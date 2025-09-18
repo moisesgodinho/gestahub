@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation'; // 1. IMPORTE O ROUTER
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase';
 
@@ -21,10 +22,10 @@ const MoonIcon = (props) => (
 export default function Header() {
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState('light');
+  const router = useRouter(); // 2. INICIE O ROUTER
 
   // Lógica de tema
   useEffect(() => {
-    // Sincroniza o estado com o que o script do layout.js definiu no HTML
     const isDarkMode = document.documentElement.classList.contains('dark');
     setTheme(isDarkMode ? 'dark' : 'light');
   }, []);
@@ -52,7 +53,8 @@ export default function Header() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      // O onAuthStateChanged vai atualizar o user para null, escondendo o header
+      // 3. ADICIONE O REDIRECIONAMENTO APÓS O LOGOUT
+      router.push('/'); 
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }
@@ -61,12 +63,10 @@ export default function Header() {
   return (
     <header className="w-full p-4">
       <div className="container mx-auto max-w-3xl flex justify-between items-center">
-        {/* Logo que leva para a Home */}
         <Link href="/" className="text-2xl font-bold text-rose-500 dark:text-rose-400">
           GestaHub
         </Link>
 
-        {/* Itens da direita só aparecem se o usuário estiver logado */}
         {user && (
           <div className="flex items-center gap-4">
             <span className="hidden sm:block text-slate-700 dark:text-slate-300">
@@ -84,7 +84,6 @@ export default function Header() {
           </div>
         )}
 
-        {/* Se não estiver logado, mostra apenas o botão de tema */}
         {!user && (
            <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">
               {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
