@@ -1,6 +1,7 @@
 // src/app/layout.js
 import { Poppins } from 'next/font/google';
 import "./globals.css";
+import Header from '@/components/Header'; // IMPORTE O HEADER
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -21,17 +22,14 @@ export default function RootLayout({ children }) {
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
+                // ... (o script do tema continua o mesmo)
                 function getInitialTheme() {
                   try {
                     const savedTheme = localStorage.getItem('theme');
-                    if (savedTheme) {
-                      return savedTheme;
-                    }
+                    if (savedTheme) { return savedTheme; }
                     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                     return prefersDark ? 'dark' : 'light';
-                  } catch (e) {
-                    return 'light';
-                  }
+                  } catch (e) { return 'light'; }
                 }
                 const theme = getInitialTheme();
                 if (theme === 'dark') {
@@ -42,12 +40,12 @@ export default function RootLayout({ children }) {
           }}
         />
         
-        {/* Adicionamos 'flex-grow' para empurrar o rodapé para baixo */}
-        <div className="flex-grow">
-          {children}
-        </div>
+        <Header /> {/* ADICIONE O HEADER AQUI */}
 
-        {/* --- RODAPÉ ADICIONADO AQUI --- */}
+        <main className="flex-grow">
+          {children}
+        </main>
+
         <footer className="w-full text-center p-4 text-slate-500 dark:text-slate-400 text-sm">
           Feito com ❤️ por Godinho
         </footer>
