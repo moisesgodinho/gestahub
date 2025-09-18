@@ -6,20 +6,18 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { weeklyInfo } from '@/data/weeklyInfo';
 
-// Função para converter DD/MM/AAAA para um objeto Date
+// --- FUNÇÕES AUXILIARES PARA DATAS ---
+
 const parseDateString = (dateStr) => {
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return null;
-
   const [day, month, year] = dateStr.split('/').map(Number);
   const dateObj = new Date(year, month - 1, day);
-
   if (dateObj.getFullYear() !== year || dateObj.getMonth() !== month - 1 || dateObj.getDate() !== day) {
     return null;
   }
   return dateObj;
 };
 
-// Função para formatar um objeto Date ou string 'AAAA-MM-DD' para DD/MM/AAAA
 const formatDateForDisplay = (date) => {
     if (!date) return '';
     const dateObj = new Date(date);
@@ -29,15 +27,24 @@ const formatDateForDisplay = (date) => {
     return `${day}/${month}/${year}`;
 }
 
+const formatDateForInput = (dateStr) => { // Converte DD/MM/AAAA para AAAA-MM-DD
+    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return '';
+    const [day, month, year] = dateStr.split('/');
+    return `${year}-${month}-${day}`;
+};
 
 export default function CalculadoraUltrassom({ user }) {
-  const [examDate, setExamDate] = useState(''); // Armazenará em DD/MM/AAAA
+  const [examDate, setExamDate] = useState('');
   const [weeksAtExam, setWeeksAtExam] = useState('');
   const [daysAtExam, setDaysAtExam] = useState('');
   const [gestationalInfo, setGestationalInfo] = useState(null);
   const [error, setError] = useState('');
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    setIsMobile(isMobileDevice);
+
     if (user) {
       const fetchExamData = async () => {
         const docRef = doc(db, 'users', user.uid);
@@ -62,7 +69,7 @@ export default function CalculadoraUltrassom({ user }) {
     if (result && user && examDateObj) {
       try {
         const ultrasoundData = {
-          examDate: examDateObj.toISOString().split('T')[0], // Salva como AAAA-MM-DD
+          examDate: examDateObj.toISOString().split('T')[0],
           weeksAtExam,
           daysAtExam: daysAtExam || '0',
         };
@@ -75,12 +82,13 @@ export default function CalculadoraUltrassom({ user }) {
   };
 
   const calculateFromUltrasound = (savedData = {}) => {
+    // A lógica de cálculo permanece a mesma
     const dateObj = savedData.savedExamDate || parseDateString(examDate);
     const weeksValue = savedData.savedWeeks || weeksAtExam;
     const daysValue = savedData.savedDays || daysAtExam;
 
     if (!dateObj || !weeksValue) {
-      setError('Por favor, preencha a data do exame (DD/MM/AAAA) e as semanas.');
+      setError('Por favor, preencha a data (DD/MM/AAAA) e as semanas.');
       setGestationalInfo(null);
       return false;
     }
@@ -94,34 +102,40 @@ export default function CalculadoraUltrassom({ user }) {
         setGestationalInfo(null);
         return false;
     }
-
     setError('');
-
     const weeks = parseInt(weeksValue, 10) || 0;
     const days = parseInt(daysValue, 10) || 0;
-
     const daysAtExamTotal = weeks * 7 + days;
     const estimatedLmp = new Date(examDateTime);
     estimatedLmp.setDate(estimatedLmp.getDate() - daysAtExamTotal);
     const estimatedLmpTime = estimatedLmp.getTime();
-
     const gestationalAgeInMs = todayTime - estimatedLmpTime;
     const gestationalAgeInDays = Math.floor(gestationalAgeInMs / (1000 * 60 * 60 * 24));
-    
     const currentWeeks = Math.floor(gestationalAgeInDays / 7);
     const currentDays = gestationalAgeInDays % 7;
-
     const dueDate = new Date(estimatedLmpTime);
     dueDate.setDate(dueDate.getDate() + 280);
 
     setGestationalInfo({
-        weeks: currentWeeks,
-        days: currentDays,
+        weeks: currentWeeks, days: currentDays,
         dueDate: dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
         currentWeekInfo: weeklyInfo[currentWeeks + 1] || "Informações para esta semana ainda não disponíveis.",
     });
     return true;
   };
+
+  // Handler para a máscara de data no desktop
+  const handleDateMask = (e) => {
+    let value = e.target.value.replace(/\D/g, '');
+    if (value.length > 8) value = value.slice(0, 8);
+    if (value.length > 4) {
+      value = `${value.slice(0, 2)}/${value.slice(2, 4)}/${value.slice(4)}`;
+    } else if (value.length > 2) {
+      value = `${value.slice(0, 2)}/${value.slice(2)}`;
+    }
+    setExamDate(value);
+  };
+
 
   return (
     <div className="space-y-4">
@@ -129,14 +143,24 @@ export default function CalculadoraUltrassom({ user }) {
         <label htmlFor="examDate" className="block text-md font-medium text-slate-700 dark:text-slate-300 mb-2">
           Data do Ultrassom
         </label>
-        <input 
-          type="text" 
-          id="examDate" 
-          value={examDate} 
-          onChange={(e) => setExamDate(e.target.value)}
-          placeholder="DD/MM/AAAA"
-          className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-transparent dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500"
-        />
+        {isMobile ? (
+          <input 
+            type="date" 
+            id="examDate" 
+            value={formatDateForInput(examDate)}
+            onChange={(e) => setExamDate(formatDateForDisplay(e.target.value))}
+            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-transparent dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        ) : (
+          <input 
+            type="text" 
+            id="examDate" 
+            value={examDate} 
+            onChange={handleDateMask}
+            placeholder="DD/MM/AAAA"
+            className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-transparent dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500"
+          />
+        )}
       </div>
       <div>
         <label className="block text-md font-medium text-slate-700 dark:text-slate-300 mb-2">
@@ -170,6 +194,7 @@ export default function CalculadoraUltrassom({ user }) {
 
        {gestationalInfo && (
         <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6 space-y-4 animate-fade-in">
+          {/* O restante do JSX para exibir as informações permanece o mesmo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
             <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg">
                 <p className="text-sm text-slate-500 dark:text-slate-400">Idade Gestacional Atual</p>
