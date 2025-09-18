@@ -83,15 +83,17 @@ export default function Home() {
 
   return (
     <main className="min-h-screen font-sans transition-colors duration-300 bg-gray-50 dark:bg-slate-900">
-      <div className="absolute top-4 right-4">
-        <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">
-          {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
-        </button>
-      </div>
+      {/* O botão de tema foi MOVIDO daqui para o header do usuário logado */}
 
       <div className="flex items-center justify-center min-h-screen p-4">
         {!user ? (
           <div className="w-full max-w-md p-8 sm:p-10 space-y-6 bg-white dark:bg-slate-800 rounded-2xl shadow-xl text-center">
+              {/* Adicionamos o botão de tema aqui também para a tela de login */}
+              <div className="absolute top-4 right-4">
+                <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">
+                  {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
+                </button>
+              </div>
               <h1 className="text-5xl font-bold text-rose-500 dark:text-rose-400">GestaHub</h1>
               <p className="text-slate-600 dark:text-slate-400 text-lg">Sua jornada da maternidade, semana a semana.</p>
               <button
@@ -103,16 +105,23 @@ export default function Home() {
           </div>
         ) : (
           <div className="w-full max-w-3xl">
+            {/* --- CABEÇALHO ATUALIZADO --- */}
             <header className="flex justify-between items-center mb-6">
               <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200">
                 Olá, <span className="text-rose-500 dark:text-rose-400">{user.displayName.split(' ')[0]}</span>!
               </h2>
-              <button
-                onClick={handleSignOut}
-                className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-              >
-                Sair
-              </button>
+              {/* Container para os botões da direita */}
+              <div className="flex items-center gap-4">
+                <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">
+                  {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
+                </button>
+                <button
+                  onClick={handleSignOut}
+                  className="bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-2 px-4 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Sair
+                </button>
+              </div>
             </header>
 
             <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl">
