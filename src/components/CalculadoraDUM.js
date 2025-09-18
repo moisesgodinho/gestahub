@@ -6,8 +6,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { weeklyInfo } from '@/data/weeklyInfo';
 
-// --- FUNÇÕES AUXILIARES PARA DATAS ---
-
+// (As funções auxiliares de data permanecem as mesmas)
 const parseDateString = (dateStr) => {
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return null;
   const [day, month, year] = dateStr.split('/').map(Number);
@@ -17,7 +16,6 @@ const parseDateString = (dateStr) => {
   }
   return dateObj;
 };
-
 const formatDateForDisplay = (date) => {
     if (!date) return '';
     const dateObj = new Date(date);
@@ -26,21 +24,20 @@ const formatDateForDisplay = (date) => {
     const year = dateObj.getUTCFullYear();
     return `${day}/${month}/${year}`;
 }
-
-const formatDateForInput = (dateStr) => { // Converte DD/MM/AAAA para AAAA-MM-DD
+const formatDateForInput = (dateStr) => {
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return '';
     const [day, month, year] = dateStr.split('/');
     return `${year}-${month}-${day}`;
 };
 
 export default function CalculadoraDUM({ user }) {
+  // (O início do componente com states e useEffects permanece o mesmo)
   const [lmp, setLmp] = useState('');
   const [gestationalInfo, setGestationalInfo] = useState(null);
   const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
-    // Detecta se é um dispositivo móvel no lado do cliente
     const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
     setIsMobile(isMobileDevice);
 
@@ -60,7 +57,6 @@ export default function CalculadoraDUM({ user }) {
   }, [user]);
 
   const calculateGestationalInfo = (lmpDateObj) => {
-    // A lógica de cálculo permanece a mesma
     if (!lmpDateObj) {
       setError('Por favor, insira uma data válida no formato DD/MM/AAAA.');
       setGestationalInfo(null);
@@ -85,9 +81,10 @@ export default function CalculadoraDUM({ user }) {
     dueDate.setDate(dueDate.getDate() + 280);
 
     setGestationalInfo({
-        weeks, days,
+        weeks,
+        days,
         dueDate: dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
-        currentWeekInfo: weeklyInfo[weeks + 1] || "Informações para esta semana ainda não disponíveis.",
+        currentWeekInfo: weeklyInfo[weeks || 1] || "Informações para esta semana ainda não disponíveis.",
     });
     return true;
   };
@@ -106,7 +103,6 @@ export default function CalculadoraDUM({ user }) {
     }
   };
 
-  // Handler para a máscara de data no desktop
   const handleDateMask = (e) => {
     let value = e.target.value.replace(/\D/g, '');
     if (value.length > 8) value = value.slice(0, 8);
@@ -117,7 +113,7 @@ export default function CalculadoraDUM({ user }) {
     }
     setLmp(value);
   };
-
+  // (O restante do componente até a exibição das informações permanece o mesmo)
   return (
     <div className="space-y-4">
       <div>
@@ -129,10 +125,8 @@ export default function CalculadoraDUM({ user }) {
             <input 
               type="date"
               id="lmp"
-              // O input 'date' precisa do formato AAAA-MM-DD
               value={formatDateForInput(lmp)}
               onChange={(e) => {
-                // O valor do input 'date' vem como AAAA-MM-DD, então formatamos para DD/MM/AAAA
                 setLmp(formatDateForDisplay(e.target.value));
               }}
               className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-transparent dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500"
@@ -158,9 +152,8 @@ export default function CalculadoraDUM({ user }) {
         {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </div>
 
-      {gestationalInfo && (
+      {gestationalInfo && gestationalInfo.currentWeekInfo.title && (
         <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6 space-y-4 animate-fade-in">
-          {/* O restante do JSX para exibir as informações permanece o mesmo */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
             <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg">
                 <p className="text-sm text-slate-500 dark:text-slate-400">Idade Gestacional</p>
@@ -171,9 +164,20 @@ export default function CalculadoraDUM({ user }) {
                 <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{gestationalInfo.dueDate}</p>
             </div>
           </div>
-          <div className="bg-rose-50 dark:bg-rose-900/30 border-l-4 border-rose-500 dark:border-rose-400 text-rose-800 dark:text-rose-200 p-4 rounded-r-lg">
-            <h4 className="font-bold">✨ Nesta semana:</h4>
-            <p>{gestationalInfo.currentWeekInfo}</p>
+          {/* --- CÓDIGO DE EXIBIÇÃO ATUALIZADO --- */}
+          <div className="bg-rose-50 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200 p-4 rounded-lg space-y-4">
+            <h3 className="text-xl font-bold text-center border-b border-rose-200 dark:border-rose-700 pb-2">
+              ✨ {gestationalInfo.currentWeekInfo.title} ✨
+            </h3>
+            <div>
+              <h4 className="font-semibold">Bebê:</h4>
+              <p className="text-sm">Tamanho aproximado de um(a) <span className="font-bold">{gestationalInfo.currentWeekInfo.size}</span>.</p>
+              <p className="mt-1">{gestationalInfo.currentWeekInfo.baby}</p>
+            </div>
+            <div>
+              <h4 className="font-semibold">Mamãe:</h4>
+              <p className="mt-1">{gestationalInfo.currentWeekInfo.mom}</p>
+            </div>
           </div>
         </div>
       )}
