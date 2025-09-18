@@ -15,9 +15,8 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR">
-      <body className={`${poppins.variable} font-sans antialiased`}>
-        {/* Este script define o tema inicial antes da página ser renderizada */}
+    <html lang="pt-BR" className="h-full">
+      <body className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -31,7 +30,6 @@ export default function RootLayout({ children }) {
                     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
                     return prefersDark ? 'dark' : 'light';
                   } catch (e) {
-                    // Se o localStorage não estiver disponível, usa o tema claro
                     return 'light';
                   }
                 }
@@ -43,7 +41,16 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
-        {children}
+        
+        {/* Adicionamos 'flex-grow' para empurrar o rodapé para baixo */}
+        <div className="flex-grow">
+          {children}
+        </div>
+
+        {/* --- RODAPÉ ADICIONADO AQUI --- */}
+        <footer className="w-full text-center p-4 text-slate-500 dark:text-slate-400 text-sm">
+          Feito com ❤️ por Godinho
+        </footer>
       </body>
     </html>
   );
