@@ -1,0 +1,50 @@
+// src/data/weeklyInfo.js
+
+// Array com informações detalhadas sobre cada semana da gestação.
+// O índice 0 é deixado em branco, pois a contagem começa na semana 1.
+
+export const weeklyInfo = [
+  "", // Índice 0
+  "Semana 1: Tecnicamente, você ainda não está grávida. A contagem da gestação começa no primeiro dia da sua última menstruação, preparando o cenário para a ovulação.",
+  "Semana 2: Seu corpo libera um óvulo (ovulação). Este é o período fértil, o momento em que a concepção tem maior probabilidade de acontecer.",
+  "Semana 3: Aconteceu a fecundação! O óvulo fertilizado (zigoto) viaja pela trompa de Falópio enquanto se divide em mais e mais células, a caminho do útero.",
+  "Semana 4: O pequeno amontoado de células, agora um blastocisto, se implanta na parede do útero. É do tamanho de uma semente de papoula e o teste de gravidez já pode dar positivo!",
+  "Semana 5: O coração do embrião começa a se formar e a bater um ritmo próprio. O tubo neural, que se tornará o cérebro e a medula espinhal, está se desenvolvendo. Tamanho: uma semente de laranja.",
+  "Semana 6: Traços faciais como olhos e narinas começam a se formar. Brotos de braços e pernas aparecem. O coração já bate de 100 a 160 vezes por minuto. Tamanho: um grão de lentilha.",
+  "Semana 7: O cérebro está se desenvolvendo rapidamente. Mãos e pés estão se formando, parecendo pequenas nadadeiras. Tamanho: uma amora (blueberry).",
+  "Semana 8: Pálpebras, lábio superior e a ponta do nariz já são visíveis. O bebê está constantemente se movendo, embora você ainda não consiga sentir. Tamanho: um grão de feijão.",
+  "Semana 9: As estruturas essenciais estão no lugar. A cauda embrionária desapareceu. As articulações, como cotovelos e joelhos, já dobram. Tamanho: uma uva.",
+  "Semana 10: Seu bebê agora é oficialmente um feto. As unhas e impressões digitais começam a se formar. Órgãos vitais, como rins e fígado, estão funcionando. Tamanho: uma azeitona grande.",
+  "Semana 11: O feto está quase todo formado. Ele pode abrir e fechar os punhos e os brotos dos dentes aparecem sob a gengiva. Tamanho: um figo.",
+  "Semana 12: Os reflexos do bebê estão se desenvolvendo. Ele pode franzir a testa e sugar o dedo. O risco de aborto espontâneo diminui significativamente. Tamanho: um limão.",
+  "Semana 13: Fim do primeiro trimestre! As cordas vocais do seu bebê estão se formando. Os intestinos, que cresciam fora do corpo, agora estão se movendo para o abdômen. Tamanho: uma vagem de ervilha.",
+  "Semana 14: O bebê pode fazer expressões faciais e o pescoço está mais definido. O corpo cresce mais rápido que a cabeça. Tamanho: um pêssego.",
+  "Semana 15: Os ossos estão se solidificando e o bebê pode sentir a luz através das pálpebras finas e fechadas. Você pode começar a sentir os primeiros movimentos (vibrações). Tamanho: uma maçã.",
+  "Semana 16: O sistema nervoso continua a se desenvolver. O bebê pode ouvir seus batimentos cardíacos e sua voz. Converse com ele! Tamanho: um abacate.",
+  "Semana 17: O esqueleto está mudando de cartilagem macia para osso. O cordão umbilical fica mais forte e espesso. Tamanho: uma pera.",
+  "Semana 18: As terminações nervosas são cobertas por mielina, permitindo mensagens mais rápidas no cérebro. O sexo do bebê pode ser visível no ultrassom. Tamanho: uma batata-doce.",
+  "Semana 19: Uma camada gordurosa e esbranquiçada, chamada vernix caseosa, começa a cobrir a pele do bebê para protegê-lo no líquido amniótico. Tamanho: uma manga.",
+  "Semana 20: Metade do caminho! Os sentidos (olfato, visão, audição, paladar e tato) estão se desenvolvendo. Você provavelmente sentirá os chutes e piruetas com mais clareza. Tamanho: uma banana.",
+  "Semana 21: O bebê engole líquido amniótico regularmente, o que é bom para o sistema digestivo. As sobrancelhas e pálpebras estão totalmente formadas. Tamanho: uma cenoura grande.",
+  "Semana 22: A pele ainda é fina e translúcida, mas o bebê começa a parecer um recém-nascido em miniatura. Cabelo fino (lanugo) cobre o corpo. Tamanho: uma espiga de milho.",
+  "Semana 23: A audição está mais aguçada. O bebê pode se assustar com ruídos altos. Os pulmões praticam a respiração, mas ainda não usam ar. Tamanho: um mamão papaia.",
+  "Semana 24: O bebê atinge o marco da viabilidade, o que significa que ele teria uma chance de sobreviver se nascesse prematuramente. O rosto está completamente formado. Tamanho: um melão cantalupo pequeno.",
+  "Semana 25: O bebê está ganhando gordura, o que torna sua pele menos enrugada. O cabelo real começa a crescer e a ganhar cor. Tamanho: uma couve-flor.",
+  "Semana 26: Os pulmões estão desenvolvendo os 'ramos' da árvore respiratória e as células que produzem surfactante, essencial para respirar fora do útero. Tamanho: um pé de alface.",
+  "Semana 27: O bebê abre e fecha os olhos, dorme e acorda em intervalos regulares e pode até chupar o dedo. O cérebro está muito ativo. Fim do segundo trimestre! Tamanho: uma beringela.",
+  "Semana 28: Bem-vinda ao terceiro trimestre! O bebê pode reconhecer sua voz. A visão está melhorando e ele pode se virar em direção a uma fonte de luz forte. Tamanho: um repolho.",
+  "Semana 29: Os músculos e pulmões continuam a amadurecer. A cabeça está crescendo para acomodar o cérebro em rápido desenvolvimento. Tamanho: uma abóbora pequena.",
+  "Semana 30: O bebê está cercado por cerca de meio litro de líquido amniótico. A medula óssea assumiu a produção de glóbulos vermelhos. Tamanho: um pepino grande.",
+  "Semana 31: O sistema nervoso central está maduro o suficiente para controlar a temperatura corporal. O bebê ganha peso rapidamente a partir de agora. Tamanho: um cacho de cocos.",
+  "Semana 32: A camada de lanugo começa a cair. As unhas das mãos e dos pés estão completamente formadas. O bebê provavelmente está na posição de cabeça para baixo. Tamanho: um jiló grande.",
+  "Semana 33: Os ossos do crânio do bebê ainda não estão fundidos, o que permite que se movam e se sobreponham ligeiramente durante o parto. Tamanho: um aipo.",
+  "Semana 34: Os pulmões estão quase totalmente desenvolvidos. A camada de vernix caseosa fica mais espessa. O sistema imunológico está se fortalecendo. Tamanho: um melão.",
+  "Semana 35: O bebê tem menos espaço para se mover, então você pode sentir menos cambalhotas, mas mais cotoveladas e joelhadas. O desenvolvimento físico está quase completo. Tamanho: um abacaxi.",
+  "Semana 36: Considerado 'termo inicial'. O bebê desce para a pelve ('encaixa'), aliviando a pressão nos seus pulmões. A maior parte do lanugo desapareceu. Tamanho: um pé de alface romana.",
+  "Semana 37: O bebê pratica a respiração, piscando e virando a cabeça. Ele está pronto para a vida fora do útero. Tamanho: uma acelga.",
+  "Semana 38: O cérebro e os pulmões continuam a amadurecer. O bebê tem uma pegada firme. A cor dos olhos ainda não é definitiva. Tamanho: um talo de ruibarbo.",
+  "Semana 39: Considerado 'termo completo'! O bebê continua a acumular gordura para ajudar a controlar a temperatura corporal após o nascimento. A qualquer momento agora! Tamanho: uma melancia pequena.",
+  "Semana 40: A data provável do parto chegou! Mas não se preocupe se o bebê não nascer exatamente hoje; é apenas uma estimativa. Ele está confortável e pronto. Tamanho: uma jaca pequena.",
+  "Semana 41: Seu bebê é considerado 'termo tardio'. Ele está totalmente desenvolvido e pode estar um pouco maior. Seu médico monitorará você e o bebê de perto.",
+  "Semana 42: Se você chegou até aqui, seu bebê é 'pós-termo'. A indução do parto pode ser recomendada para garantir a saúde e segurança de ambos. A espera está quase no fim!"
+];
