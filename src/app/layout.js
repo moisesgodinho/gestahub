@@ -2,11 +2,10 @@
 import { Poppins } from 'next/font/google';
 import "./globals.css";
 
-// Configura a fonte Poppins com os pesos (weights) que vamos usar
 const poppins = Poppins({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
-  variable: '--font-poppins', // Cria uma variável CSS para a fonte
+  variable: '--font-poppins',
 });
 
 export const metadata = {
@@ -17,8 +16,33 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR">
-      {/* Aplica a variável da fonte ao body */}
       <body className={`${poppins.variable} font-sans antialiased`}>
+        {/* Este script define o tema inicial antes da página ser renderizada */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              (function() {
+                function getInitialTheme() {
+                  try {
+                    const savedTheme = localStorage.getItem('theme');
+                    if (savedTheme) {
+                      return savedTheme;
+                    }
+                    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                    return prefersDark ? 'dark' : 'light';
+                  } catch (e) {
+                    // Se o localStorage não estiver disponível, usa o tema claro
+                    return 'light';
+                  }
+                }
+                const theme = getInitialTheme();
+                if (theme === 'dark') {
+                  document.documentElement.classList.add('dark');
+                }
+              })();
+            `,
+          }}
+        />
         {children}
       </body>
     </html>
