@@ -7,6 +7,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
+import Toast from '@/components/Toast'; // 1. IMPORTE O TOAST
 
 // --- DADOS E FUNÇÕES AUXILIARES ---
 const bmiCategories = [
@@ -28,7 +29,6 @@ const getBMICategory = (bmi) => {
   return { range: 'N/A', category: '' };
 };
 const getTodayString = () => new Date().toISOString().split('T')[0];
-
 const calculateGestationalAgeOnDate = (lmpDate, targetDate) => {
     if (!lmpDate || !targetDate) return '';
     const lmpTime = new Date(lmpDate).getTime();
@@ -55,6 +55,9 @@ export default function WeightTrackerPage() {
   const [currentGain, setCurrentGain] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
+
+  // 2. ESTADO DO TOAST
+  const [toast, setToast] = useState({ show: false, message: '' });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -111,16 +114,26 @@ export default function WeightTrackerPage() {
     }
   };
 
+  // 3. LÓGICA DE SALVAMENTO ATUALIZADA
   const handleSaveInitialData = async () => {
-    if (!user || !height || !prePregnancyWeight) return;
-    const profile = { height: parseFloat(height), prePregnancyWeight: parseFloat(prePregnancyWeight), history: [] }; // Sempre inicia com histórico vazio ao salvar dados novos
+    if (!user || !height || !prePregnancyWeight) {
+        setToast({ show: true, message: 'Preencha altura e peso!' });
+        return;
+    };
+    
     try {
-      await setDoc(doc(db, 'users', user.uid), { weightProfile: profile }, { merge: true });
-      updateCalculations(profile.prePregnancyWeight, profile.height, profile.history);
-      setWeightHistory([]); // Limpa o histórico local também
-      alert('Dados iniciais salvos! O histórico anterior foi reiniciado.');
+      const userDocRef = doc(db, 'users', user.uid);
+      await setDoc(
+        userDocRef,
+        { weightProfile: { height: parseFloat(height), prePregnancyWeight: parseFloat(prePregnancyWeight) } },
+        { merge: true }
+      );
+
+      updateCalculations(parseFloat(prePregnancyWeight), parseFloat(height), weightHistory);
+      setToast({ show: true, message: 'Dados iniciais salvos com sucesso!' });
     } catch (error) {
       console.error("Erro ao salvar dados iniciais:", error);
+      setToast({ show: true, message: 'Erro ao salvar dados.' });
     }
   };
 
@@ -155,7 +168,7 @@ export default function WeightTrackerPage() {
       updateCalculations(prePregnancyWeight, height, updatedHistory);
     } catch (error) {
       console.error("Erro ao apagar registro:", error);
-      alert("Não foi possível apagar o registro. Tente novamente.");
+      setToast({ show: true, message: 'Não foi possível apagar o registro.' });
     } finally {
       setIsModalOpen(false);
       setEntryToDelete(null);
@@ -166,13 +179,16 @@ export default function WeightTrackerPage() {
     return <main className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900"><p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p></main>;
   }
   
-  // A recomendação e a categoria para destaque são baseadas SEMPRE no IMC inicial.
   const recommendation = getBMICategory(initialBmi);
   const initialCategory = recommendation.category;
 
   return (
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmDeleteEntry} title="Confirmar Exclusão" message="Tem certeza que deseja apagar este registro de peso?"/>
+      
+      {/* 4. TOAST */}
+      <Toast message={toast.message} show={toast.show} onClose={() => setToast({ show: false, message: '' })} />
+
       <main className="min-h-screen font-sans bg-gray-50 dark:bg-slate-900 p-4">
         <div className="container mx-auto max-w-2xl">
           <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">Acompanhamento de Peso</h1>
