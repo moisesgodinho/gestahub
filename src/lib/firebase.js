@@ -13,10 +13,6 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// --- NOSSO NOVO TESTE DE DIAGNÓSTICO ---
-console.log("Configuração completa lida pelo app:", firebaseConfig);
-// ----------------------------------------
-
 // Inicializa o Firebase (garante que não seja inicializado mais de uma vez)
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
