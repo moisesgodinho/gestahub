@@ -58,6 +58,7 @@ export default function CalculadoraUltrassom({ user, onSaveSuccess, onCancel }) 
   const handleSave = async () => {
     const examDateObj = parseDateString(examDate);
     const weeksValue = parseInt(weeksAtExam, 10);
+    const daysValue = parseInt(daysAtExam, 10) || 0;
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -72,6 +73,18 @@ export default function CalculadoraUltrassom({ user, onSaveSuccess, onCancel }) 
     if (weeksValue < 0 || weeksValue > 42) {
       toast.warn("O número de semanas deve ser entre 0 e 42.");
       return;
+    }
+    if (daysValue < 0 || daysValue > 6) {
+      toast.warn("O número de dias deve ser entre 0 e 6.");
+      return;
+    }
+
+    const daysSinceExam = Math.floor((today.getTime() - examDateObj.getTime()) / (1000 * 60 * 60 * 24));
+    const currentGestationalAgeInDays = (weeksValue * 7) + daysValue + daysSinceExam;
+
+    if (currentGestationalAgeInDays > 294) { // 42 semanas
+        toast.warn("A data do exame informada, somada aos dias atuais, ultrapassa 42 semanas de gestação.");
+        return;
     }
     
     if (user && examDateObj) {
