@@ -8,6 +8,7 @@ import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebas
 import { auth, db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify'; // 1. IMPORTE O TOAST
+import AppNavigation from '@/components/AppNavigation';
 
 export default function KickCounterPage() {
   const [user, setUser] = useState(null);
@@ -191,7 +192,6 @@ export default function KickCounterPage() {
           {sessions.length > 0 && (
             <div className="mt-8 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl">
               <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Histórico de Sessões</h2>
-              {/* 3. CLASSES DE SCROLL REMOVIDAS DA DIV ABAIXO */}
               <div className="space-y-3">
                 {sessions.map((session) => (
                   <div key={session.timestamp} className="flex justify-between items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
@@ -210,9 +210,7 @@ export default function KickCounterPage() {
           )}
 
           <div className="mt-8 text-center">
-            <Link href="/" className="text-indigo-600 dark:text-indigo-400 hover:underline">
-              Voltar para a página inicial
-            </Link>
+          <AppNavigation />
           </div>
         </div>
       </div>

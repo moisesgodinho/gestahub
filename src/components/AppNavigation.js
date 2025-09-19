@@ -2,18 +2,29 @@
 'use client';
 
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+
+// Define todos os links de navegação em um só lugar
+const navLinks = [
+  { href: '/', title: 'Página Inicial', description: 'Veja o resumo da sua gestação.' },
+  { href: '/contador-de-movimentos', title: 'Contador de Movimentos', description: 'Monitore os movimentos do seu bebê.' },
+  { href: '/acompanhamento-de-peso', title: 'Acompanhamento de Peso', description: 'Registre seu peso e veja seu progresso.' }
+];
 
 export default function AppNavigation() {
+  const pathname = usePathname();
+
+  // Filtra os links para não mostrar o da página atual
+  const filteredLinks = navLinks.filter(link => link.href !== pathname);
+
   return (
     <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
-      <Link href="/contador-de-movimentos" className="block bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow text-center">
-        <h3 className="text-xl font-semibold text-rose-500 dark:text-rose-400">Contador de Movimentos</h3>
-        <p className="text-slate-600 dark:text-slate-400 mt-2">Monitore os movimentos do seu bebê.</p>
-      </Link>
-      <Link href="/acompanhamento-de-peso" className="block bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow text-center">
-        <h3 className="text-xl font-semibold text-rose-500 dark:text-rose-400">Acompanhamento de Peso</h3>
-        <p className="text-slate-600 dark:text-slate-400 mt-2">Registre seu peso e veja seu progresso.</p>
-      </Link>
+      {filteredLinks.map(link => (
+        <Link key={link.href} href={link.href} className="block bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow text-center">
+          <h3 className="text-xl font-semibold text-rose-500 dark:text-rose-400">{link.title}</h3>
+          <p className="text-slate-600 dark:text-slate-400 mt-2">{link.description}</p>
+        </Link>
+      ))}
     </div>
   );
 }

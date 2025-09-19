@@ -8,6 +8,7 @@ import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebas
 import { auth, db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
+import AppNavigation from '@/components/AppNavigation';
 
 // --- DADOS E FUNÇÕES AUXILIARES (sem alterações) ---
 const bmiCategories = [
@@ -288,9 +289,7 @@ export default function WeightTrackerPage() {
           )}
           
           <div className="mt-8 text-center">
-            <Link href="/" className="text-indigo-600 dark:text-indigo-400 hover:underline">
-              Voltar para a página inicial
-            </Link>
+          <AppNavigation />
           </div>
         </div>
       </div>
