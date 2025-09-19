@@ -1,3 +1,38 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+.dark select {
+  background-color: #334155; /* slate-700 */
+  color: #e2e8f0; /* slate-200 */
+  border-color: #475569; /* slate-600 */
+}
+
+.dark select option {
+  background-color: #334155; /* slate-700 */
+  color: #e2e8f0; /* slate-200 */
+}
+
+/* Oculta a seta padrão em alguns navegadores e permite estilizar a seta com background-image */
+select {
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%234b5563' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  background-size: 1.5em;
+  padding-right: 2.5rem; /* Espaço para a seta customizada */
+}
+
+/* Para o modo escuro, mude a cor da seta */
+.dark select {
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='none' stroke='%2394a3b8' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3e%3cpath d='M6 9l6 6 6-6'/%3e%3c/svg%3e");
+}
+
+/* Garante que o input de texto também tenha o fundo escuro */
+.dark input[type="text"] {
+  background-color: #334155; /* slate-700 */
+  color: #e2e8f0; /* slate-200 */
+  border-color: #475569; /* slate-600 */
+}
