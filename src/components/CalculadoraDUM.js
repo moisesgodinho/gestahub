@@ -1,11 +1,12 @@
+// src/components/CalculadoraDUM.js
 'use client';
 
 import { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { weeklyInfo } from '@/data/weeklyInfo';
-import CronogramaUltrassom from './CronogramaUltrassom';
+import { toast } from 'react-toastify';
 
+// Funções auxiliares de data
 const parseDateString = (dateStr) => {
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return null;
   const [day, month, year] = dateStr.split('/').map(Number);
@@ -29,11 +30,8 @@ const formatDateForInput = (dateStr) => {
     return `${year}-${month}-${day}`;
 };
 
-export default function CalculadoraDUM({ user }) {
+export default function CalculadoraDUM({ user, onSaveSuccess, onCancel }) {
   const [lmp, setLmp] = useState('');
-  const [lmpDateObj, setLmpDateObj] = useState(null);
-  const [gestationalInfo, setGestationalInfo] = useState(null);
-  const [error, setError] = useState('');
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -46,59 +44,42 @@ export default function CalculadoraDUM({ user }) {
         const docSnap = await getDoc(docRef);
         if (docSnap.exists() && docSnap.data().lmp) {
           const savedLmp = docSnap.data().lmp;
-          const displayDate = formatDateForDisplay(savedLmp);
-          setLmp(displayDate);
-          calculateGestationalInfo(parseDateString(displayDate));
+          setLmp(formatDateForDisplay(savedLmp));
         }
       };
       fetchLmp();
     }
   }, [user]);
 
-  const calculateGestationalInfo = (dateObject) => {
-    setLmpDateObj(dateObject);
-    if (!dateObject) {
-      setError('Por favor, insira uma data válida no formato DD/MM/AAAA.');
-      setGestationalInfo(null);
-      return false;
-    }
-    const lmpDateTime = dateObject.getTime();
-    const today = new Date();
-    const todayTime = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
-    
-    if (lmpDateTime > todayTime) {
-        setError('A data da última menstruação não pode ser no futuro.');
-        setGestationalInfo(null);
-        return false;
-    }
-
-    setError('');
-    const gestationalAgeInMs = todayTime - lmpDateTime;
-    const gestationalAgeInDays = Math.floor(gestationalAgeInMs / (1000 * 60 * 60 * 24));
-    const weeks = Math.floor(gestationalAgeInDays / 7);
-    const days = gestationalAgeInDays % 7;
-    const dueDate = new Date(lmpDateTime);
-    dueDate.setDate(dueDate.getDate() + 280);
-
-    setGestationalInfo({
-        weeks,
-        days,
-        dueDate: dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
-        currentWeekInfo: weeklyInfo[weeks || 1] || "Informações para esta semana ainda não disponíveis.",
-    });
-    return true;
-  };
-
-  const handleCalculateAndSave = async () => {
+  const handleSave = async () => {
     const dateObject = parseDateString(lmp);
-    const success = calculateGestationalInfo(dateObject);
-    if (success && user && dateObject) {
+    if (!dateObject) {
+      toast.warn("Por favor, insira uma data válida no formato DD/MM/AAAA.");
+      return;
+    }
+    
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    if (dateObject.getTime() > today.getTime()) {
+      toast.warn('A data não pode ser no futuro.');
+      return;
+    }
+
+    const gestationalAgeInDays = Math.floor((today.getTime() - dateObject.getTime()) / (1000 * 60 * 60 * 24));
+    if (gestationalAgeInDays > 294) { // 42 semanas
+      toast.warn('A data informada resulta em mais de 42 semanas de gestação.');
+      return;
+    }
+
+    if (user && dateObject) {
       try {
         const dateToSave = dateObject.toISOString().split('T')[0];
         await setDoc(doc(db, 'users', user.uid), { lmp: dateToSave }, { merge: true });
+        toast.success("Data salva com sucesso!");
+        if (onSaveSuccess) onSaveSuccess();
       } catch (error) {
         console.error("Erro ao salvar DUM:", error);
-        setError("Não foi possível salvar a data.");
+        toast.error("Não foi possível salvar a data.");
       }
     }
   };
@@ -122,27 +103,17 @@ export default function CalculadoraDUM({ user }) {
         </label>
         <div className="flex flex-col sm:flex-row gap-3">
           {isMobile ? ( <input type="date" id="lmp" value={formatDateForInput(lmp)} onChange={(e) => { setLmp(formatDateForDisplay(e.target.value)); }} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-transparent dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500" /> ) : ( <input type="text" id="lmp" value={lmp} onChange={handleDateMask} placeholder="DD/MM/AAAA" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md shadow-sm bg-transparent dark:text-slate-200 focus:ring-indigo-500 focus:border-indigo-500" /> )}
-          <button onClick={handleCalculateAndSave} className="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors focus:outline-none focus:ring-4 focus:ring-indigo-300 dark:focus:ring-indigo-800">
-            {user ? 'Calcular e Salvar' : 'Calcular'}
-          </button>
         </div>
-        {error && <p className="text-red-500 text-sm mt-2">{error}</p>}
       </div>
 
-      {gestationalInfo && gestationalInfo.currentWeekInfo.title && (
-        <div className="border-t border-slate-200 dark:border-slate-700 pt-6 mt-6 space-y-4 animate-fade-in">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
-            <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg"> <p className="text-sm text-slate-500 dark:text-slate-400">Idade Gestacional</p> <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{gestationalInfo.weeks}s {gestationalInfo.days}d</p> </div>
-            <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg"> <p className="text-sm text-slate-500 dark:text-slate-400">Data Provável do Parto</p> <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{gestationalInfo.dueDate}</p> </div>
-          </div>
-          <div className="bg-rose-50 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200 p-4 rounded-lg space-y-4">
-            <h3 className="text-xl font-bold text-center border-b border-rose-200 dark:border-rose-700 pb-2"> ✨ {gestationalInfo.currentWeekInfo.title} ✨ </h3>
-            <div> <h4 className="font-semibold">Bebê:</h4> <p className="text-sm">Tamanho aproximado de um(a) <span className="font-bold">{gestationalInfo.currentWeekInfo.size}</span>.</p> <p className="mt-1">{gestationalInfo.currentWeekInfo.baby}</p> </div>
-            <div> <h4 className="font-semibold">Mamãe:</h4> <p className="mt-1">{gestationalInfo.currentWeekInfo.mom}</p> </div>
-          </div>
-          <CronogramaUltrassom lmpDate={lmpDateObj} />
-        </div>
-      )}
+      <div className="mt-4 flex flex-col sm:flex-row justify-end gap-3 border-t border-slate-200 dark:border-slate-700 pt-4">
+        <button onClick={onCancel} className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
+            Cancelar
+        </button>
+        <button onClick={handleSave} className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">
+            Salvar
+        </button>
+      </div>
     </div>
   );
 }

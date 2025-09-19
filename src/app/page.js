@@ -3,32 +3,110 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-// ... (outras importações)
 import { onAuthStateChanged, signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider } from '@/lib/firebase';
+import { auth, googleProvider, db } from '@/lib/firebase';
+import { doc, getDoc } from 'firebase/firestore';
 import CalculadoraDUM from '@/components/CalculadoraDUM';
 import CalculadoraUltrassom from '@/components/CalculadoraUltrassom';
+import { weeklyInfo } from '@/data/weeklyInfo';
+import CronogramaUltrassom from '@/components/CronogramaUltrassom';
 
-// ... (componentes de ilustração e ícones)
-const FetusIllustration = (props) => ( <svg {...props} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg"> <path fill="#FFDDD2" d="M164.6,128.9c-7.9,25.9-32.9,42.7-58.8,47.3c-25.9,4.6-52.7-3-70.2-22.3s-25.7-49.9-19.9-74.2 C11.3,55.4,31.5,35.2,52.2,22.4C72.9,9.6,94.1,4.2,112.5,10.6c18.4,6.4,34,24.6,40.8,43.2 C159.9,72.3,172.5,103.1,164.6,128.9z" transform="translate(-25, -30)" /> <g fill="currentColor" transform="translate(2, 5)"> <circle cx="95" cy="70" r="22" /> <path d="M95,92c-15,0-25,15-25,28c0,10,12,20,25,20s25-10,25-20C120,107,110,92,95,92z" /> <path d="M82,128c-5,5-5,15,0,20c5,5,15,5,20,0" /> </g> </svg> );
-const CheckIcon = () => ( <svg className="w-5 h-5 text-rose-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"> <polyline points="20 6 9 17 4 12"></polyline> </svg> );
-
+// --- Componentes de Ilustração e Ícones ---
+const FetusIllustration = (props) => (
+  <svg {...props} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+    <path 
+      fill="#FFDDD2" 
+      d="M164.6,128.9c-7.9,25.9-32.9,42.7-58.8,47.3c-25.9,4.6-52.7-3-70.2-22.3s-25.7-49.9-19.9-74.2 C11.3,55.4,31.5,35.2,52.2,22.4C72.9,9.6,94.1,4.2,112.5,10.6c18.4,6.4,34,24.6,40.8,43.2 C159.9,72.3,172.5,103.1,164.6,128.9z" 
+      transform="translate(-25, -30)"
+    />
+    <g fill="currentColor" transform="translate(2, 5)">
+      <circle cx="95" cy="70" r="22" />
+      <path d="M95,92c-15,0-25,15-25,28c0,10,12,20,25,20s25-10,25-20C120,107,110,92,95,92z" />
+      <path d="M82,128c-5,5-5,15,0,20c5,5,15,5,20,0" />
+    </g>
+  </svg>
+);
+const CheckIcon = () => ( <svg className="w-5 h-5 text-rose-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"> <polyline points="20 6 9 17 4 12"></polyline> </svg> );
 
 export default function Home() {
-  // ... (toda a lógica do componente Home permanece a mesma)
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [activeCalculator, setActiveCalculator] = useState('dum');
+  
+  const [isEditing, setIsEditing] = useState(false);
+  const [gestationalInfo, setGestationalInfo] = useState(null);
+  const [estimatedLmp, setEstimatedLmp] = useState(null);
+  const [dataSource, setDataSource] = useState('dum');
+  const [countdown, setCountdown] = useState({ weeks: 0, days: 0 });
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
+      if (currentUser) {
+        fetchUserData(currentUser.uid);
+      }
       setLoading(false);
     });
     return () => unsubscribe();
   }, []);
+
+  const fetchUserData = async (uid) => {
+    const docRef = doc(db, 'users', uid);
+    const docSnap = await getDoc(docRef);
+    let lmpDate = null;
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      if (data.ultrasound && data.ultrasound.examDate) {
+        const { examDate, weeksAtExam, daysAtExam } = data.ultrasound;
+        const examDateTime = new Date(examDate).getTime();
+        const daysAtExamTotal = (parseInt(weeksAtExam, 10) * 7) + (parseInt(daysAtExam, 10) || 0);
+        lmpDate = new Date(examDateTime);
+        lmpDate.setDate(lmpDate.getUTCDate() - daysAtExamTotal);
+        setActiveCalculator('ultrassom');
+        setDataSource('ultrassom');
+      } else if (data.lmp) {
+        lmpDate = new Date(data.lmp);
+        setActiveCalculator('dum');
+        setDataSource('dum');
+      }
+    }
+
+    if (lmpDate) {
+      setEstimatedLmp(lmpDate);
+      calculateGestationalInfo(lmpDate);
+      setIsEditing(false);
+    } else {
+      setIsEditing(true);
+    }
+  };
   
+  const calculateGestationalInfo = (lmpDate) => {
+    const lmpDateTime = lmpDate.getTime();
+    const today = new Date();
+    const todayTime = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const gestationalAgeInMs = todayTime - lmpDateTime;
+    const gestationalAgeInDays = Math.floor(gestationalAgeInMs / (1000 * 60 * 60 * 24));
+    const weeks = Math.floor(gestationalAgeInDays / 7);
+    const days = gestationalAgeInDays % 7;
+    const dueDate = new Date(lmpDateTime);
+    dueDate.setDate(dueDate.getDate() + 280);
+
+    const totalPregnancyDays = 280;
+    const remainingDaysTotal = totalPregnancyDays - gestationalAgeInDays;
+    setCountdown({
+        weeks: Math.floor(remainingDaysTotal / 7),
+        days: remainingDaysTotal % 7,
+    });
+
+    setGestationalInfo({
+        weeks, days,
+        dueDate: dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
+        currentWeekInfo: weeklyInfo[weeks || 1] || "Informações para esta semana ainda não disponíveis.",
+    });
+  };
+
   const handleSignIn = async () => {
     try {
       await signInWithPopup(auth, googleProvider);
@@ -37,20 +115,21 @@ export default function Home() {
       setError("Falha no login. Tente novamente.");
     }
   };
+  
+  const handleSaveSuccess = async () => {
+      if(user) {
+        await fetchUserData(user.uid);
+      }
+      setIsEditing(false);
+  };
 
   if (loading) {
-    return (
-        <div className="flex items-center justify-center flex-grow">
-          <p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p>
-        </div>
-    );
+    return ( <div className="flex items-center justify-center flex-grow"> <p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p> </div> );
   }
-
 
   return (
     <div className="flex items-center justify-center flex-grow p-4">
       {!user ? (
-        // ... (tela de login permanece a mesma)
         <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden animate-fade-in">
           <div className="w-full md:w-1/2 bg-rose-50 dark:bg-slate-900/50 p-8 flex-col gap-4 items-center justify-center hidden md:flex">
              <h1 className="text-5xl font-bold text-rose-500 dark:text-rose-400 text-center">GestaHub</h1>
@@ -75,21 +154,58 @@ export default function Home() {
         </div>
       ) : (
         <div className="w-full max-w-3xl">
-          <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl">
-            {/* ... (lógica das abas da calculadora) ... */}
-            <div className="mb-6 flex border-b border-slate-200 dark:border-slate-700">
-              <button onClick={() => setActiveCalculator('dum')} className={`py-2 px-4 text-lg font-semibold transition-colors ${activeCalculator === 'dum' ? 'border-b-2 border-rose-500 text-rose-500 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400 hover:text-rose-500'}`}> Calculadora DUM </button>
-              <button onClick={() => setActiveCalculator('ultrassom')} className={`py-2 px-4 text-lg font-semibold transition-colors ${activeCalculator === 'ultrassom' ? 'border-b-2 border-rose-500 text-rose-500 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400 hover:text-rose-500'}`}> Calculadora Ultrassom </button>
+          {gestationalInfo && (
+            <div className="mb-6 animate-fade-in">
+              <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl">
+                  <div className="flex justify-between items-center mb-4">
+                      <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200">Sua Gestação</h2>
+                      {!isEditing && (
+                        <div className="flex items-center gap-4">
+                          {dataSource === 'dum' && (
+                            <button onClick={() => { setActiveCalculator('ultrassom'); setIsEditing(true); }} className="text-sm font-semibold text-green-600 dark:text-green-400 hover:underline">
+                              Calcular por Ultrassom?
+                            </button>
+                          )}
+                          <button onClick={() => setIsEditing(true)} className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Alterar Dados</button>
+                        </div>
+                      )}
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-center">
+                      <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg"> <p className="text-sm text-slate-500 dark:text-slate-400">Idade Gestacional</p> <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{gestationalInfo.weeks}s {gestationalInfo.days}d</p> </div>
+                      <div className="bg-slate-100 dark:bg-slate-700 p-4 rounded-lg"> <p className="text-sm text-slate-500 dark:text-slate-400">Data Provável do Parto</p> <p className="text-2xl font-bold text-indigo-600 dark:text-indigo-400">{gestationalInfo.dueDate}</p> </div>
+                  </div>
+                  {!isEditing && (
+                    <>
+                      <div className="text-center p-6 mt-6 rounded-2xl bg-gradient-to-r from-rose-400 to-orange-300 text-white shadow-lg">
+                        {countdown.weeks > 0 || countdown.days > 0 ? ( <> <p className="font-bold text-4xl drop-shadow-md">{countdown.weeks}s {countdown.days}d</p> <p className="font-semibold text-lg drop-shadow-md">para o grande dia!</p> </> ) : ( <p className="font-bold text-3xl drop-shadow-md">A qualquer momento! ❤️</p> )}
+                      </div>
+                      <div className="mt-6 bg-rose-50 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200 p-4 rounded-lg space-y-4">
+                        <h3 className="text-xl font-bold text-center border-b border-rose-200 dark:border-rose-700 pb-2"> ✨ {gestationalInfo.currentWeekInfo.title} ✨ </h3>
+                        <div> <h4 className="font-semibold">Bebê:</h4> <p className="text-sm">Tamanho aproximado de um(a) <span className="font-bold">{gestationalInfo.currentWeekInfo.size}</span>.</p> <p className="mt-1">{gestationalInfo.currentWeekInfo.baby}</p> </div>
+                        <div> <h4 className="font-semibold">Mamãe:</h4> <p className="mt-1">{gestationalInfo.currentWeekInfo.mom}</p> </div>
+                      </div>
+                      <CronogramaUltrassom lmpDate={estimatedLmp} />
+                    </>
+                  )}
+              </div>
             </div>
-            {activeCalculator === 'dum' ? <CalculadoraDUM user={user} /> : <CalculadoraUltrassom user={user} />}
-          </div>
+          )}
+
+          {(isEditing || !gestationalInfo) && (
+            <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl animate-fade-in">
+              <div className="mb-6 flex border-b border-slate-200 dark:border-slate-700">
+                <button onClick={() => setActiveCalculator('dum')} className={`py-2 px-4 text-lg font-semibold transition-colors ${activeCalculator === 'dum' ? 'border-b-2 border-rose-500 text-rose-500 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400 hover:text-rose-500'}`}>Calculadora DUM</button>
+                <button onClick={() => setActiveCalculator('ultrassom')} className={`py-2 px-4 text-lg font-semibold transition-colors ${activeCalculator === 'ultrassom' ? 'border-b-2 border-rose-500 text-rose-500 dark:text-rose-400' : 'text-slate-500 dark:text-slate-400 hover:text-rose-500'}`}>Calculadora Ultrassom</button>
+              </div>
+              {activeCalculator === 'dum' ? <CalculadoraDUM user={user} onSaveSuccess={handleSaveSuccess} onCancel={() => setIsEditing(false)} /> : <CalculadoraUltrassom user={user} onSaveSuccess={handleSaveSuccess} onCancel={() => setIsEditing(false)} />}
+            </div>
+          )}
           
           <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
               <Link href="/contador-de-movimentos" className="block bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow text-center">
                   <h3 className="text-xl font-semibold text-rose-500 dark:text-rose-400">Contador de Movimentos</h3>
                   <p className="text-slate-600 dark:text-slate-400 mt-2">Monitore os movimentos do seu bebê.</p>
               </Link>
-              {/* --- LINK PARA A NOVA PÁGINA ADICIONADO AQUI --- */}
               <Link href="/acompanhamento-de-peso" className="block bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl hover:shadow-2xl transition-shadow text-center">
                   <h3 className="text-xl font-semibold text-rose-500 dark:text-rose-400">Acompanhamento de Peso</h3>
                   <p className="text-slate-600 dark:text-slate-400 mt-2">Registre seu peso e veja seu progresso.</p>
@@ -100,3 +216,4 @@ export default function Home() {
     </div>
   );
 }
+
