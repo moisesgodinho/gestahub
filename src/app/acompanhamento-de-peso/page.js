@@ -7,9 +7,9 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
-import Toast from '@/components/Toast'; // 1. IMPORTE O TOAST
+import { toast } from 'react-toastify';
 
-// --- DADOS E FUNÇÕES AUXILIARES ---
+// --- DADOS E FUNÇÕES AUXILIARES (sem alterações) ---
 const bmiCategories = [
   { category: 'Baixo Peso', range: '< 18.5', recommendation: '12.5 a 18 kg' },
   { category: 'Peso Adequado', range: '18.5 - 24.9', recommendation: '11.5 a 16 kg' },
@@ -26,7 +26,7 @@ const getBMICategory = (bmi) => {
   if (bmi >= 18.5 && bmi <= 24.9) return bmiCategories[1];
   if (bmi >= 25 && bmi <= 29.9) return bmiCategories[2];
   if (bmi >= 30) return bmiCategories[3];
-  return { range: 'N/A', category: '' };
+  return { range: 'N/A', category: '', recommendation: 'N/A' };
 };
 const getTodayString = () => new Date().toISOString().split('T')[0];
 const calculateGestationalAgeOnDate = (lmpDate, targetDate) => {
@@ -55,9 +55,7 @@ export default function WeightTrackerPage() {
   const [currentGain, setCurrentGain] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
-
-  // 2. ESTADO DO TOAST
-  const [toast, setToast] = useState({ show: false, message: '' });
+  const [isEditing, setIsEditing] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -86,9 +84,13 @@ export default function WeightTrackerPage() {
       } else if (data.lmp) {
         setEstimatedLmp(new Date(data.lmp));
       }
-
       if (data.weightProfile) {
         const profile = data.weightProfile;
+        if (profile.height && profile.prePregnancyWeight) {
+            setIsEditing(false);
+        } else {
+            setIsEditing(true);
+        }
         const history = profile.history?.sort((a, b) => new Date(b.date) - new Date(a.date)) || [];
         setHeight(profile.height || '');
         setPrePregnancyWeight(profile.prePregnancyWeight || '');
@@ -96,7 +98,11 @@ export default function WeightTrackerPage() {
         if (profile.height && profile.prePregnancyWeight) {
           updateCalculations(profile.prePregnancyWeight, profile.height, history);
         }
+      } else {
+        setIsEditing(true);
       }
+    } else {
+        setIsEditing(true);
     }
     setLoading(false);
   };
@@ -114,32 +120,34 @@ export default function WeightTrackerPage() {
     }
   };
 
-  // 3. LÓGICA DE SALVAMENTO ATUALIZADA
   const handleSaveInitialData = async () => {
-    if (!user || !height || !prePregnancyWeight) {
-        setToast({ show: true, message: 'Preencha altura e peso!' });
-        return;
-    };
-    
+    const parsedHeight = parseFloat(height);
+    const parsedWeight = parseFloat(prePregnancyWeight);
+    if (!user || !parsedHeight || !parsedWeight) { toast.warn('Preencha a altura e o peso corretamente.'); return; }
+    if (parsedHeight <= 0 || parsedWeight <= 0) { toast.warn('Altura e peso devem ser valores positivos.'); return; }
+    if (parsedHeight < 100 || parsedHeight > 250) { toast.warn('Por favor, insira uma altura realista (entre 100 e 250 cm).'); return; }
+    if (parsedWeight < 30 || parsedWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
+
+    const dataToUpdate = { height: parsedHeight, prePregnancyWeight: parsedWeight };
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(
-        userDocRef,
-        { weightProfile: { height: parseFloat(height), prePregnancyWeight: parseFloat(prePregnancyWeight) } },
-        { merge: true }
-      );
-
-      updateCalculations(parseFloat(prePregnancyWeight), parseFloat(height), weightHistory);
-      setToast({ show: true, message: 'Dados iniciais salvos com sucesso!' });
+      await setDoc(userDocRef, { weightProfile: dataToUpdate }, { merge: true });
+      updateCalculations(parsedWeight, parsedHeight, weightHistory);
+      toast.success('Dados iniciais salvos com sucesso!');
+      setIsEditing(false);
     } catch (error) {
       console.error("Erro ao salvar dados iniciais:", error);
-      setToast({ show: true, message: 'Erro ao salvar dados.' });
+      toast.error('Erro ao salvar dados.');
     }
   };
 
   const handleAddWeight = async () => {
-    if (!user || !currentWeight || !entryDate) return;
-    const newEntry = { weight: parseFloat(currentWeight), date: entryDate, bmi: calculateBMI(currentWeight, height) };
+    const parsedCurrentWeight = parseFloat(currentWeight);
+    if (!user || !parsedCurrentWeight || !entryDate) { toast.warn("Preencha o peso e a data do registro."); return; }
+    if (parsedCurrentWeight <= 0) { toast.warn('O peso deve ser um valor positivo.'); return; }
+     if (parsedCurrentWeight < 30 || parsedCurrentWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
+
+    const newEntry = { weight: parsedCurrentWeight, date: entryDate, bmi: calculateBMI(parsedCurrentWeight, height) };
     try {
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, { weightProfile: { history: arrayUnion(newEntry) } }, { merge: true });
@@ -148,8 +156,10 @@ export default function WeightTrackerPage() {
       updateCalculations(prePregnancyWeight, height, updatedHistory);
       setCurrentWeight('');
       setEntryDate(getTodayString());
+      toast.success("Peso adicionado ao histórico!");
     } catch (error) {
       console.error("Erro ao adicionar peso:", error);
+      toast.error("Erro ao adicionar peso.");
     }
   };
   
@@ -166,9 +176,10 @@ export default function WeightTrackerPage() {
       const updatedHistory = weightHistory.filter(e => e.date !== entryToDelete.date || e.weight !== entryToDelete.weight);
       setWeightHistory(updatedHistory);
       updateCalculations(prePregnancyWeight, height, updatedHistory);
+      toast.info("Registro de peso removido.");
     } catch (error) {
       console.error("Erro ao apagar registro:", error);
-      setToast({ show: true, message: 'Não foi possível apagar o registro.' });
+      toast.error("Não foi possível apagar o registro.");
     } finally {
       setIsModalOpen(false);
       setEntryToDelete(null);
@@ -186,20 +197,34 @@ export default function WeightTrackerPage() {
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmDeleteEntry} title="Confirmar Exclusão" message="Tem certeza que deseja apagar este registro de peso?"/>
       
-      {/* 4. TOAST */}
-      <Toast message={toast.message} show={toast.show} onClose={() => setToast({ show: false, message: '' })} />
-
-      <main className="min-h-screen font-sans bg-gray-50 dark:bg-slate-900 p-4">
-        <div className="container mx-auto max-w-2xl">
-          <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">Acompanhamento de Peso</h1>
+      {/* --- ESTRUTURA DE LAYOUT CORRIGIDA --- */}
+      <div className="flex items-center justify-center flex-grow p-4">
+        <div className="w-full max-w-3xl">
+          <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
+            Acompanhamento de Peso
+          </h1>
 
           <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
-            <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Seus Dados</h2>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div><label htmlFor="height" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Altura (cm)</label><input type="number" id="height" value={height} onChange={(e) => setHeight(e.target.value)} placeholder="Ex: 165" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/></div>
-              <div><label htmlFor="preWeight" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Peso Pré-Gestacional (kg)</label><input type="number" id="preWeight" value={prePregnancyWeight} onChange={(e) => setPrePregnancyWeight(e.target.value)} placeholder="Ex: 60.5" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/></div>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200">Seus Dados</h2>
+              {!isEditing && prePregnancyWeight && height && (
+                <button onClick={() => setIsEditing(true)} className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Editar</button>
+              )}
             </div>
-            <button onClick={handleSaveInitialData} className="mt-4 w-full bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors">Salvar Dados Iniciais</button>
+            {isEditing ? (
+              <>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div><label htmlFor="height" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Altura (cm)</label><input type="number" id="height" value={height} onChange={(e) => setHeight(e.target.value)} placeholder="Ex: 165" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/></div>
+                  <div><label htmlFor="preWeight" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Peso Pré-Gestacional (kg)</label><input type="number" id="preWeight" value={prePregnancyWeight} onChange={(e) => setPrePregnancyWeight(e.target.value)} placeholder="Ex: 60.5" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/></div>
+                </div>
+                <button onClick={handleSaveInitialData} className="mt-4 w-full bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors">Salvar Dados</button>
+              </>
+            ) : (
+              <div className="grid grid-cols-2 gap-4 text-center">
+                <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Altura</p><p className="font-bold text-lg text-slate-800 dark:text-slate-100">{height} cm</p></div>
+                <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Peso Inicial</p><p className="font-bold text-lg text-slate-800 dark:text-slate-100">{prePregnancyWeight} kg</p></div>
+              </div>
+            )}
           </div>
 
           {prePregnancyWeight && height && (
@@ -209,7 +234,7 @@ export default function WeightTrackerPage() {
                   <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">IMC Inicial</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{initialBmi}</p></div>
                   <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">IMC Atual</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{currentBmi}</p></div>
                   <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Ganho Total</p><p className="font-bold text-lg text-green-600 dark:text-green-400">{currentGain} kg</p></div>
-                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Meta</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{recommendation.range}</p></div>
+                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Meta</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{recommendation.recommendation}</p></div>
                 </div>
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                   <label className="block text-md font-medium text-slate-700 dark:text-slate-300 mb-2">Adicionar novo registro de peso</label>
@@ -222,10 +247,11 @@ export default function WeightTrackerPage() {
               </div>
 
               <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
-                <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Recomendações de Ganho de Peso</h3>
+                <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-2 text-center">Recomendações de Ganho de Peso</h3>
+                <p className="text-xs text-center text-slate-500 dark:text-slate-400 mb-4">A meta de ganho de peso é baseada no seu IMC pré-gestacional.</p>
                 <div className="space-y-3">
                   {bmiCategories.map((item) => {
-                    const isActive = item.category === initialCategory; // --- LÓGICA CORRIGIDA AQUI ---
+                    const isActive = item.category === initialCategory;
                     return (
                       <div key={item.category} className={`p-4 rounded-lg transition-all ${isActive ? 'border-l-4 border-rose-500 bg-slate-100 dark:bg-slate-700/50' : 'bg-slate-50 dark:bg-slate-700/20'}`}>
                         <p className={`font-semibold ${isActive ? 'text-rose-500 dark:text-rose-400' : 'text-slate-700 dark:text-slate-200'}`}>{item.category} <span className="font-normal text-sm text-slate-500 dark:text-slate-400">(IMC {item.range})</span></p>
@@ -239,7 +265,7 @@ export default function WeightTrackerPage() {
               {weightHistory.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl">
                   <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Histórico de Peso</h2>
-                  <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
+                  <div className="space-y-2">
                     {weightHistory.map((entry, index) => (
                       <div key={`${entry.date}-${index}`} className="flex items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
                         <div className="flex-grow">
@@ -267,7 +293,7 @@ export default function WeightTrackerPage() {
             </Link>
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }

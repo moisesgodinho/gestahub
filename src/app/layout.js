@@ -1,7 +1,9 @@
 // src/app/layout.js
 import { Poppins } from 'next/font/google';
+import { ToastContainer } from 'react-toastify'; // 1. IMPORTE O CONTAINER
+import 'react-toastify/dist/ReactToastify.css'; // 2. IMPORTE O CSS
 import "./globals.css";
-import Header from '@/components/Header'; // IMPORTE O HEADER
+import Header from '@/components/Header';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -40,7 +42,21 @@ export default function RootLayout({ children }) {
           }}
         />
         
-        <Header /> {/* ADICIONE O HEADER AQUI */}
+        {/* 3. ADICIONE O TOASTCONTAINER AQUI */}
+        <ToastContainer
+          position="top-right"
+          autoClose={3000}
+          hideProgressBar={false}
+          newestOnTop={false}
+          closeOnClick
+          rtl={false}
+          pauseOnFocusLoss
+          draggable
+          pauseOnHover
+          theme="colored"
+        />
+
+        <Header />
 
         <main className="flex-grow">
           {children}
