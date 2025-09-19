@@ -1,7 +1,6 @@
 // src/components/GestationalInfoDashboard.js
 'use client';
 
-import { weeklyInfo } from '@/data/weeklyInfo';
 import CronogramaUltrassom from '@/components/CronogramaUltrassom';
 
 export default function GestationalInfoDashboard({ gestationalInfo, countdown, estimatedLmp, onSwitchToUltrasound, onEdit, dataSource }) {
@@ -43,8 +42,9 @@ export default function GestationalInfoDashboard({ gestationalInfo, countdown, e
             <p className="font-bold text-3xl drop-shadow-md">A qualquer momento! ❤️</p>
           )}
         </div>
-        <div className="mt-6 bg-rose-50 dark:bg-rose-900/30 text-rose-800 dark:text-rose-200 p-4 rounded-lg space-y-4">
-          <h3 className="text-xl font-bold text-center border-b border-rose-200 dark:border-rose-700 pb-2"> ✨ {gestationalInfo.currentWeekInfo.title} ✨ </h3>
+        {/* Alterações de cor aqui */}
+        <div className="mt-6 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-800 dark:text-indigo-200 p-4 rounded-lg space-y-4">
+          <h3 className="text-xl font-bold text-center border-b border-indigo-200 dark:border-indigo-700 pb-2"> ✨ {gestationalInfo.currentWeekInfo.title} ✨ </h3>
           <div>
             <h4 className="font-semibold">Bebê:</h4>
             <p className="text-sm">Tamanho aproximado de um(a) <span className="font-bold">{gestationalInfo.currentWeekInfo.size}</span>.</p>
