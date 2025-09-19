@@ -4,18 +4,16 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 
-// Define todos os links de navegação em um só lugar
 const navLinks = [
   { href: '/', title: 'Página Inicial', description: 'Veja o resumo da sua gestação.' },
   { href: '/contador-de-movimentos', title: 'Contador de Movimentos', description: 'Monitore os movimentos do seu bebê.' },
   { href: '/acompanhamento-de-peso', title: 'Acompanhamento de Peso', description: 'Registre seu peso e veja seu progresso.' },
-  { href: '/diario-de-sintomas', title: 'Diário de Sintomas', description: 'Registre seu humor e sintomas diários.' }
+  { href: '/diario-de-sintomas', title: 'Diário de Sintomas', description: 'Registre seu humor e sintomas diários.' },
+  { href: '/cronometro-de-contracoes', title: 'Cronômetro de Contrações', description: 'Monitore a duração e frequência das contrações.' }
 ];
 
 export default function AppNavigation() {
   const pathname = usePathname();
-
-  // Filtra os links para não mostrar o da página atual
   const filteredLinks = navLinks.filter(link => link.href !== pathname);
 
   return (
