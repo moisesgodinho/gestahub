@@ -1,7 +1,7 @@
 // src/app/layout.js
 import { Poppins } from 'next/font/google';
-import { ToastContainer } from 'react-toastify'; // 1. IMPORTE O CONTAINER
-import 'react-toastify/dist/ReactToastify.css'; // 2. IMPORTE O CSS
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import "./globals.css";
 import Header from '@/components/Header';
 
@@ -18,13 +18,13 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="pt-BR" className="h-full">
+    // Adicione suppressHydrationWarning aqui
+    <html lang="pt-BR" className="h-full" suppressHydrationWarning>
       <body className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900`}>
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // ... (o script do tema continua o mesmo)
                 function getInitialTheme() {
                   try {
                     const savedTheme = localStorage.getItem('theme');
@@ -42,7 +42,6 @@ export default function RootLayout({ children }) {
           }}
         />
         
-        {/* 3. ADICIONE O TOASTCONTAINER AQUI */}
         <ToastContainer
           position="top-right"
           autoClose={3000}
