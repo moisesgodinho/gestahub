@@ -206,7 +206,7 @@ export default function WeightTrackerPage() {
 
           <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
             <div className="flex justify-between items-center mb-4">
-              <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200">Seus Dados</h2>
+              <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200">Seus Dados Iniciais</h2>
               {!isEditing && prePregnancyWeight && height && (
                 <button onClick={() => setIsEditing(true)} className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline">Editar</button>
               )}

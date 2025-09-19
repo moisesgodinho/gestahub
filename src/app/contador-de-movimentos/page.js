@@ -1,12 +1,13 @@
-// src/app/contador-de-chutes/page.js
+// src/app/contador-de-movimentos/page.js
 'use client';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
-import ConfirmationModal from '@/components/ConfirmationModal'; // Importe o novo componente
+import ConfirmationModal from '@/components/ConfirmationModal';
+import { toast } from 'react-toastify'; // 1. IMPORTE O TOAST
 
 export default function KickCounterPage() {
   const [user, setUser] = useState(null);
@@ -16,8 +17,6 @@ export default function KickCounterPage() {
   const [startTime, setStartTime] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
-  
-  // States para o modal de confirmação
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState(null);
 
@@ -73,6 +72,7 @@ export default function KickCounterPage() {
     }
   };
   
+  // 2. FUNÇÕES ATUALIZADAS COM TOASTIFY
   const handleStopAndSave = async () => {
     setIsCounting(false);
     if (user && kickCount > 0) {
@@ -82,18 +82,14 @@ export default function KickCounterPage() {
         date: startTime.toLocaleDateString('pt-BR'),
         timestamp: startTime.getTime(),
       };
-      
       try {
         const userDocRef = doc(db, 'users', user.uid);
-        await updateDoc(userDocRef, { kickSessions: arrayUnion(newSession) });
+        await setDoc(userDocRef, { kickSessions: arrayUnion(newSession) }, { merge: true });
         setSessions(prevSessions => [newSession, ...prevSessions].sort((a, b) => b.timestamp - a.timestamp));
+        toast.success("Sessão salva no histórico!");
       } catch (e) {
-        if (e.code === 'not-found' || e.message.includes('No document to update')) {
-            await setDoc(doc(db, 'users', user.uid), { kickSessions: [newSession] }, { merge: true });
-            setSessions([newSession]);
-        } else {
-            console.error("Erro ao salvar sessão:", e);
-        }
+        console.error("Erro ao salvar sessão:", e);
+        toast.error("Erro ao salvar a sessão.");
       }
     }
     setKickCount(0);
@@ -107,18 +103,15 @@ export default function KickCounterPage() {
 
   const confirmDeleteSession = async () => {
     if (!user || !sessionToDelete) return;
-
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, {
-        kickSessions: arrayRemove(sessionToDelete)
-      });
+      await updateDoc(userDocRef, { kickSessions: arrayRemove(sessionToDelete) });
       setSessions(prevSessions => prevSessions.filter(s => s.timestamp !== sessionToDelete.timestamp));
+      toast.info("Sessão removida do histórico.");
     } catch (error) {
       console.error("Erro ao apagar sessão: ", error);
-      alert("Não foi possível apagar a sessão. Tente novamente.");
+      toast.error("Não foi possível apagar a sessão.");
     } finally {
-      // Fecha o modal e limpa o estado
       setIsModalOpen(false);
       setSessionToDelete(null);
     }
@@ -126,9 +119,9 @@ export default function KickCounterPage() {
   
   if (loading) {
     return (
-        <main className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900">
-          <p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p>
-        </main>
+      <div className="flex items-center justify-center flex-grow">
+        <p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p>
+      </div>
     );
   }
 
@@ -141,14 +134,14 @@ export default function KickCounterPage() {
         title="Confirmar Exclusão"
         message="Tem certeza que deseja apagar esta sessão? A ação não pode ser desfeita."
       />
-      <main className="min-h-screen font-sans bg-gray-50 dark:bg-slate-900 p-4">
-        <div className="container mx-auto max-w-2xl">
+      <div className="flex items-center justify-center flex-grow p-4">
+        <div className="w-full max-w-3xl">
           <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-4 text-center">
             Contador de Movimentos
           </h1>
           <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl text-center">
             <p className="text-slate-600 dark:text-slate-400 text-lg mb-6">
-              Monitore o padrão de movimentos do seu bebê. Pressione "Iniciar" e, a cada movimento (chute, giro ou vibração), clique em "Movimentou!".
+              Monitore o padrão de movimentos do seu bebê. Pressione &quot;Iniciar&quot; e, a cada movimento (chute, giro ou vibração), clique em &quot;Movimentou!&quot;.
             </p>
             <div className="text-6xl font-bold text-indigo-600 dark:text-indigo-400 mb-4">
               {kickCount}
@@ -156,33 +149,22 @@ export default function KickCounterPage() {
             <div className="text-2xl text-slate-500 dark:text-slate-400 mb-6">
               {formatTime(timer)}
             </div>
-
             {!isCounting ? (
-              <button
-                onClick={handleStart}
-                className="w-full sm:w-auto bg-rose-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-rose-600 transition-all"
-              >
+              <button onClick={handleStart} className="w-full sm:w-auto bg-rose-500 text-white font-bold py-3 px-8 rounded-lg hover:bg-rose-600 transition-all">
                 Iniciar Sessão
               </button>
             ) : (
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <button
-                  onClick={handleKick}
-                  className="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-colors"
-                >
+                <button onClick={handleKick} className="w-full sm:w-auto bg-indigo-600 text-white font-semibold py-3 px-8 rounded-lg hover:bg-indigo-700 transition-colors">
                   Movimentou!
                 </button>
-                <button
-                  onClick={handleStopAndSave}
-                  className="w-full sm:w-auto bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3 px-6 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
-                >
+                <button onClick={handleStopAndSave} className="w-full sm:w-auto bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold py-3 px-6 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
                   Parar e Salvar
                 </button>
               </div>
             )}
           </div>
-          
-          {/* --- EXPLICAÇÃO CORRIGIDA E ADICIONADA NOVAMENTE --- */}
+
           <div className="mt-8 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-200 p-4 rounded-r-lg space-y-4 text-sm">
             <div>
               <h3 className="font-bold text-lg">Por que contar os movimentos?</h3>
@@ -208,42 +190,32 @@ export default function KickCounterPage() {
 
           {sessions.length > 0 && (
             <div className="mt-8 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl">
-                <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">
-                  Histórico de Sessões
-                </h2>
-                <div className="space-y-3 max-h-80 overflow-y-auto pr-2">
-                  {sessions.map((session) => (
-                      <div key={session.timestamp} className="flex justify-between items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
-                          <div className="flex-grow">
-                              <p className="font-semibold text-slate-700 dark:text-slate-200">{session.date}</p>
-                              <p className="text-sm text-slate-500 dark:text-slate-400">{session.kicks} movimentos</p>
-                          </div>
-                          <p className="font-medium text-indigo-600 dark:text-indigo-400 mx-4">em {formatTime(session.duration)}</p>
-                          <button 
-                            onClick={() => openDeleteConfirmation(session)}
-                            title="Apagar sessão"
-                            className="p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors"
-                          >
-                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                              <polyline points="3 6 5 6 21 6"></polyline>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                              <line x1="10" y1="11" x2="10" y2="17"></line>
-                              <line x1="14" y1="11" x2="14" y2="17"></line>
-                            </svg>
-                          </button>
-                      </div>
-                  ))}
-                </div>
+              <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Histórico de Sessões</h2>
+              {/* 3. CLASSES DE SCROLL REMOVIDAS DA DIV ABAIXO */}
+              <div className="space-y-3">
+                {sessions.map((session) => (
+                  <div key={session.timestamp} className="flex justify-between items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
+                    <div className="flex-grow">
+                      <p className="font-semibold text-slate-700 dark:text-slate-200">{session.date}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400">{session.kicks} movimentos</p>
+                    </div>
+                    <p className="font-medium text-indigo-600 dark:text-indigo-400 mx-4">em {formatTime(session.duration)}</p>
+                    <button onClick={() => openDeleteConfirmation(session)} title="Apagar sessão" className="p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
 
           <div className="mt-8 text-center">
-              <Link href="/" className="text-indigo-600 dark:text-indigo-400 hover:underline">
-                Voltar para a página inicial
-              </Link>
+            <Link href="/" className="text-indigo-600 dark:text-indigo-400 hover:underline">
+              Voltar para a página inicial
+            </Link>
           </div>
         </div>
-      </main>
+      </div>
     </>
   );
 }
