@@ -1,29 +1,45 @@
 // src/components/WeightChart.js
 'use client';
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend } from 'chart.js';
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend);
 
-export default function WeightChart({ history, prePregnancyWeight, dueDate }) { // Recebe dueDate diretamente
+export default function WeightChart({ history, prePregnancyWeight, dueDate }) {
+  const [isDarkMode, setIsDarkMode] = useState(false);
+
+  useEffect(() => {
+    // Função para verificar se o modo escuro está ativo
+    const checkDarkMode = () => {
+      setIsDarkMode(document.documentElement.classList.contains('dark'));
+    };
+
+    checkDarkMode(); // Verifica o tema na montagem do componente
+
+    // Observa mudanças na classe do elemento <html> para atualizar o tema
+    const observer = new MutationObserver(checkDarkMode);
+    observer.observe(document.documentElement, { attributes: true, attributeFilter: ['class'] });
+
+    return () => observer.disconnect(); // Limpa o observador
+  }, []);
+
   const sortedHistory = [...history].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   const labels = [
-    'Início', 
-    ...sortedHistory.map(entry => new Date(entry.date).toLocaleDateString('pt-BR'))
+    'Início',
+    ...sortedHistory.map(entry => new Date(entry.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' }))
   ];
 
   const dataPoints = [
-    prePregnancyWeight, 
+    prePregnancyWeight,
     ...sortedHistory.map(entry => entry.weight)
   ];
 
-  // Usa a data do parto recebida para adicionar o ponto final ao gráfico
   if (dueDate && dueDate > new Date()) {
     labels.push(`DPP: ${dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`);
-    dataPoints.push(null); 
+    dataPoints.push(null);
   }
 
   const chartData = {
@@ -45,17 +61,17 @@ export default function WeightChart({ history, prePregnancyWeight, dueDate }) { 
     maintainAspectRatio: false,
     plugins: {
       legend: {
-        position: 'top',
-        labels: {
-            color: '#cbd5e1'
-        }
+        display: false
       },
       title: {
         display: true,
         text: 'Evolução do Peso',
-        color: '#e2e8f0',
+        color: isDarkMode ? '#e2e8f0' : '#1e293b',
         font: {
             size: 18
+        },
+        padding: {
+            bottom: 15
         }
       },
     },
@@ -63,18 +79,18 @@ export default function WeightChart({ history, prePregnancyWeight, dueDate }) { 
         y: {
             beginAtZero: false,
             ticks: {
-                color: '#94a3b8'
+                color: isDarkMode ? '#94a3b8' : '#64748b'
             },
             grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
+                color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
             }
         },
         x: {
             ticks: {
-                color: '#94a3b8'
+                color: isDarkMode ? '#94a3b8' : '#64748b'
             },
             grid: {
-                color: 'rgba(255, 255, 255, 0.1)'
+                color: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.1)'
             }
         }
     }
