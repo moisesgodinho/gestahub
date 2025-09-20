@@ -72,8 +72,8 @@ export default function CronogramaUltrassom({ lmpDate }) {
               <p className="font-semibold text-slate-700 dark:text-slate-200">{exam.name}</p>
               <p className={dateTextClasses}>
                 {endDate
-                  ? `Janela ideal: ${startDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} a ${endDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
-                  : `A partir de ${startDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
+                  ? `Janela ideal: ${startDate.toLocaleDateString('pt-BR')} a ${endDate.toLocaleDateString('pt-BR')}`
+                  : `A partir de ${startDate.toLocaleDateString('pt-BR')}`
                 }
               </p>
             </div>

@@ -97,7 +97,7 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
       />
       <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
         <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
-          {!!entry ? `Editando o dia ${new Date(date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}` : 'Como você está se sentindo hoje?'}
+          {!!entry ? `Editando o dia ${new Date(date).toLocaleDateString('pt-BR')}` : 'Como você está se sentindo hoje?'}
         </h2>
         
         <div className="mb-4">

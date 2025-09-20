@@ -270,7 +270,7 @@ export default function WeightTrackerPage() {
                     {weightHistory.map((entry, index) => (
                       <div key={`${entry.date}-${index}`} className="flex items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
                         <div className="flex-grow">
-                          <p className="font-semibold text-slate-700 dark:text-slate-200">{new Date(entry.date).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</p>
+                          <p className="font-semibold text-slate-700 dark:text-slate-200">{new Date(entry.date).toLocaleDateString('pt-BR')}</p>
                           {estimatedLmp && (<p className="text-xs text-rose-500 dark:text-rose-400 font-medium">{calculateGestationalAgeOnDate(estimatedLmp, entry.date)}</p>)}
                         </div>
                         <div className="text-right mx-4">
