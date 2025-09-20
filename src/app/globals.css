@@ -49,3 +49,17 @@ select {
     transform: scale(1) translate(var(--tx, 0), var(--ty, 0)) rotate(var(--r, 0));
   }
 }
+
+/* ADIÇÃO PARA CONTROLE DE SELEÇÃO DE TEXTO */
+body {
+  -webkit-user-select: none; /* Safari */
+  -ms-user-select: none; /* IE 10+ */
+  user-select: none; /* Padrão */
+}
+
+/* Garante que a seleção de texto continue funcionando em campos de formulário */
+input, textarea, [contenteditable="true"] {
+  -webkit-user-select: auto; /* Safari */
+  -ms-user-select: auto; /* IE 10+ */
+  user-select: auto; /* Padrão */
+}
