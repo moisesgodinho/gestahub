@@ -12,11 +12,12 @@ module.exports = {
         sans: ['var(--font-poppins)'],
       },
       keyframes: {
+        // A animação foi ajustada aqui: removi o 'transform'
         fadeIn: {
-          '0%': { opacity: '0', transform: 'translateY(10px)' },
-          '100%': { opacity: '1', transform: 'translateY(0)' },
+          '0%': { opacity: '0' },
+          '100%': { opacity: '1' },
         },
-        // Novas animações para a celebração
+        // Animações para a celebração (permanecem as mesmas)
         'fade-in-fast': {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
@@ -35,8 +36,8 @@ module.exports = {
         }
       },
       animation: {
-        'fade-in': 'fadeIn 0.5s ease-out forwards',
-        // Novas utilidades de animação
+        // A duração da animação foi ajustada para um fade suave
+        'fade-in': 'fadeIn 0.4s ease-out forwards',
         'fade-in-fast': 'fade-in-fast 0.3s ease-out forwards',
         'pop-in': 'pop-in 0.4s ease-out forwards',
       },

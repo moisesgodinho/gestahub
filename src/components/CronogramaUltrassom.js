@@ -6,7 +6,7 @@ import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
 import CompletionCelebration from './CompletionCelebration';
-import ConfirmationModal from './ConfirmationModal'; // Importado
+import ConfirmationModal from './ConfirmationModal';
 
 const ultrasoundSchedule = [
   { id: 'transvaginal', name: '1º Ultrassom (Transvaginal)', startWeek: 8, endWeek: 11 },
@@ -195,7 +195,7 @@ export default function CronogramaUltrassom({ lmpDate, user }) {
         <div className="space-y-3">
           {ultrasoundSchedule.map((exam, index) => {
             const data = examData[exam.id] || {};
-            const isDone = data.done;
+            const isDone = !!data.done; // CORREÇÃO APLICADA AQUI
             const currentScheduledDate = data.scheduledDate;
 
             const startDate = lmpDate ? new Date(lmpUTCDate.getTime()) : null;
