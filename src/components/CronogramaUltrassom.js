@@ -82,15 +82,22 @@ export default function CronogramaUltrassom({ lmpDate, user }) {
             }
         }
 
-        // CORREÇÃO: Impede que o exame seja marcado como concluído se a data atual estiver muito fora da janela
         const examDetails = ultrasoundSchedule.find(e => e.id === examId);
         if (lmpDate && examDetails) {
+            // CORREÇÃO: Impede que o exame seja marcado como concluído antes da janela ideal começar
+            const idealStartDate = new Date(getUTCDate(lmpDate));
+            idealStartDate.setDate(idealStartDate.getDate() + examDetails.startWeek * 7);
+
+            if (today < idealStartDate) {
+                toast.error("Ainda não chegou a data para realizar este exame.");
+                return;
+            }
+
             const idealEndDate = new Date(getUTCDate(lmpDate));
             idealEndDate.setDate(idealEndDate.getDate() + (examDetails.endWeek * 7) + 6);
-
-            // Período de tolerância: permite marcar como concluído até 4 semanas após o fim da janela ideal
+            
             const gracePeriodEndDate = new Date(idealEndDate);
-            gracePeriodEndDate.setDate(gracePeriodEndDate.getDate() + 28); 
+            gracePeriodEndDate.setDate(gracePeriodEndDate.getDate() + 28); // Período de tolerância de 4 semanas
 
             if (today > gracePeriodEndDate) {
                 toast.error("Não é possível marcar como concluído. A data atual está muito fora do período recomendado para este exame.");
