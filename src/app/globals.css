@@ -37,22 +37,15 @@ select {
   border-color: #475569; /* slate-600 */
 }
 
-@keyframes fall {
-  0% {
-    opacity: 1;
-    transform: translateY(-10vh) rotateZ(0deg);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(110vh) rotateZ(720deg);
-  }
-}
+/* SUBSTITUA a animação @keyframes confetti-burst por esta */
 
-@keyframes rotate {
+@keyframes confetti-burst {
   0% {
-    transform: rotateX(0) rotateY(0);
+    opacity: 1; /* Começa 100% visível */
+    transform: scale(0.5) translate(0, 0) rotate(0deg);
   }
   100% {
-    transform: rotateX(360deg) rotateY(360deg);
+    opacity: 0; /* Termina 100% transparente */
+    transform: scale(1) translate(var(--tx, 0), var(--ty, 0)) rotate(var(--r, 0));
   }
 }
