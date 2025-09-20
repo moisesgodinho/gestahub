@@ -62,7 +62,6 @@ export default function WeightTrackerPage() {
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   
-  // CORREÇÃO: Novo estado para o modal de substituição
   const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
 
   useEffect(() => {
@@ -125,18 +124,34 @@ export default function WeightTrackerPage() {
     }
   };
 
+  // NOVA FUNÇÃO handleWeightInput
   const handleWeightInput = (setter) => (e) => {
-    const value = e.target.value.replace(/[^0-9]/g, '');
-    
-    if (value.length > 5) return;
+    // 1. Remove tudo que não for número
+    let value = e.target.value.replace(/[^0-9]/g, '');
+
+    // 2. Limita o total de dígitos a 5
+    if (value.length > 5) {
+        value = value.slice(0, 5);
+    }
 
     let formattedValue = value;
-    if (value.length > 2) {
-      formattedValue = value.slice(0, -2) + '.' + value.slice(-2);
+
+    // 3. Aplica a formatação com ponto decimal baseada no tamanho
+    if (value.length === 3) {
+        // Ex: 655 -> 65.5
+        formattedValue = value.slice(0, 2) + '.' + value.slice(2);
+    } else if (value.length === 4) {
+        // Ex: 6551 -> 65.51
+        formattedValue = value.slice(0, 2) + '.' + value.slice(2);
+    } else if (value.length === 5) {
+        // Ex: 10255 -> 102.55
+        formattedValue = value.slice(0, 3) + '.' + value.slice(3);
     }
     
+    // 4. Atualiza o estado com o valor formatado
     setter(formattedValue);
   };
+
 
   const handleSaveInitialData = async () => {
     const parsedHeight = parseFloat(height);
@@ -159,18 +174,15 @@ export default function WeightTrackerPage() {
     }
   };
 
-  // CORREÇÃO: Lógica de salvar movida para uma função separada
   const proceedWithSave = async () => {
     const parsedCurrentWeight = parseFloat(currentWeight);
     const newEntry = { weight: parsedCurrentWeight, date: entryDate, bmi: calculateBMI(parsedCurrentWeight, height) };
     
-    // Remove o registro antigo antes de adicionar o novo (para substituição)
     const oldEntry = weightHistory.find(entry => entry.date === entryDate);
     const historyWithoutOldEntry = oldEntry ? weightHistory.filter(entry => entry.date !== entryDate) : weightHistory;
 
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      // Atualiza o histórico completo no banco de dados
       await setDoc(userDocRef, { weightProfile: { history: [...historyWithoutOldEntry, newEntry] } }, { merge: true });
 
       const updatedHistory = [...historyWithoutOldEntry, newEntry];
@@ -206,7 +218,6 @@ export default function WeightTrackerPage() {
       return;
     }
     
-    // CORREÇÃO: Abre o modal em vez de mostrar o toast
     if (weightHistory.some(entry => entry.date === entryDate)) {
       setIsOverwriteModalOpen(true);
       return;
@@ -249,7 +260,6 @@ export default function WeightTrackerPage() {
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmDeleteEntry} title="Confirmar Exclusão" message="Tem certeza que deseja apagar este registro de peso?"/>
       
-      {/* CORREÇÃO: Novo modal para substituição de registro */}
       <ConfirmationModal 
         isOpen={isOverwriteModalOpen} 
         onClose={() => setIsOverwriteModalOpen(false)} 
@@ -264,7 +274,7 @@ export default function WeightTrackerPage() {
       />
       
       <div className="flex items-center justify-center flex-grow p-4">
-        {/* ... (O restante do JSX permanece o mesmo) ... */}
+        {/* ... (O restante do JSX da página permanece o mesmo) ... */}
         <div className="w-full max-w-3xl">
           <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
             Acompanhamento de Peso
@@ -300,7 +310,7 @@ export default function WeightTrackerPage() {
                   <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">IMC Inicial</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{initialBmi}</p></div>
                   <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">IMC Atual</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{currentBmi}</p></div>
                   <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Ganho Total</p><p className="font-bold text-lg text-green-600 dark:text-green-400">{currentGain} kg</p></div>
-                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Meta</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{recommendation.recommendation}</p></div>
+                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Meta de Ganho</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{recommendation.recommendation}</p></div>
                 </div>
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                   <label className="block text-md font-medium text-slate-700 dark:text-slate-300 mb-2">Adicionar novo registro de peso</label>
