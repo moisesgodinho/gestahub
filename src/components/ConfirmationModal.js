@@ -3,16 +3,24 @@
 
 import React from 'react';
 
-export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, message }) {
+export default function ConfirmationModal({ 
+  isOpen, 
+  onClose, 
+  onConfirm, 
+  title, 
+  message,
+  confirmButtonText = "Confirmar",
+  confirmButtonClass = "bg-red-500 hover:bg-red-600" // Cor padrão vermelha para exclusão
+}) {
   if (!isOpen) {
     return null;
   }
 
   return (
     // Overlay de fundo
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in-fast">
       {/* Card do Modal */}
-      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-sm m-4">
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-xl w-full max-w-sm m-4 animate-pop-in">
         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
           {title}
         </h3>
@@ -29,9 +37,9 @@ export default function ConfirmationModal({ isOpen, onClose, onConfirm, title, m
           </button>
           <button
             onClick={onConfirm}
-            className="px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+            className={`px-4 py-2 rounded-lg text-white transition-colors ${confirmButtonClass}`}
           >
-            Confirmar
+            {confirmButtonText}
           </button>
         </div>
       </div>
