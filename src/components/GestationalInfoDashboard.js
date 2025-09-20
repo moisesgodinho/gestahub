@@ -3,7 +3,7 @@
 
 import CronogramaUltrassom from '@/components/CronogramaUltrassom';
 
-export default function GestationalInfoDashboard({ gestationalInfo, countdown, estimatedLmp, onSwitchToUltrasound, onEdit, dataSource }) {
+export default function GestationalInfoDashboard({ gestationalInfo, countdown, estimatedLmp, onSwitchToUltrasound, onEdit, dataSource, user }) {
   if (!gestationalInfo) {
     return null;
   }
@@ -55,7 +55,7 @@ export default function GestationalInfoDashboard({ gestationalInfo, countdown, e
             <p className="mt-1">{gestationalInfo.currentWeekInfo.mom}</p>
           </div>
         </div>
-        <CronogramaUltrassom lmpDate={estimatedLmp} />
+        <CronogramaUltrassom lmpDate={estimatedLmp} user={user} />
       </div>
     </div>
   );

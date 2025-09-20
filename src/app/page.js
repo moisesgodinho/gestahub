@@ -9,7 +9,7 @@ import Login from '@/components/Login';
 import GestationalInfoDashboard from '@/components/GestationalInfoDashboard';
 import CalculatorPanel from '@/components/CalculatorPanel';
 import AppNavigation from '@/components/AppNavigation';
-import { weeklyInfo } from '@/data/weeklyInfo'; // <-- ADICIONE ESTA LINHA
+import { weeklyInfo } from '@/data/weeklyInfo';
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -117,6 +117,7 @@ export default function Home() {
                 setIsEditing(true);
               }}
               onEdit={() => setIsEditing(true)}
+              user={user}
             />
           )}
 
