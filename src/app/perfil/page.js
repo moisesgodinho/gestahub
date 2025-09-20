@@ -9,13 +9,14 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useUser } from '@/context/UserContext';
 
-// Função para calcular a idade
+// Função para calcular a idade a partir da data de nascimento
 const calculateAge = (birthDateString) => {
   if (!birthDateString) return null;
   const birthDate = new Date(birthDateString);
   const today = new Date();
   let age = today.getFullYear() - birthDate.getFullYear();
   const m = today.getMonth() - birthDate.getMonth();
+  // Ajusta a idade se o aniversário ainda não ocorreu no ano corrente
   if (m < 0 || (m === 0 && today.getDate() < birthDate.getUTCDate())) {
     age--;
   }
@@ -38,7 +39,7 @@ export default function ProfilePage() {
 
   // Campos do formulário
   const [displayName, setDisplayName] = useState('');
-  const [dob, setDob] = useState('');
+  const [dob, setDob] = useState(''); // dob = Date of Birth
   
   const router = useRouter();
 
@@ -71,7 +72,7 @@ export default function ProfilePage() {
       const userDocRef = doc(db, 'users', user.uid);
       await setDoc(userDocRef, { profile: profileData }, { merge: true });
       updateUserProfile(profileData);
-      setDisplayName(formattedDisplayName); // Garante que o estado local também seja atualizado
+      setDisplayName(formattedDisplayName);
       toast.success("Perfil atualizado com sucesso!");
       setIsEditing(false);
     } catch (error) {
@@ -144,7 +145,8 @@ export default function ProfilePage() {
             </div>
           )}
 
-          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-col sm:flex-row justify-between items-center gap-4">
+          {/* AQUI ESTÁ A ALTERAÇÃO: removi 'flex-col sm:flex-row' para manter o layout flexível */}
+          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-row justify-between items-center gap-4">
             <div>
               {isEditing ? (
                 <div className="flex gap-4">
