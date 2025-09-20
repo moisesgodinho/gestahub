@@ -36,3 +36,23 @@ select {
   color: #e2e8f0; /* slate-200 */
   border-color: #475569; /* slate-600 */
 }
+
+@keyframes fall {
+  0% {
+    opacity: 1;
+    transform: translateY(-10vh) rotateZ(0deg);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(110vh) rotateZ(720deg);
+  }
+}
+
+@keyframes rotate {
+  0% {
+    transform: rotateX(0) rotateY(0);
+  }
+  100% {
+    transform: rotateX(360deg) rotateY(360deg);
+  }
+}
