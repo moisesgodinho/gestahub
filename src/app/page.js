@@ -9,8 +9,9 @@ import Login from '@/components/Login';
 import GestationalInfoDashboard from '@/components/GestationalInfoDashboard';
 import CalculatorPanel from '@/components/CalculatorPanel';
 import AppNavigation from '@/components/AppNavigation';
+import AgendaProximosPassos from '@/components/AgendaProximosPassos';
 import { weeklyInfo } from '@/data/weeklyInfo';
-import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge'; // Lógica centralizada
+import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge';
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -40,7 +41,7 @@ export default function Home() {
 
     if (docSnap.exists()) {
       const userData = docSnap.data();
-      const lmpDate = getEstimatedLmp(userData); // Usa a função central
+      const lmpDate = getEstimatedLmp(userData);
 
       if (lmpDate) {
         setEstimatedLmp(lmpDate);
@@ -68,7 +69,7 @@ export default function Home() {
     const weeks = Math.floor(gestationalAgeInDays / 7);
     const days = gestationalAgeInDays % 7;
     
-    const dueDate = getDueDate(lmpDate); // Usa a função central
+    const dueDate = getDueDate(lmpDate);
 
     const totalPregnancyDays = 280;
     const remainingDaysTotal = totalPregnancyDays - gestationalAgeInDays;
@@ -80,7 +81,7 @@ export default function Home() {
     setGestationalInfo({
         weeks, days,
         dueDate: dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
-        currentWeekInfo: weeklyInfo[weeks || 1] || "Informações para esta semana ainda não disponíveis.",
+        currentWeekInfo: weeklyInfo[weeks] || weeklyInfo[42], // Adiciona um fallback para o final
     });
   };
 
@@ -101,28 +102,27 @@ export default function Home() {
         <Login />
       ) : (
         <div className="w-full max-w-3xl">
-          {!isEditing && gestationalInfo && (
-            <GestationalInfoDashboard 
-              gestationalInfo={gestationalInfo}
-              countdown={countdown}
-              estimatedLmp={estimatedLmp}
-              dataSource={dataSource}
-              onSwitchToUltrasound={() => {
-                setActiveCalculator('ultrassom');
-                setIsEditing(true);
-              }}
-              onEdit={() => setIsEditing(true)}
-              user={user}
-            />
-          )}
-
-          {(isEditing || !gestationalInfo) && (
+          {!isEditing && gestationalInfo ? (
+            <>
+              <GestationalInfoDashboard 
+                gestationalInfo={gestationalInfo}
+                countdown={countdown}
+                dataSource={dataSource}
+                onSwitchToUltrasound={() => {
+                  setActiveCalculator('ultrassom');
+                  setIsEditing(true);
+                }}
+                onEdit={() => setIsEditing(true)}
+              />
+              <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
+            </>
+          ) : (
             <CalculatorPanel
               user={user}
               activeCalculator={activeCalculator}
               onSwitch={setActiveCalculator}
               onSaveSuccess={handleSaveSuccess}
-              onCancel={() => setIsEditing(false)}
+              onCancel={() => gestationalInfo && setIsEditing(false)}
             />
           )}
           

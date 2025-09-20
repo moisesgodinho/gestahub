@@ -1,10 +1,9 @@
 // src/components/GestationalInfoDashboard.js
 'use client';
 
-import CronogramaUltrassom from '@/components/CronogramaUltrassom';
-import InfoTooltip from '@/components/InfoTooltip'; // 1. IMPORTE O NOVO COMPONENTE
+import InfoTooltip from '@/components/InfoTooltip';
 
-export default function GestationalInfoDashboard({ gestationalInfo, countdown, estimatedLmp, onSwitchToUltrasound, onEdit, dataSource, user }) {
+export default function GestationalInfoDashboard({ gestationalInfo, countdown, onSwitchToUltrasound, onEdit, dataSource }) {
   if (!gestationalInfo) {
     return null;
   }
@@ -51,8 +50,6 @@ export default function GestationalInfoDashboard({ gestationalInfo, countdown, e
           
           <div className="text-sm text-center">
             <p>Tamanho comparado a um(a) <span className="font-bold">{currentWeekInfo.size}</span>.</p>
-            
-            {/* 2. ADICIONE O ÍCONE E O TOOLTIP AQUI */}
             <div className="mt-1 flex items-center justify-center gap-2">
               <p>
                 <span className="font-semibold">{currentWeekInfo.length}</span> | <span className="font-semibold">{currentWeekInfo.weight}</span>
@@ -72,8 +69,6 @@ export default function GestationalInfoDashboard({ gestationalInfo, countdown, e
             <p className="mt-1">{currentWeekInfo.mom}</p>
           </div>
         </div>
-        
-        <CronogramaUltrassom lmpDate={estimatedLmp} user={user} />
       </div>
     </div>
   );
