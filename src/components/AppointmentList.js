@@ -18,6 +18,11 @@ export default function AppointmentList({ appointments, onEdit, user }) {
     const newDoneStatus = !appointment.done;
 
     if (newDoneStatus) {
+      if (appointment.type === 'ultrasound' && !appointment.isScheduled) {
+        toast.warn("Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.");
+        onEdit(appointment);
+        return;
+      }
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       const appointmentDate = new Date(appointment.date + 'T00:00:00Z');
@@ -77,7 +82,7 @@ export default function AppointmentList({ appointments, onEdit, user }) {
   const today = new Date().toISOString().split('T')[0];
   
   const upcomingAppointments = appointments
-    .filter(a => a.date >= today && !a.done)
+    .filter(a => (a.date >= today || !a.date) && !a.done)
     .sort((a,b) => new Date(a.date) - new Date(b.date));
     
   const pastAppointments = appointments
@@ -96,28 +101,22 @@ export default function AppointmentList({ appointments, onEdit, user }) {
                 </label>
             </div>
             <div className="flex-grow">
-                <p className="font-bold text-lg text-slate-800 dark:text-slate-100">{app.title}</p>
+                {/* CORREÇÃO AQUI: Usa 'app.title' ou 'app.name' */}
+                <p className="font-bold text-lg text-slate-800 dark:text-slate-100">{app.title || app.name}</p>
                 <p className={`font-semibold ${app.isScheduled ? 'text-indigo-600 dark:text-indigo-400' : 'text-gray-500 dark:text-gray-400'}`}>
-                    {new Date(app.date + 'T00:00:00Z').toLocaleDateString('pt-BR', {timeZone: 'UTC'})} {app.time && `às ${app.time}`}
-                    {!app.isScheduled && app.type === 'ultrasound' && <span className="text-xs font-normal"> (Data Sugerida)</span>}
+                    {app.date ? `${new Date(app.date + 'T00:00:00Z').toLocaleDateString('pt-BR', {timeZone: 'UTC'})} ${app.time ? `às ${app.time}` : ''}`: 'Agendamento pendente'}
                 </p>
                 {app.professional && <p className="text-sm text-slate-600 dark:text-slate-300">{app.professional}</p>}
                 {app.location && <p className="text-sm text-slate-500 dark:text-slate-400">{app.location}</p>}
             </div>
             <div className="flex gap-2">
-                {app.type === 'manual' ? (
-                <>
-                    <button onClick={() => onEdit(app)} title="Editar" className="p-2 rounded-full text-slate-500 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/50">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
-                    </button>
-                    <button onClick={() => openDeleteConfirmation(app)} title="Apagar" className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
-                    </button>
-                </>
-                ) : (
-                <Link href="/" title="Gerenciar na Página Inicial" className="p-2 rounded-full text-slate-500 hover:bg-indigo-100 hover:text-indigo-600 dark:hover:bg-indigo-900/50">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path><polyline points="15 3 21 3 21 9"></polyline><line x1="10" y1="14" x2="21" y2="3"></line></svg>
-                </Link>
+                <button onClick={() => onEdit(app)} title="Editar" className="p-2 rounded-full text-slate-500 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/50">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                </button>
+                {app.type === 'manual' && (
+                  <button onClick={() => openDeleteConfirmation(app)} title="Apagar" className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                  </button>
                 )}
             </div>
         </div>
@@ -139,14 +138,14 @@ export default function AppointmentList({ appointments, onEdit, user }) {
         {upcomingAppointments.length > 0 && (
           <div className="mt-6">
             <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Próximas Consultas</h3>
-            <div className="space-y-4">{upcomingAppointments.map(app => <AppointmentCard key={app.id} app={app} />)}</div>
+            <div className="space-y-4">{upcomingAppointments.map(app => <AppointmentCard key={`${app.type}-${app.id}`} app={app} />)}</div>
           </div>
         )}
 
         {pastAppointments.length > 0 && (
           <div className="mt-8">
             <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4">Consultas Passadas</h3>
-            <div className="space-y-4">{pastAppointments.map(app => <AppointmentCard key={app.id} app={app} />)}</div>
+            <div className="space-y-4">{pastAppointments.map(app => <AppointmentCard key={`${app.type}-${app.id}`} app={app} />)}</div>
           </div>
         )}
         </>

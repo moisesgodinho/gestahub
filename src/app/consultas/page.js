@@ -11,11 +11,11 @@ import AppointmentForm from '@/components/AppointmentForm';
 import AppointmentList from '@/components/AppointmentList';
 
 const ultrasoundSchedule = [
-  { id: 'transvaginal', name: '1º Ultrassom (Transvaginal)', startWeek: 8, endWeek: 11 },
-  { id: 'morfologico_1', name: '2º Ultrassom (Morfológico 1º Trimestre)', startWeek: 12, endWeek: 14 },
-  { id: 'morfologico_2', name: '3º Ultrassom (Morfológico 2º Trimestre)', startWeek: 22, endWeek: 24 },
-  { id: 'ecocardiograma', name: '4º Ultrassom (Ecocardiograma Fetal)', startWeek: 26, endWeek: 28 },
-  { id: 'doppler_3', name: '5º Ultrassom (3º Trimestre com Doppler)', startWeek: 28, endWeek: 36 },
+  { id: 'transvaginal', name: '1º Ultrassom (Transvaginal)', startWeek: 8, endWeek: 11, type: 'ultrasound' },
+  { id: 'morfologico_1', name: '2º Ultrassom (Morfológico 1º Trimestre)', startWeek: 12, endWeek: 14, type: 'ultrasound' },
+  { id: 'morfologico_2', name: '3º Ultrassom (Morfológico 2º Trimestre)', startWeek: 22, endWeek: 24, type: 'ultrasound' },
+  { id: 'ecocardiograma', name: '4º Ultrassom (Ecocardiograma Fetal)', startWeek: 26, endWeek: 28, type: 'ultrasound' },
+  { id: 'doppler_3', name: '5º Ultrassom (3º Trimestre com Doppler)', startWeek: 28, endWeek: 36, type: 'ultrasound' },
 ];
 
 export default function AppointmentsPage() {
@@ -23,13 +23,14 @@ export default function AppointmentsPage() {
   const [loading, setLoading] = useState(true);
   const [manualAppointments, setManualAppointments] = useState([]);
   const [ultrasoundAppointments, setUltrasoundAppointments] = useState([]);
-  const [combinedAppointments, setCombinedAppointments] = useState([]);
   const [appointmentToEdit, setAppointmentToEdit] = useState(null);
+  const [lmpDate, setLmpDate] = useState(null);
 
   useEffect(() => {
     const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        // Listener para consultas manuais
         const appointmentsRef = collection(db, 'users', currentUser.uid, 'appointments');
         const q = query(appointmentsRef, orderBy('date', 'desc'));
         const unsubscribeAppointments = onSnapshot(q, (snapshot) => {
@@ -37,32 +38,26 @@ export default function AppointmentsPage() {
           setManualAppointments(fetchedAppointments);
         });
 
+        // Listener para o documento do usuário (para ultrassons)
         const userDocRef = doc(db, 'users', currentUser.uid);
         const unsubscribeUserDoc = onSnapshot(userDocRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            const lmpDate = getEstimatedLmp(userData);
-            const ultrasoundData = userData.ultrasoundSchedule || {};
+          const userData = docSnap.exists() ? docSnap.data() : {};
+          const estimatedLmp = getEstimatedLmp(userData);
+          setLmpDate(estimatedLmp);
+          const ultrasoundData = userData.ultrasoundSchedule || {};
 
-            if (lmpDate) {
-              const scheduledUltrasounds = ultrasoundSchedule.map(exam => {
-                const examData = ultrasoundData[exam.id] || {};
-                const idealDate = new Date(lmpDate);
-                idealDate.setDate(idealDate.getDate() + exam.startWeek * 7);
-
-                return {
-                  ...examData,
-                  id: exam.id,
-                  title: exam.name,
-                  date: examData.scheduledDate || idealDate.toISOString().split('T')[0],
-                  isScheduled: !!examData.scheduledDate,
-                  done: !!examData.done,
-                  type: 'ultrasound',
-                };
-              });
-              setUltrasoundAppointments(scheduledUltrasounds);
-            }
-          }
+          // CORREÇÃO: Gera a lista de ultrassons mesmo sem DUM
+          const scheduledUltrasounds = ultrasoundSchedule.map(exam => {
+            const examData = ultrasoundData[exam.id] || {};
+            return {
+              ...exam,
+              ...examData,
+              date: examData.scheduledDate || null,
+              isScheduled: !!examData.scheduledDate,
+              done: !!examData.done,
+            };
+          });
+          setUltrasoundAppointments(scheduledUltrasounds);
           setLoading(false);
         });
 
@@ -77,9 +72,7 @@ export default function AppointmentsPage() {
     return () => unsubscribeAuth();
   }, []);
 
-  useEffect(() => {
-    setCombinedAppointments([...manualAppointments, ...ultrasoundAppointments]);
-  }, [manualAppointments, ultrasoundAppointments]);
+  const combinedAppointments = useMemo(() => [...manualAppointments, ...ultrasoundAppointments], [manualAppointments, ultrasoundAppointments]);
 
   const professionalSuggestions = useMemo(() => {
     const allProfessionals = combinedAppointments.map(app => app.professional).filter(Boolean);
@@ -92,10 +85,8 @@ export default function AppointmentsPage() {
   }, [combinedAppointments]);
 
   const handleEdit = (appointment) => {
-    if (appointment.type === 'manual') {
-      setAppointmentToEdit(appointment);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+    setAppointmentToEdit(appointment);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleFinishEditing = () => {
@@ -119,6 +110,7 @@ export default function AppointmentsPage() {
           onSave={handleFinishEditing}
           professionalSuggestions={professionalSuggestions}
           locationSuggestions={locationSuggestions}
+          lmpDate={lmpDate}
         />
         
         <AppointmentList 

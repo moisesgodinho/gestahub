@@ -55,10 +55,12 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
         
         ultrasoundSchedule.forEach(exam => {
           const examData = ultrasoundData[exam.id] || {};
-          const idealDate = new Date(lmpDate);
-          idealDate.setDate(idealDate.getDate() + exam.startWeek * 7);
-
-          ultrasoundItems.push({ ...exam, ...examData, date: examData.scheduledDate || idealDate.toISOString().split('T')[0], isScheduled: !!examData.scheduledDate });
+          ultrasoundItems.push({ 
+            ...exam, 
+            ...examData, 
+            date: examData.scheduledDate || null, 
+            isScheduled: !!examData.scheduledDate 
+          });
         });
       }
       setUltrasoundAppointments(ultrasoundItems);
@@ -86,6 +88,13 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
     const newDoneStatus = !appointment.done;
 
     if (newDoneStatus) {
+      // VALIDAÇÃO para não concluir ultrassom sem data
+      if (appointment.type === 'ultrasound' && !appointment.isScheduled) {
+        toast.warn("Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.");
+        handleStartEditing(appointment); // Abre a edição para facilitar
+        return;
+      }
+
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const appointmentDate = new Date(appointment.date + 'T00:00:00Z');
       if (appointmentDate > today) {
@@ -140,9 +149,16 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
   };
 
   const handleStartEditing = (item) => {
+    let defaultDate = item.scheduledDate || item.date;
+    if (item.type === 'ultrasound' && !defaultDate && lmpDate) {
+      const idealStartDate = new Date(lmpDate);
+      idealStartDate.setDate(idealStartDate.getDate() + item.startWeek * 7);
+      defaultDate = idealStartDate.toISOString().split('T')[0];
+    }
+
     setEditDetails({
       title: item.title || item.name || '',
-      date: item.scheduledDate || item.date || '',
+      date: defaultDate || '',
       time: item.time || '',
       professional: item.professional || '',
       location: item.location || '',
@@ -159,6 +175,24 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
     if (!user || !editDetails.date) {
       toast.warn("Por favor, insira uma data.");
       return;
+    }
+    
+    if (item.type === 'ultrasound' && lmpDate) {
+      const lmpUTCDate = getUTCDate(lmpDate);
+      const selectedDate = new Date(editDetails.date + 'T00:00:00Z');
+      const idealStartDate = new Date(lmpUTCDate.getTime());
+      idealStartDate.setUTCDate(idealStartDate.getUTCDate() + item.startWeek * 7);
+      const idealEndDate = new Date(lmpUTCDate.getTime());
+      idealEndDate.setUTCDate(idealEndDate.getUTCDate() + (item.endWeek * 7) + 6);
+      const toleranceStartDate = new Date(idealStartDate.getTime());
+      toleranceStartDate.setUTCDate(toleranceStartDate.getUTCDate() - 14);
+      const toleranceEndDate = new Date(idealEndDate.getTime());
+      toleranceEndDate.setUTCDate(toleranceEndDate.getUTCDate() + 14);
+
+      if (selectedDate < toleranceStartDate || selectedDate > toleranceEndDate) {
+        toast.error("A data está fora do período recomendado (tolerância de 2 semanas).");
+        return;
+      }
     }
     
     try {
@@ -239,7 +273,9 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
                     </div>
                     <div className="flex-grow">
                       <p className="font-semibold text-slate-700 dark:text-slate-200">{item.title || item.name}</p>
-                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">{formatDateDisplay(item.date)} {item.time && `às ${item.time}`}</p>
+                      <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
+                        {item.date ? formatDateDisplay(item.date) : 'Agendamento pendente'} {item.time && `às ${item.time}`}
+                      </p>
                       {idealWindowText && <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">{idealWindowText}</p>}
                       {item.professional && <p className="text-xs text-slate-500 dark:text-slate-400">Com: {item.professional}</p>}
                       {item.location && <p className="text-xs text-slate-500 dark:text-slate-400">Local: {item.location}</p>}
