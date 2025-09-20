@@ -117,8 +117,19 @@ export default function CronogramaUltrassom({ lmpDate, user }) {
     }
     
     const examDetails = ultrasoundSchedule.find(e => e.id === examId);
+    const isDone = examData[examId]?.done;
+    
+    // CORREÇÃO: Adicionada a verificação de data futura para exames concluídos
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const userDate = new Date(`${scheduledDate}T00:00:00Z`);
+
+    if (isDone && userDate > today) {
+      toast.error("A data de um exame concluído não pode ser no futuro.");
+      return;
+    }
+    
     if (examDetails && lmpDate) {
-        const userDate = new Date(`${scheduledDate}T00:00:00Z`);
         const dueDate = new Date(lmpDate);
         dueDate.setDate(dueDate.getDate() + 294); // 42 semanas
 
@@ -195,7 +206,7 @@ export default function CronogramaUltrassom({ lmpDate, user }) {
         <div className="space-y-3">
           {ultrasoundSchedule.map((exam, index) => {
             const data = examData[exam.id] || {};
-            const isDone = !!data.done; // CORREÇÃO APLICADA AQUI
+            const isDone = !!data.done;
             const currentScheduledDate = data.scheduledDate;
 
             const startDate = lmpDate ? new Date(lmpUTCDate.getTime()) : null;
