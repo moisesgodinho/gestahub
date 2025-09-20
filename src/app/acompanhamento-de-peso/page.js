@@ -107,8 +107,6 @@ export default function WeightTrackerPage() {
     setLoading(false);
   };
   
-  // O restante do arquivo continua exatamente o mesmo...
-  // ... (todo o código de updateCalculations, handleSaveInitialData, etc. permanece igual)
   const updateCalculations = (initialWeight, userHeight, history) => {
     const bmi = calculateBMI(initialWeight, userHeight);
     setInitialBmi(bmi);
@@ -147,7 +145,23 @@ export default function WeightTrackerPage() {
     const parsedCurrentWeight = parseFloat(currentWeight);
     if (!user || !parsedCurrentWeight || !entryDate) { toast.warn("Preencha o peso e a data do registro."); return; }
     if (parsedCurrentWeight <= 0) { toast.warn('O peso deve ser um valor positivo.'); return; }
-     if (parsedCurrentWeight < 30 || parsedCurrentWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
+    if (parsedCurrentWeight < 30 || parsedCurrentWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
+
+    // CORREÇÃO: Adicionada a verificação de data
+    const today = new Date();
+    today.setUTCHours(0, 0, 0, 0);
+
+    const selectedDate = new Date(entryDate + 'T00:00:00Z');
+
+    if (selectedDate > today) {
+      toast.warn("A data do registro não pode ser no futuro.");
+      return;
+    }
+
+    if (estimatedLmp && selectedDate < estimatedLmp) {
+      toast.warn("A data do registro não pode ser anterior ao início da gestação.");
+      return;
+    }
 
     const newEntry = { weight: parsedCurrentWeight, date: entryDate, bmi: calculateBMI(parsedCurrentWeight, height) };
     try {
