@@ -70,14 +70,32 @@ export default function CronogramaUltrassom({ lmpDate, user }) {
     if (!user) return;
     const isTryingToComplete = !examData[examId]?.done;
     const examDateStr = examData[examId]?.scheduledDate;
-    
-    if (isTryingToComplete && examDateStr) {
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-        const examDate = new Date(`${examDateStr}T00:00:00Z`);
-        if (examDate > today) {
-            toast.warn("Não é possível marcar como concluído um exame agendado para o futuro.");
-            return;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (isTryingToComplete) {
+        if (examDateStr) {
+            const examDate = new Date(`${examDateStr}T00:00:00Z`);
+            if (examDate > today) {
+                toast.warn("Não é possível marcar como concluído um exame agendado para o futuro.");
+                return;
+            }
+        }
+
+        // CORREÇÃO: Impede que o exame seja marcado como concluído se a data atual estiver muito fora da janela
+        const examDetails = ultrasoundSchedule.find(e => e.id === examId);
+        if (lmpDate && examDetails) {
+            const idealEndDate = new Date(getUTCDate(lmpDate));
+            idealEndDate.setDate(idealEndDate.getDate() + (examDetails.endWeek * 7) + 6);
+
+            // Período de tolerância: permite marcar como concluído até 4 semanas após o fim da janela ideal
+            const gracePeriodEndDate = new Date(idealEndDate);
+            gracePeriodEndDate.setDate(gracePeriodEndDate.getDate() + 28); 
+
+            if (today > gracePeriodEndDate) {
+                toast.error("Não é possível marcar como concluído. A data atual está muito fora do período recomendado para este exame.");
+                return;
+            }
         }
     }
 
@@ -119,7 +137,6 @@ export default function CronogramaUltrassom({ lmpDate, user }) {
     const examDetails = ultrasoundSchedule.find(e => e.id === examId);
     const isDone = examData[examId]?.done;
     
-    // CORREÇÃO: Adicionada a verificação de data futura para exames concluídos
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const userDate = new Date(`${scheduledDate}T00:00:00Z`);
@@ -168,15 +185,15 @@ export default function CronogramaUltrassom({ lmpDate, user }) {
     setScheduledDate('');
   };
 
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+  const todayUTC = new Date();
+  todayUTC.setHours(0, 0, 0, 0);
   const lmpUTCDate = getUTCDate(lmpDate);
 
   let nextExamIndex = !lmpDate ? -1 : ultrasoundSchedule.findIndex(exam => {
     const endDate = new Date(lmpUTCDate.getTime());
     const endWeek = exam.endWeek || (exam.startWeek + 4);
     endDate.setDate(endDate.getDate() + (endWeek * 7) + 6);
-    return today <= endDate && !examData[exam.id]?.done;
+    return todayUTC <= endDate && !examData[exam.id]?.done;
   });
 
   if (nextExamIndex === -1) {
