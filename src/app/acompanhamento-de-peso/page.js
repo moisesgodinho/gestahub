@@ -2,15 +2,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
 import AppNavigation from '@/components/AppNavigation';
+import WeightChart from '@/components/WeightChart';
+import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge'; // Lógica centralizada
 
-// --- DADOS E FUNÇÕES AUXILIARES (sem alterações) ---
+// --- DADOS E FUNÇÕES AUXILIARES ---
 const bmiCategories = [
   { category: 'Baixo Peso', range: '< 18.5', recommendation: '12.5 a 18 kg' },
   { category: 'Peso Adequado', range: '18.5 - 24.9', recommendation: '11.5 a 16 kg' },
@@ -32,8 +33,8 @@ const getBMICategory = (bmi) => {
 const getTodayString = () => new Date().toISOString().split('T')[0];
 const calculateGestationalAgeOnDate = (lmpDate, targetDate) => {
     if (!lmpDate || !targetDate) return '';
-    const lmpTime = new Date(lmpDate).getTime();
-    const targetTime = new Date(targetDate).getTime();
+    const lmpTime = lmpDate.getTime();
+    const targetTime = new Date(targetDate + 'T00:00:00Z').getTime();
     const gestationalAgeInMs = targetTime - lmpTime;
     const gestationalAgeInDays = Math.floor(gestationalAgeInMs / (1000 * 60 * 60 * 24));
     if (gestationalAgeInDays < 0) return '';
@@ -48,6 +49,7 @@ export default function WeightTrackerPage() {
   const [height, setHeight] = useState('');
   const [prePregnancyWeight, setPrePregnancyWeight] = useState('');
   const [estimatedLmp, setEstimatedLmp] = useState(null);
+  const [dueDate, setDueDate] = useState(null);
   const [currentWeight, setCurrentWeight] = useState('');
   const [entryDate, setEntryDate] = useState(getTodayString());
   const [weightHistory, setWeightHistory] = useState([]);
@@ -74,19 +76,16 @@ export default function WeightTrackerPage() {
     const docRef = doc(db, 'users', uid);
     const docSnap = await getDoc(docRef);
     if (docSnap.exists()) {
-      const data = docSnap.data();
-      if (data.ultrasound) {
-        const { examDate, weeksAtExam, daysAtExam } = data.ultrasound;
-        const examDateTime = new Date(examDate).getTime();
-        const daysAtExamTotal = (parseInt(weeksAtExam, 10) * 7) + (parseInt(daysAtExam, 10) || 0);
-        const lmp = new Date(examDateTime);
-        lmp.setDate(lmp.getDate() - daysAtExamTotal);
-        setEstimatedLmp(lmp);
-      } else if (data.lmp) {
-        setEstimatedLmp(new Date(data.lmp));
+      const userData = docSnap.data();
+      const lmpDate = getEstimatedLmp(userData); // Usa a função central
+
+      if (lmpDate) {
+        setEstimatedLmp(lmpDate);
+        setDueDate(getDueDate(lmpDate)); // Usa a função central
       }
-      if (data.weightProfile) {
-        const profile = data.weightProfile;
+
+      if (userData.weightProfile) {
+        const profile = userData.weightProfile;
         if (profile.height && profile.prePregnancyWeight) {
             setIsEditing(false);
         } else {
@@ -108,6 +107,8 @@ export default function WeightTrackerPage() {
     setLoading(false);
   };
   
+  // O restante do arquivo continua exatamente o mesmo...
+  // ... (todo o código de updateCalculations, handleSaveInitialData, etc. permanece igual)
   const updateCalculations = (initialWeight, userHeight, history) => {
     const bmi = calculateBMI(initialWeight, userHeight);
     setInitialBmi(bmi);
@@ -198,7 +199,6 @@ export default function WeightTrackerPage() {
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmDeleteEntry} title="Confirmar Exclusão" message="Tem certeza que deseja apagar este registro de peso?"/>
       
-      {/* --- ESTRUTURA DE LAYOUT CORRIGIDA --- */}
       <div className="flex items-center justify-center flex-grow p-4">
         <div className="w-full max-w-3xl">
           <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
@@ -263,6 +263,14 @@ export default function WeightTrackerPage() {
                 </div>
               </div>
               
+              {prePregnancyWeight && weightHistory.length > 0 && (
+                <WeightChart 
+                  history={weightHistory} 
+                  prePregnancyWeight={prePregnancyWeight} 
+                  dueDate={dueDate}
+                />
+              )}
+
               {weightHistory.length > 0 && (
                 <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl">
                   <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Histórico de Peso</h2>
@@ -270,7 +278,7 @@ export default function WeightTrackerPage() {
                     {weightHistory.map((entry, index) => (
                       <div key={`${entry.date}-${index}`} className="flex items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
                         <div className="flex-grow">
-                          <p className="font-semibold text-slate-700 dark:text-slate-200">{new Date(entry.date).toLocaleDateString('pt-BR')}</p>
+                          <p className="font-semibold text-slate-700 dark:text-slate-200">{new Date(entry.date + 'T00:00:00Z').toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</p>
                           {estimatedLmp && (<p className="text-xs text-rose-500 dark:text-rose-400 font-medium">{calculateGestationalAgeOnDate(estimatedLmp, entry.date)}</p>)}
                         </div>
                         <div className="text-right mx-4">
@@ -289,7 +297,7 @@ export default function WeightTrackerPage() {
           )}
           
           <div className="mt-8 text-center">
-          <AppNavigation />
+            <AppNavigation />
           </div>
         </div>
       </div>

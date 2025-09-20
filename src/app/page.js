@@ -10,6 +10,7 @@ import GestationalInfoDashboard from '@/components/GestationalInfoDashboard';
 import CalculatorPanel from '@/components/CalculatorPanel';
 import AppNavigation from '@/components/AppNavigation';
 import { weeklyInfo } from '@/data/weeklyInfo';
+import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge'; // Lógica centralizada
 
 export default function Home() {
   const [user, setUser] = useState(null);
@@ -36,29 +37,22 @@ export default function Home() {
   const fetchUserData = async (uid) => {
     const docRef = doc(db, 'users', uid);
     const docSnap = await getDoc(docRef);
-    let lmpDate = null;
 
     if (docSnap.exists()) {
-      const data = docSnap.data();
-      if (data.ultrasound && data.ultrasound.examDate) {
-        const { examDate, weeksAtExam, daysAtExam } = data.ultrasound;
-        const examDateTime = new Date(examDate).getTime();
-        const daysAtExamTotal = (parseInt(weeksAtExam, 10) * 7) + (parseInt(daysAtExam, 10) || 0);
-        lmpDate = new Date(examDateTime);
-        lmpDate.setDate(lmpDate.getUTCDate() - daysAtExamTotal);
-        setActiveCalculator('ultrassom');
-        setDataSource('ultrassom');
-      } else if (data.lmp) {
-        lmpDate = new Date(data.lmp);
-        setActiveCalculator('dum');
-        setDataSource('dum');
-      }
-    }
+      const userData = docSnap.data();
+      const lmpDate = getEstimatedLmp(userData); // Usa a função central
 
-    if (lmpDate) {
-      setEstimatedLmp(lmpDate);
-      calculateGestationalInfo(lmpDate);
-      setIsEditing(false);
+      if (lmpDate) {
+        setEstimatedLmp(lmpDate);
+        calculateGestationalInfo(lmpDate);
+        
+        const source = userData.ultrasound && userData.ultrasound.examDate ? 'ultrassom' : 'dum';
+        setDataSource(source);
+        setActiveCalculator(source);
+        setIsEditing(false);
+      } else {
+        setIsEditing(true);
+      }
     } else {
       setIsEditing(true);
     }
@@ -67,13 +61,14 @@ export default function Home() {
   const calculateGestationalInfo = (lmpDate) => {
     const lmpDateTime = lmpDate.getTime();
     const today = new Date();
-    const todayTime = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+    const todayTime = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+    
     const gestationalAgeInMs = todayTime - lmpDateTime;
     const gestationalAgeInDays = Math.floor(gestationalAgeInMs / (1000 * 60 * 60 * 24));
     const weeks = Math.floor(gestationalAgeInDays / 7);
     const days = gestationalAgeInDays % 7;
-    const dueDate = new Date(lmpDateTime);
-    dueDate.setDate(dueDate.getDate() + 280);
+    
+    const dueDate = getDueDate(lmpDate); // Usa a função central
 
     const totalPregnancyDays = 280;
     const remainingDaysTotal = totalPregnancyDays - gestationalAgeInDays;
