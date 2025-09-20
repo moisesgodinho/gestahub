@@ -4,6 +4,7 @@ import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import "./globals.css";
 import Header from '@/components/Header';
+import { UserProvider } from '@/context/UserContext';
 
 const poppins = Poppins({
   subsets: ['latin'],
@@ -55,11 +56,12 @@ export default function RootLayout({ children }) {
           theme="colored"
         />
 
-        <Header />
-
-        <main className="flex-grow">
-          {children}
-        </main>
+        <UserProvider>
+          <Header />
+          <main className="flex-grow">
+            {children}
+          </main>
+        </UserProvider>
 
         <footer className="w-full text-center p-4 text-slate-500 dark:text-slate-400 text-sm">
           Feito com ❤️ por Godinho
