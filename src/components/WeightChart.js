@@ -22,7 +22,7 @@ export default function WeightChart({ history, prePregnancyWeight, dueDate }) { 
 
   // Usa a data do parto recebida para adicionar o ponto final ao gráfico
   if (dueDate && dueDate > new Date()) {
-    labels.push(`DPP: ${dueDate.toLocaleDateString('pt-BR')}`);
+    labels.push(`DPP: ${dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`);
     dataPoints.push(null); 
   }
 

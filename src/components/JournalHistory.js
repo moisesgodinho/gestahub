@@ -115,7 +115,7 @@ export default function JournalHistory({ entries, onEdit, user }) {
               <div key={entry.id} className="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg">
                 <div className="flex justify-between items-start">
                   <div>
-                    <p className="font-bold text-lg text-slate-800 dark:text-slate-100">{new Date(entry.date).toLocaleDateString('pt-BR')}</p>
+                    <p className="font-bold text-lg text-slate-800 dark:text-slate-100">{new Date(entry.date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</p>
                     <p className="font-semibold text-indigo-600 dark:text-indigo-400">{getMoodLabel(entry.mood)}</p>
                   </div>
                   <div className="flex gap-2">

@@ -10,20 +10,21 @@ import { toast } from 'react-toastify';
 const parseDateString = (dateStr) => {
   if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return null;
   const [day, month, year] = dateStr.split('/').map(Number);
-  const dateObj = new Date(year, month - 1, day);
-  if (dateObj.getFullYear() !== year || dateObj.getMonth() !== month - 1 || dateObj.getDate() !== day) {
+  const dateObj = new Date(Date.UTC(year, month - 1, day)); // Usar UTC na criação
+  if (dateObj.getUTCFullYear() !== year || dateObj.getUTCMonth() !== month - 1 || dateObj.getUTCDate() !== day) {
     return null;
   }
   return dateObj;
 };
+
+// CORREÇÃO: Padronizando a função de formatação
 const formatDateForDisplay = (date) => {
     if (!date) return '';
-    const dateObj = new Date(date);
-    const day = String(dateObj.getUTCDate()).padStart(2, '0');
-    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-    const year = dateObj.getUTCFullYear();
-    return `${day}/${month}/${year}`;
+    // Adiciona T00:00:00Z para garantir que seja interpretado como UTC
+    const dateObj = new Date(date + 'T00:00:00Z');
+    return dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
 }
+
 const formatDateForInput = (dateStr) => {
     if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return '';
     const [day, month, year] = dateStr.split('/');
@@ -59,13 +60,14 @@ export default function CalculadoraDUM({ user, onSaveSuccess, onCancel }) {
     }
     
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    if (dateObject.getTime() > today.getTime()) {
+    const todayUTC = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+
+    if (dateObject.getTime() > todayUTC.getTime()) {
       toast.warn('A data não pode ser no futuro.');
       return;
     }
 
-    const gestationalAgeInDays = Math.floor((today.getTime() - dateObject.getTime()) / (1000 * 60 * 60 * 24));
+    const gestationalAgeInDays = Math.floor((todayUTC.getTime() - dateObject.getTime()) / (1000 * 60 * 60 * 24));
     if (gestationalAgeInDays > 294) { // 42 semanas
       toast.warn('A data informada resulta em mais de 42 semanas de gestação.');
       return;
