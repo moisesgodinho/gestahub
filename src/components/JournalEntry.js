@@ -70,9 +70,10 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
       toast.warn('Por favor, selecione uma data.');
       return;
     }
-    // Verificação de humor obrigatório adicionada aqui
-    if (!mood) {
-      toast.warn('Por favor, selecione um humor para o seu registro.');
+    
+    // NOVA VALIDAÇÃO: Impede o salvamento de um registro totalmente vazio
+    if (!mood && selectedSymptoms.length === 0 && notes.trim() === '') {
+      toast.warn('Por favor, registre pelo menos um humor, sintoma ou anotação.');
       return;
     }
 
@@ -97,7 +98,7 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
       />
       <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
         <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
-          {!!entry ? `Editando o dia ${new Date(date).toLocaleDateString('pt-BR')}` : 'Como você está se sentindo hoje?'}
+          {!!entry ? `Editando o dia ${new Date(date).toLocaleDateString('pt-BR', { timeZone: 'UTC' })}` : 'Como você está se sentindo hoje?'}
         </h2>
         
         <div className="mb-4">
@@ -118,7 +119,8 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
         </div>
 
         <div className="mb-4">
-          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Humor (obrigatório)</label>
+          {/* Rótulo do humor atualizado para não ser mais obrigatório */}
+          <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Humor</label>
           <div className="flex flex-wrap gap-2">
             {moodOptions.map(option => (
               <button key={option.value} onClick={() => setMood(option.value)} className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${mood === option.value ? 'bg-indigo-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300'}`}>

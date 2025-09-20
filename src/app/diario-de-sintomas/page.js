@@ -8,7 +8,7 @@ import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import AppNavigation from '@/components/AppNavigation';
 import JournalEntry from '@/components/JournalEntry';
 import JournalHistory from '@/components/JournalHistory';
-import ConfirmationModal from '@/components/ConfirmationModal'; // Importado aqui
+import SymptomChart from '@/components/SymptomChart'; // 1. IMPORTE O NOVO COMPONENTE
 
 export default function JournalPage() {
   const [user, setUser] = useState(null);
@@ -58,7 +58,6 @@ export default function JournalPage() {
           Diário de Sintomas e Humor
         </h1>
         
-        {/* Passando a lista de 'entries' para o componente do formulário */}
         <JournalEntry 
           user={user} 
           entry={selectedEntry} 
@@ -66,6 +65,9 @@ export default function JournalPage() {
           onCancel={handleFinishEditing}
           allEntries={entries} 
         />
+
+        {/* 2. ADICIONE O COMPONENTE DO GRÁFICO AQUI */}
+        {entries.length > 0 && <SymptomChart entries={entries} />}
 
         <JournalHistory entries={entries} onEdit={handleEdit} user={user} />
         
