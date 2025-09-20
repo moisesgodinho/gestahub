@@ -3,15 +3,15 @@
 
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore'; // Importe o setDoc
 import { auth, db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
 import AppNavigation from '@/components/AppNavigation';
 import WeightChart from '@/components/WeightChart';
-import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge'; // Lógica centralizada
+import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge';
 
-// --- DADOS E FUNÇÕES AUXILIARES ---
+// --- (O restante das funções auxiliares permanece o mesmo) ---
 const bmiCategories = [
   { category: 'Baixo Peso', range: '< 18.5', recommendation: '12.5 a 18 kg' },
   { category: 'Peso Adequado', range: '18.5 - 24.9', recommendation: '11.5 a 16 kg' },
@@ -43,7 +43,9 @@ const calculateGestationalAgeOnDate = (lmpDate, targetDate) => {
     return `${weeks}s ${days}d`;
 };
 
+
 export default function WeightTrackerPage() {
+  // --- (Estados existentes) ---
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [height, setHeight] = useState('');
@@ -59,6 +61,9 @@ export default function WeightTrackerPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  
+  // CORREÇÃO: Novo estado para o modal de substituição
+  const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -120,6 +125,19 @@ export default function WeightTrackerPage() {
     }
   };
 
+  const handleWeightInput = (setter) => (e) => {
+    const value = e.target.value.replace(/[^0-9]/g, '');
+    
+    if (value.length > 5) return;
+
+    let formattedValue = value;
+    if (value.length > 2) {
+      formattedValue = value.slice(0, -2) + '.' + value.slice(-2);
+    }
+    
+    setter(formattedValue);
+  };
+
   const handleSaveInitialData = async () => {
     const parsedHeight = parseFloat(height);
     const parsedWeight = parseFloat(prePregnancyWeight);
@@ -141,13 +159,38 @@ export default function WeightTrackerPage() {
     }
   };
 
+  // CORREÇÃO: Lógica de salvar movida para uma função separada
+  const proceedWithSave = async () => {
+    const parsedCurrentWeight = parseFloat(currentWeight);
+    const newEntry = { weight: parsedCurrentWeight, date: entryDate, bmi: calculateBMI(parsedCurrentWeight, height) };
+    
+    // Remove o registro antigo antes de adicionar o novo (para substituição)
+    const oldEntry = weightHistory.find(entry => entry.date === entryDate);
+    const historyWithoutOldEntry = oldEntry ? weightHistory.filter(entry => entry.date !== entryDate) : weightHistory;
+
+    try {
+      const userDocRef = doc(db, 'users', user.uid);
+      // Atualiza o histórico completo no banco de dados
+      await setDoc(userDocRef, { weightProfile: { history: [...historyWithoutOldEntry, newEntry] } }, { merge: true });
+
+      const updatedHistory = [...historyWithoutOldEntry, newEntry];
+      setWeightHistory(updatedHistory.sort((a, b) => new Date(b.date) - new Date(a.date)));
+      updateCalculations(prePregnancyWeight, height, updatedHistory);
+      setCurrentWeight('');
+      setEntryDate(getTodayString());
+      toast.success(oldEntry ? "Registro de peso atualizado!" : "Peso adicionado ao histórico!");
+    } catch (error) {
+      console.error("Erro ao adicionar/atualizar peso:", error);
+      toast.error("Erro ao salvar o registro.");
+    }
+  };
+
   const handleAddWeight = async () => {
     const parsedCurrentWeight = parseFloat(currentWeight);
     if (!user || !parsedCurrentWeight || !entryDate) { toast.warn("Preencha o peso e a data do registro."); return; }
     if (parsedCurrentWeight <= 0) { toast.warn('O peso deve ser um valor positivo.'); return; }
-    if (parsedCurrentWeight < 30 || parsedCurrentWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
+     if (parsedCurrentWeight < 30 || parsedCurrentWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
 
-    // CORREÇÃO: Adicionada a verificação de data
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
 
@@ -162,21 +205,14 @@ export default function WeightTrackerPage() {
       toast.warn("A data do registro não pode ser anterior ao início da gestação.");
       return;
     }
-
-    const newEntry = { weight: parsedCurrentWeight, date: entryDate, bmi: calculateBMI(parsedCurrentWeight, height) };
-    try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { weightProfile: { history: arrayUnion(newEntry) } }, { merge: true });
-      const updatedHistory = [...weightHistory, newEntry];
-      setWeightHistory(updatedHistory.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      updateCalculations(prePregnancyWeight, height, updatedHistory);
-      setCurrentWeight('');
-      setEntryDate(getTodayString());
-      toast.success("Peso adicionado ao histórico!");
-    } catch (error) {
-      console.error("Erro ao adicionar peso:", error);
-      toast.error("Erro ao adicionar peso.");
+    
+    // CORREÇÃO: Abre o modal em vez de mostrar o toast
+    if (weightHistory.some(entry => entry.date === entryDate)) {
+      setIsOverwriteModalOpen(true);
+      return;
     }
+
+    await proceedWithSave();
   };
   
   const openDeleteConfirmation = (entry) => {
@@ -213,7 +249,22 @@ export default function WeightTrackerPage() {
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmDeleteEntry} title="Confirmar Exclusão" message="Tem certeza que deseja apagar este registro de peso?"/>
       
+      {/* CORREÇÃO: Novo modal para substituição de registro */}
+      <ConfirmationModal 
+        isOpen={isOverwriteModalOpen} 
+        onClose={() => setIsOverwriteModalOpen(false)} 
+        onConfirm={async () => {
+          setIsOverwriteModalOpen(false);
+          await proceedWithSave();
+        }}
+        title="Substituir Registro?" 
+        message="Já existe um registro para esta data. Deseja substituí-lo com o novo peso?"
+        confirmButtonText="Substituir"
+        confirmButtonClass="bg-indigo-600 hover:bg-indigo-700"
+      />
+      
       <div className="flex items-center justify-center flex-grow p-4">
+        {/* ... (O restante do JSX permanece o mesmo) ... */}
         <div className="w-full max-w-3xl">
           <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
             Acompanhamento de Peso
@@ -229,8 +280,8 @@ export default function WeightTrackerPage() {
             {isEditing ? (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div><label htmlFor="height" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Altura (cm)</label><input type="number" id="height" value={height} onChange={(e) => setHeight(e.target.value)} placeholder="Ex: 165" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/></div>
-                  <div><label htmlFor="preWeight" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Peso Pré-Gestacional (kg)</label><input type="number" id="preWeight" value={prePregnancyWeight} onChange={(e) => setPrePregnancyWeight(e.target.value)} placeholder="Ex: 60.5" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/></div>
+                  <div><label htmlFor="height" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Altura (cm)</label><input type="tel" id="height" value={height} onChange={(e) => setHeight(e.target.value.replace(/[^0-9]/g, ''))} placeholder="Ex: 165" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/></div>
+                  <div><label htmlFor="preWeight" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Peso Pré-Gestacional (kg)</label><input type="tel" id="preWeight" value={prePregnancyWeight} onChange={handleWeightInput(setPrePregnancyWeight)} placeholder="Ex: 60.50" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/></div>
                 </div>
                 <button onClick={handleSaveInitialData} className="mt-4 w-full bg-indigo-600 text-white font-semibold py-2 px-6 rounded-lg hover:bg-indigo-700 transition-colors">Salvar Dados</button>
               </>
@@ -254,7 +305,7 @@ export default function WeightTrackerPage() {
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
                   <label className="block text-md font-medium text-slate-700 dark:text-slate-300 mb-2">Adicionar novo registro de peso</label>
                   <div className="flex flex-col sm:flex-row gap-3">
-                    <input type="number" value={currentWeight} onChange={(e) => setCurrentWeight(e.target.value)} placeholder="Peso em kg (Ex: 62.0)" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/>
+                    <input type="tel" value={currentWeight} onChange={handleWeightInput(setCurrentWeight)} placeholder="Peso em kg (Ex: 62.50)" className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/>
                     <input type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} className="w-full px-4 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/>
                     <button onClick={handleAddWeight} className="bg-rose-500 text-white font-semibold py-2 px-6 rounded-lg hover:bg-rose-600 transition-colors">Adicionar</button>
                   </div>

@@ -25,7 +25,7 @@ export default function CompletionCelebration({ onClose }) {
         '--ty': `${ty}px`,
         '--r': `${Math.random() * 720 - 360}deg`,
         animation: `confetti-burst 4s cubic-bezier(0.1, 1, 0.3, 1) forwards`,
-        animationDelay: `${0.35 + Math.random() * 0.2}s`,
+        animationDelay: `${0.3 + Math.random() * 0.2}s`,
       };
       return <ConfettiPiece key={i} style={style} />;
     }), 
