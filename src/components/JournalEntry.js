@@ -8,7 +8,13 @@ import { toast } from 'react-toastify';
 import { moodOptions, symptomOptions } from '@/data/journalData';
 import ConfirmationModal from './ConfirmationModal';
 
-const getTodayString = () => new Date().toISOString().split('T')[0];
+const getTodayString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
 export default function JournalEntry({ user, entry, onSave, onCancel, allEntries }) {
   const [date, setDate] = useState(getTodayString());

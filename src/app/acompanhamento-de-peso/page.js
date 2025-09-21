@@ -30,7 +30,13 @@ const getBMICategory = (bmi) => {
   if (bmi >= 30) return bmiCategories[3];
   return { range: 'N/A', category: '', recommendation: 'N/A' };
 };
-const getTodayString = () => new Date().toISOString().split('T')[0];
+const getTodayString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 const calculateGestationalAgeOnDate = (lmpDate, targetDate) => {
     if (!lmpDate || !targetDate) return '';
     const lmpTime = lmpDate.getTime();

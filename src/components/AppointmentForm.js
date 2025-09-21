@@ -3,13 +3,25 @@
 
 import { useState, useEffect } from 'react';
 import { db } from '@/lib/firebase';
-import { collection, addDoc, doc, setDoc } from 'firebase/firestore';
+import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
 import { appointmentTypes } from '@/data/appointmentData';
 
-const getTodayString = () => new Date().toISOString().split('T')[0];
+const getTodayString = () => {
+  const today = new Date();
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, '0');
+  const day = String(today.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+};
 
-export default function AppointmentForm({ user, appointmentToEdit, onSave, professionalSuggestions, locationSuggestions }) {
+const getUTCDate = (date) => {
+  if (!date) return null;
+  const d = new Date(date);
+  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
+};
+
+export default function AppointmentForm({ user, appointmentToEdit, onFinish, professionalSuggestions, locationSuggestions, lmpDate, dueDate }) {
   const [title, setTitle] = useState('');
   const [date, setDate] = useState(getTodayString());
   const [time, setTime] = useState('');
@@ -19,24 +31,21 @@ export default function AppointmentForm({ user, appointmentToEdit, onSave, profe
 
   useEffect(() => {
     if (appointmentToEdit) {
-      setTitle(appointmentToEdit.title);
-      setDate(appointmentToEdit.date);
+      setTitle(appointmentToEdit.title || appointmentToEdit.name);
+      setDate(appointmentToEdit.date || getTodayString());
       setTime(appointmentToEdit.time || '');
       setProfessional(appointmentToEdit.professional || '');
       setLocation(appointmentToEdit.location || '');
       setNotes(appointmentToEdit.notes || '');
+    } else {
+      setTitle('');
+      setDate(getTodayString());
+      setTime('');
+      setProfessional('');
+      setLocation('');
+      setNotes('');
     }
   }, [appointmentToEdit]);
-
-  const resetForm = () => {
-    setTitle('');
-    setDate(getTodayString());
-    setTime('');
-    setProfessional('');
-    setLocation('');
-    setNotes('');
-    onSave();
-  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -45,20 +54,69 @@ export default function AppointmentForm({ user, appointmentToEdit, onSave, profe
       toast.warn('Por favor, preencha o título e a data da consulta.');
       return;
     }
+    
+    // VALIDAÇÃO ATUALIZADA com tolerância de 2 semanas após o parto
+    if (lmpDate && dueDate) {
+      const selectedDate = new Date(date + 'T00:00:00Z');
+      const extendedDueDate = new Date(dueDate.getTime());
+      extendedDueDate.setUTCDate(extendedDueDate.getUTCDate() + 14); // Adiciona 14 dias
 
-    const appointmentData = { title, date, time, professional, location, notes };
+      if (selectedDate < lmpDate || selectedDate > extendedDueDate) {
+        toast.error('A data da consulta deve estar dentro do período da gestação.');
+        return;
+      }
+    }
+    
+    if (appointmentToEdit?.type === 'ultrasound' && lmpDate) {
+        const lmpUTCDate = getUTCDate(lmpDate);
+        const selectedDate = new Date(date + 'T00:00:00Z');
+        const idealStartDate = new Date(lmpUTCDate.getTime());
+        idealStartDate.setUTCDate(idealStartDate.getUTCDate() + appointmentToEdit.startWeek * 7);
+        const idealEndDate = new Date(lmpUTCDate.getTime());
+        idealEndDate.setUTCDate(idealEndDate.getUTCDate() + (appointmentToEdit.endWeek * 7) + 6);
+        const toleranceStartDate = new Date(idealStartDate.getTime());
+        toleranceStartDate.setUTCDate(toleranceStartDate.getUTCDate() - 14);
+        const toleranceEndDate = new Date(idealEndDate.getTime());
+        toleranceEndDate.setUTCDate(toleranceEndDate.getUTCDate() + 14);
+
+        if (selectedDate < toleranceStartDate || selectedDate > toleranceEndDate) {
+            toast.error("A data está fora do período recomendado (tolerância de 2 semanas).");
+            return;
+        }
+    }
 
     try {
       if (appointmentToEdit) {
-        const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentToEdit.id);
-        await setDoc(appointmentRef, appointmentData);
-        toast.success('Consulta atualizada com sucesso!');
+        if (appointmentToEdit.type === 'manual') {
+            const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentToEdit.id);
+            await setDoc(appointmentRef, { title, date, time, professional, location, notes }, { merge: true });
+            toast.success('Consulta atualizada com sucesso!');
+        } else if (appointmentToEdit.type === 'ultrasound') {
+            const userDocRef = doc(db, 'users', user.uid);
+            const docSnap = await getDoc(userDocRef);
+            if (docSnap.exists()) {
+                const scheduleData = docSnap.data().ultrasoundSchedule || {};
+                const updatedSchedule = { 
+                    ...scheduleData, 
+                    [appointmentToEdit.id]: { 
+                        ...scheduleData[appointmentToEdit.id], 
+                        scheduledDate: date, 
+                        time, 
+                        professional, 
+                        location, 
+                        notes 
+                    } 
+                };
+                await setDoc(userDocRef, { ultrasoundSchedule: updatedSchedule }, { merge: true });
+                toast.success('Ultrassom atualizado com sucesso!');
+            }
+        }
       } else {
         const appointmentsRef = collection(db, 'users', user.uid, 'appointments');
-        await addDoc(appointmentsRef, appointmentData);
+        await addDoc(appointmentsRef, { title, date, time, professional, location, notes });
         toast.success('Consulta adicionada com sucesso!');
       }
-      resetForm();
+      onFinish();
     } catch (error) {
       console.error('Erro ao salvar consulta:', error);
       toast.error('Não foi possível salvar a consulta.');
@@ -73,18 +131,19 @@ export default function AppointmentForm({ user, appointmentToEdit, onSave, profe
       <form onSubmit={handleSave} className="space-y-4">
         <div>
           <label htmlFor="title" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Título*</label>
-          <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Ex: Ultrassom Morfológico" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/>
+          <input type="text" id="title" value={title} onChange={(e) => setTitle(e.target.value)} disabled={appointmentToEdit?.type === 'ultrasound'} placeholder="Ex: Ultrassom Morfológico" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 disabled:opacity-50"/>
           <div className="flex flex-wrap gap-2 mt-2">
             {appointmentTypes.map(type => (
               <button 
                 key={type} 
                 type="button" 
                 onClick={() => setTitle(type)} 
+                disabled={appointmentToEdit?.type === 'ultrasound'}
                 className={`px-3 py-1 text-xs rounded-full transition-colors ${
                   title === type
                     ? 'bg-indigo-600 text-white'
                     : 'bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600'
-                }`}
+                } disabled:opacity-50 disabled:cursor-not-allowed`}
               >
                 {type}
               </button>
@@ -120,11 +179,9 @@ export default function AppointmentForm({ user, appointmentToEdit, onSave, profe
           <textarea id="notes" rows="3" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Dúvidas para perguntar, resultados de exames..." className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"></textarea>
         </div>
         <div className="flex justify-end gap-4">
-          {appointmentToEdit && (
-            <button type="button" onClick={resetForm} className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600">
-              Cancelar Edição
-            </button>
-          )}
+          <button type="button" onClick={onFinish} className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600">
+            Cancelar
+          </button>
           <button type="submit" className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700">
             {appointmentToEdit ? 'Atualizar' : 'Salvar'}
           </button>

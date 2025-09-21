@@ -88,13 +88,11 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
     const newDoneStatus = !appointment.done;
 
     if (newDoneStatus) {
-      // VALIDAÇÃO para não concluir ultrassom sem data
       if (appointment.type === 'ultrasound' && !appointment.isScheduled) {
         toast.warn("Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.");
-        handleStartEditing(appointment); // Abre a edição para facilitar
+        handleStartEditing(appointment);
         return;
       }
-
       const today = new Date(); today.setHours(0, 0, 0, 0);
       const appointmentDate = new Date(appointment.date + 'T00:00:00Z');
       if (appointmentDate > today) {
@@ -227,9 +225,21 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
     }
   };
 
+  const getSortDate = (item) => {
+    if (item.date) {
+      return new Date(item.date);
+    }
+    if (item.type === 'ultrasound' && lmpDate) {
+      const idealStartDate = new Date(lmpDate);
+      idealStartDate.setDate(idealStartDate.getDate() + item.startWeek * 7);
+      return idealStartDate;
+    }
+    return new Date('2999-12-31');
+  };
+
   const upcomingEvents = combinedAppointments
     .filter(event => !event.done)
-    .sort((a, b) => new Date(a.date) - new Date(b.date));
+    .sort((a, b) => getSortDate(a) - getSortDate(b));
 
   if (loading) {
     return <div className="text-center p-4">Carregando agenda...</div>;
@@ -318,7 +328,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
             <Link href="/consultas" className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm text-center">
               Ver Histórico Completo
             </Link>
-            <Link href="/consultas" className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors text-sm text-center">
+            <Link href="/consultas?new=true" className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors text-sm text-center">
               Adicionar Nova Consulta
             </Link>
           </div>
@@ -326,7 +336,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
       ) : (
         <div className="text-center">
           <p className="text-slate-500 dark:text-slate-400">Nenhum compromisso futuro encontrado.</p>
-          <Link href="/consultas" className="mt-4 inline-block px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm">
+          <Link href="/consultas?new=true" className="mt-4 inline-block px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-semibold hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm">
             Ver Histórico e Adicionar
           </Link>
         </div>
