@@ -2,36 +2,25 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import Link from 'next/link';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { doc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
-import { toast } from 'react-toastify'; // 1. IMPORTE O TOAST
+import { toast } from 'react-toastify';
 import AppNavigation from '@/components/AppNavigation';
+import { useUser } from '@/context/UserContext';
+import { useKickCounter } from '@/hooks/useKickCounter';
+import { formatTime } from '@/lib/dateUtils';
 
 export default function KickCounterPage() {
-  const [user, setUser] = useState(null);
+  const { user, loading: userLoading } = useUser();
+  const { sessions, loading: sessionsLoading, setSessions } = useKickCounter(user);
+
   const [kickCount, setKickCount] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
   const [timer, setTimer] = useState(0);
   const [startTime, setStartTime] = useState(null);
-  const [sessions, setSessions] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        fetchSessions(currentUser.uid);
-      } else {
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
 
   useEffect(() => {
     let interval = null;
@@ -42,23 +31,6 @@ export default function KickCounterPage() {
     }
     return () => clearInterval(interval);
   }, [isCounting]);
-  
-  const fetchSessions = async (uid) => {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists() && docSnap.data().kickSessions) {
-      setSessions(docSnap.data().kickSessions.sort((a, b) => b.timestamp - a.timestamp));
-    }
-    setLoading(false);
-  };
-
-  const formatTime = (seconds) => {
-    const getSeconds = `0${seconds % 60}`.slice(-2);
-    const minutes = Math.floor(seconds / 60);
-    const getMinutes = `0${minutes % 60}`.slice(-2);
-    const getHours = `0${Math.floor(seconds / 3600)}`.slice(-2);
-    return `${getHours}:${getMinutes}:${getSeconds}`;
-  };
 
   const handleStart = () => {
     setIsCounting(true);
@@ -73,7 +45,6 @@ export default function KickCounterPage() {
     }
   };
   
-  // 2. FUNÇÕES ATUALIZADAS COM TOASTIFY
   const handleStopAndSave = async () => {
     setIsCounting(false);
     if (user && kickCount > 0) {
@@ -86,7 +57,6 @@ export default function KickCounterPage() {
       try {
         const userDocRef = doc(db, 'users', user.uid);
         await setDoc(userDocRef, { kickSessions: arrayUnion(newSession) }, { merge: true });
-        setSessions(prevSessions => [newSession, ...prevSessions].sort((a, b) => b.timestamp - a.timestamp));
         toast.success("Sessão salva no histórico!");
       } catch (e) {
         console.error("Erro ao salvar sessão:", e);
@@ -107,7 +77,6 @@ export default function KickCounterPage() {
     try {
       const userDocRef = doc(db, 'users', user.uid);
       await updateDoc(userDocRef, { kickSessions: arrayRemove(sessionToDelete) });
-      setSessions(prevSessions => prevSessions.filter(s => s.timestamp !== sessionToDelete.timestamp));
       toast.info("Sessão removida do histórico.");
     } catch (error) {
       console.error("Erro ao apagar sessão: ", error);
@@ -118,6 +87,8 @@ export default function KickCounterPage() {
     }
   };
   
+  const loading = userLoading || sessionsLoading;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center flex-grow">
@@ -166,24 +137,24 @@ export default function KickCounterPage() {
             )}
           </div>
 
-          <div className="mt-8 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-200 p-4 rounded-r-lg space-y-4 text-sm">
+          <div className="mt-8 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl space-y-6 border-l-4 border-blue-500">
             <div>
-              <h3 className="font-bold text-lg">Por que contar os movimentos?</h3>
-              <p className="mt-1">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">Por que contar os movimentos?</h3>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                 Esta é uma ferramenta importante para monitorar o bem-estar do seu bebê, especialmente no terceiro trimestre (a partir da 28ª semana). Movimentos fetais regulares são um forte sinal de que o bebê está saudável. Uma mudança no padrão pode ser um sinal de alerta precoce, permitindo que você e seu médico ajam rapidamente.
               </p>
             </div>
             <div>
-              <h3 className="font-bold text-lg">Como fazer a contagem?</h3>
-              <ul className="list-disc list-inside mt-1 space-y-1">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">Como fazer a contagem?</h3>
+              <ul className="list-disc list-inside mt-1 space-y-1 text-sm text-slate-600 dark:text-slate-400">
                 <li><strong>Escolha um horário:</strong> Dê preferência a um momento em que seu bebê costuma estar mais ativo (geralmente à noite ou após uma refeição).</li>
                 <li><strong>Fique confortável:</strong> Deite-se de lado (preferencialmente o esquerdo, para melhorar a circulação) ou sente-se com os pés para cima.</li>
                 <li><strong>Conte os movimentos:</strong> Inicie a sessão e registre cada movimento que sentir (chutes, giros, vibrações). O objetivo comum é sentir <strong>10 movimentos em até 2 horas</strong>.</li>
               </ul>
             </div>
             <div>
-              <h3 className="font-bold text-lg">Quando devo procurar meu médico?</h3>
-              <p className="mt-1">
+              <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">Quando devo procurar meu médico?</h3>
+              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
                 O mais importante é conhecer o padrão <strong>normal</strong> do seu bebê. Se você notar uma diminuição significativa e prolongada na atividade dele, ou se o tempo para atingir 10 movimentos aumentar muito, entre em contato com seu obstetra. <strong>Confie no seu instinto.</strong>
               </p>
             </div>

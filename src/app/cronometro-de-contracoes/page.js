@@ -134,9 +134,10 @@ export default function ContractionTimerPage() {
                         )}
                     </div>
                     
-                    <div className="mt-8 bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500 text-blue-800 dark:text-blue-200 p-4 rounded-r-lg space-y-2 text-sm">
-                        <h3 className="font-bold text-lg">Quando ir para a maternidade?</h3>
-                        <p>Uma referência comum é a <strong>Regra 5-1-1</strong>: contrações que duram <strong>1 minuto</strong>, ocorrem a cada <strong>5 minutos</strong>, por pelo menos <strong>1 hora</strong>. No entanto, siga sempre a orientação do seu médico. Esta ferramenta é um auxílio, mas não substitui a avaliação profissional.</p>
+                    {/* SEÇÃO MODIFICADA */}
+                    <div className="mt-8 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl space-y-2 border-l-4 border-blue-500">
+                        <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">Quando ir para a maternidade?</h3>
+                        <p className="text-sm text-slate-600 dark:text-slate-400">Uma referência comum é a <strong>Regra 5-1-1</strong>: contrações que duram <strong>1 minuto</strong>, ocorrem a cada <strong>5 minutos</strong>, por pelo menos <strong>1 hora</strong>. No entanto, siga sempre a orientação do seu médico. Esta ferramenta é um auxílio, mas não substitui a avaliação profissional.</p>
                     </div>
 
                     {contractions.length > 0 && (
@@ -146,11 +147,10 @@ export default function ContractionTimerPage() {
                                 {contractions.map((c) => {
                                     const currentDate = new Date(c.startTime.seconds * 1000).toLocaleDateString('pt-BR');
                                     const showDateHeader = currentDate !== lastDate;
-                                    lastDate = currentDate; // Atualiza a última data vista
+                                    lastDate = currentDate;
 
                                     return (
                                         <div key={c.id}>
-                                            {/* Renderiza o cabeçalho de data apenas se for uma nova data */}
                                             {showDateHeader && (
                                                 <h3 className="text-lg font-bold text-slate-600 dark:text-slate-300 pt-4 pb-2 border-b border-slate-200 dark:border-slate-700">
                                                     {currentDate}

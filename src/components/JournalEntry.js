@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
@@ -15,6 +15,7 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
   const [notes, setNotes] = useState('');
   const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
   const [isExistingEntry, setIsExistingEntry] = useState(false);
+  const notesTextareaRef = useRef(null); // Ref para o textarea
 
   useEffect(() => {
     if (entry) {
@@ -33,6 +34,16 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
     }
   }, [entry, allEntries]);
 
+  // Efeito para ajustar a altura do textarea ao carregar uma anotação existente
+  useEffect(() => {
+    if (notesTextareaRef.current) {
+        const textarea = notesTextareaRef.current;
+        textarea.style.height = 'auto'; // Reseta a altura
+        textarea.style.height = `${textarea.scrollHeight}px`; // Ajusta para o conteúdo
+    }
+  }, [notes]);
+
+
   useEffect(() => {
     if (!entry) {
       setIsExistingEntry(allEntries.some(e => e.id === date));
@@ -43,6 +54,14 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
     setSelectedSymptoms(prev =>
       prev.includes(symptom) ? prev.filter(s => s !== symptom) : [...prev, symptom]
     );
+  };
+  
+  // Função para lidar com a mudança no textarea de anotações
+  const handleNotesChange = (e) => {
+    const textarea = e.target;
+    setNotes(textarea.value);
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
   };
 
   const proceedWithSave = async () => {
@@ -69,7 +88,6 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
       return;
     }
     
-    // NOVA VALIDAÇÃO: Impede o salvamento de um registro totalmente vazio
     if (!mood && selectedSymptoms.length === 0 && notes.trim() === '') {
       toast.warn('Por favor, registre pelo menos um humor, sintoma ou anotação.');
       return;
@@ -117,7 +135,6 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
         </div>
 
         <div className="mb-4">
-          {/* Rótulo do humor atualizado para não ser mais obrigatório */}
           <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Humor</label>
           <div className="flex flex-wrap gap-2">
             {moodOptions.map(option => (
@@ -139,16 +156,22 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
           </div>
         </div>
         
+        {/* CAMPO DE ANOTAÇÕES MODIFICADO */}
         <div className="mb-6">
           <label htmlFor="notes" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Anotações Adicionais</label>
           <textarea 
             id="notes" 
+            ref={notesTextareaRef}
             rows="3" 
             value={notes}
-            onChange={(e) => setNotes(e.target.value)}
+            onChange={handleNotesChange}
+            maxLength="500"
             placeholder="Algum detalhe importante sobre o seu dia..."
-            className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"
+            className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 resize-none overflow-hidden"
           ></textarea>
+           <div className="text-right text-sm text-slate-400 dark:text-slate-500">
+            {notes.length} / 500
+          </div>
         </div>
 
         <div className="flex justify-end gap-4">

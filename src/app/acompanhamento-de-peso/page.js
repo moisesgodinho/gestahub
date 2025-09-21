@@ -2,14 +2,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
+import { doc, updateDoc, arrayRemove, setDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
 import AppNavigation from '@/components/AppNavigation';
 import WeightChart from '@/components/WeightChart';
-import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge';
+import { useUser } from '@/context/UserContext';
+import { useWeightData } from '@/hooks/useWeightData'; // Importa o hook
 import { getTodayString, calculateGestationalAgeOnDate } from '@/lib/dateUtils';
 
 const bmiCategories = [
@@ -18,11 +18,13 @@ const bmiCategories = [
   { category: 'Sobrepeso', range: '25.0 - 29.9', recommendation: '7 a 11.5 kg' },
   { category: 'Obesidade', range: '≥ 30.0', recommendation: '5 a 9 kg' },
 ];
+
 const calculateBMI = (weight, height) => {
   if (!weight || !height) return 0;
   const heightInMeters = height / 100;
   return parseFloat((weight / (heightInMeters * heightInMeters)).toFixed(2));
 };
+
 const getBMICategory = (bmi) => {
   if (bmi < 18.5) return bmiCategories[0];
   if (bmi >= 18.5 && bmi <= 24.9) return bmiCategories[1];
@@ -32,113 +34,37 @@ const getBMICategory = (bmi) => {
 };
 
 export default function WeightTrackerPage() {
-  // --- (Estados existentes) ---
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
+  const { user, loading: userLoading } = useUser();
+  const { loading: dataLoading, weightProfile, weightHistory, calculations, estimatedLmp, dueDate, setWeightHistory } = useWeightData(user);
+  
   const [height, setHeight] = useState('');
   const [prePregnancyWeight, setPrePregnancyWeight] = useState('');
-  const [estimatedLmp, setEstimatedLmp] = useState(null);
-  const [dueDate, setDueDate] = useState(null);
   const [currentWeight, setCurrentWeight] = useState('');
   const [entryDate, setEntryDate] = useState(getTodayString());
-  const [weightHistory, setWeightHistory] = useState([]);
-  const [initialBmi, setInitialBmi] = useState(0);
-  const [currentBmi, setCurrentBmi] = useState(0);
-  const [currentGain, setCurrentGain] = useState(0);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
-  
   const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        fetchUserData(currentUser.uid);
-      } else {
-        setLoading(false);
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const fetchUserData = async (uid) => {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      const userData = docSnap.data();
-      const lmpDate = getEstimatedLmp(userData); // Usa a função central
-
-      if (lmpDate) {
-        setEstimatedLmp(lmpDate);
-        setDueDate(getDueDate(lmpDate)); // Usa a função central
-      }
-
-      if (userData.weightProfile) {
-        const profile = userData.weightProfile;
-        if (profile.height && profile.prePregnancyWeight) {
-            setIsEditing(false);
-        } else {
-            setIsEditing(true);
-        }
-        const history = profile.history?.sort((a, b) => new Date(b.date) - new Date(a.date)) || [];
-        setHeight(profile.height || '');
-        setPrePregnancyWeight(profile.prePregnancyWeight || '');
-        setWeightHistory(history);
-        if (profile.height && profile.prePregnancyWeight) {
-          updateCalculations(profile.prePregnancyWeight, profile.height, history);
-        }
-      } else {
-        setIsEditing(true);
-      }
-    } else {
-        setIsEditing(true);
+    if (weightProfile) {
+      setHeight(weightProfile.height || '');
+      setPrePregnancyWeight(weightProfile.prePregnancyWeight || '');
+      setIsEditing(!weightProfile.height || !weightProfile.prePregnancyWeight);
+    } else if (!dataLoading) {
+      setIsEditing(true);
     }
-    setLoading(false);
-  };
+  }, [weightProfile, dataLoading]);
   
-  const updateCalculations = (initialWeight, userHeight, history) => {
-    const bmi = calculateBMI(initialWeight, userHeight);
-    setInitialBmi(bmi);
-    if (history && history.length > 0) {
-      const latestEntry = [...history].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-      setCurrentGain((latestEntry.weight - initialWeight).toFixed(2));
-      setCurrentBmi(latestEntry.bmi);
-    } else {
-      setCurrentGain(0);
-      setCurrentBmi(bmi);
-    }
-  };
-
-  // NOVA FUNÇÃO handleWeightInput
   const handleWeightInput = (setter) => (e) => {
-    // 1. Remove tudo que não for número
     let value = e.target.value.replace(/[^0-9]/g, '');
-
-    // 2. Limita o total de dígitos a 5
-    if (value.length > 5) {
-        value = value.slice(0, 5);
-    }
-
+    if (value.length > 5) value = value.slice(0, 5);
     let formattedValue = value;
-
-    // 3. Aplica a formatação com ponto decimal baseada no tamanho
-    if (value.length === 3) {
-        // Ex: 655 -> 65.5
-        formattedValue = value.slice(0, 2) + '.' + value.slice(2);
-    } else if (value.length === 4) {
-        // Ex: 6551 -> 65.51
-        formattedValue = value.slice(0, 2) + '.' + value.slice(2);
-    } else if (value.length === 5) {
-        // Ex: 10255 -> 102.55
-        formattedValue = value.slice(0, 3) + '.' + value.slice(3);
-    }
-    
-    // 4. Atualiza o estado com o valor formatado
+    if (value.length === 3) formattedValue = value.slice(0, 2) + '.' + value.slice(2);
+    else if (value.length === 4) formattedValue = value.slice(0, 2) + '.' + value.slice(2);
+    else if (value.length === 5) formattedValue = value.slice(0, 3) + '.' + value.slice(3);
     setter(formattedValue);
   };
-
 
   const handleSaveInitialData = async () => {
     const parsedHeight = parseFloat(height);
@@ -148,11 +74,9 @@ export default function WeightTrackerPage() {
     if (parsedHeight < 100 || parsedHeight > 250) { toast.warn('Por favor, insira uma altura realista (entre 100 e 250 cm).'); return; }
     if (parsedWeight < 30 || parsedWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
 
-    const dataToUpdate = { height: parsedHeight, prePregnancyWeight: parsedWeight };
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { weightProfile: dataToUpdate }, { merge: true });
-      updateCalculations(parsedWeight, parsedHeight, weightHistory);
+      await setDoc(userDocRef, { weightProfile: { height: parsedHeight, prePregnancyWeight: parsedWeight, history: weightHistory } }, { merge: true });
       toast.success('Dados iniciais salvos com sucesso!');
       setIsEditing(false);
     } catch (error) {
@@ -164,17 +88,12 @@ export default function WeightTrackerPage() {
   const proceedWithSave = async () => {
     const parsedCurrentWeight = parseFloat(currentWeight);
     const newEntry = { weight: parsedCurrentWeight, date: entryDate, bmi: calculateBMI(parsedCurrentWeight, height) };
-    
     const oldEntry = weightHistory.find(entry => entry.date === entryDate);
     const historyWithoutOldEntry = oldEntry ? weightHistory.filter(entry => entry.date !== entryDate) : weightHistory;
 
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { weightProfile: { history: [...historyWithoutOldEntry, newEntry] } }, { merge: true });
-
-      const updatedHistory = [...historyWithoutOldEntry, newEntry];
-      setWeightHistory(updatedHistory.sort((a, b) => new Date(b.date) - new Date(a.date)));
-      updateCalculations(prePregnancyWeight, height, updatedHistory);
+      await setDoc(userDocRef, { weightProfile: { ...weightProfile, history: [...historyWithoutOldEntry, newEntry] } }, { merge: true });
       setCurrentWeight('');
       setEntryDate(getTodayString());
       toast.success(oldEntry ? "Registro de peso atualizado!" : "Peso adicionado ao histórico!");
@@ -192,24 +111,20 @@ export default function WeightTrackerPage() {
 
     const today = new Date();
     today.setUTCHours(0, 0, 0, 0);
-
     const selectedDate = new Date(entryDate + 'T00:00:00Z');
 
     if (selectedDate > today) {
       toast.warn("A data do registro não pode ser no futuro.");
       return;
     }
-
     if (estimatedLmp && selectedDate < estimatedLmp) {
       toast.warn("A data do registro não pode ser anterior ao início da gestação.");
       return;
     }
-    
     if (weightHistory.some(entry => entry.date === entryDate)) {
       setIsOverwriteModalOpen(true);
       return;
     }
-
     await proceedWithSave();
   };
   
@@ -225,7 +140,6 @@ export default function WeightTrackerPage() {
       await updateDoc(userDocRef, { "weightProfile.history": arrayRemove(entryToDelete) });
       const updatedHistory = weightHistory.filter(e => e.date !== entryToDelete.date || e.weight !== entryToDelete.weight);
       setWeightHistory(updatedHistory);
-      updateCalculations(prePregnancyWeight, height, updatedHistory);
       toast.info("Registro de peso removido.");
     } catch (error) {
       console.error("Erro ao apagar registro:", error);
@@ -235,13 +149,14 @@ export default function WeightTrackerPage() {
       setEntryToDelete(null);
     }
   };
+  
+  const loading = userLoading || dataLoading;
 
   if (loading) {
-    return <main className="flex items-center justify-center min-h-screen bg-gray-50 dark:bg-slate-900"><p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p></main>;
+    return <main className="flex items-center justify-center min-h-screen"><p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p></main>;
   }
   
-  const recommendation = getBMICategory(initialBmi);
-  const initialCategory = recommendation.category;
+  const recommendation = getBMICategory(calculations.initialBmi);
 
   return (
     <>
@@ -261,7 +176,6 @@ export default function WeightTrackerPage() {
       />
       
       <div className="flex items-center justify-center flex-grow p-4">
-        {/* ... (O restante do JSX da página permanece o mesmo) ... */}
         <div className="w-full max-w-3xl">
           <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
             Acompanhamento de Peso
@@ -294,9 +208,9 @@ export default function WeightTrackerPage() {
             <>
               <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-center mb-6">
-                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">IMC Inicial</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{initialBmi}</p></div>
-                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">IMC Atual</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{currentBmi}</p></div>
-                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Ganho Total</p><p className="font-bold text-lg text-green-600 dark:text-green-400">{currentGain} kg</p></div>
+                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">IMC Inicial</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{calculations.initialBmi}</p></div>
+                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">IMC Atual</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{calculations.currentBmi}</p></div>
+                  <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Ganho Total</p><p className="font-bold text-lg text-green-600 dark:text-green-400">{calculations.currentGain} kg</p></div>
                   <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg"><p className="text-xs text-slate-500 dark:text-slate-400">Meta de Ganho</p><p className="font-bold text-lg text-indigo-600 dark:text-indigo-400">{recommendation.recommendation}</p></div>
                 </div>
                 <div className="border-t border-slate-200 dark:border-slate-700 pt-4">
@@ -314,7 +228,7 @@ export default function WeightTrackerPage() {
                 <p className="text-xs text-center text-slate-500 dark:text-slate-400 mb-4">A meta de ganho de peso é baseada no seu IMC pré-gestacional.</p>
                 <div className="space-y-3">
                   {bmiCategories.map((item) => {
-                    const isActive = item.category === initialCategory;
+                    const isActive = item.category === recommendation.category;
                     return (
                       <div key={item.category} className={`p-4 rounded-lg transition-all ${isActive ? 'border-l-4 border-rose-500 bg-slate-100 dark:bg-slate-700/50' : 'bg-slate-50 dark:bg-slate-700/20'}`}>
                         <p className={`font-semibold ${isActive ? 'text-rose-500 dark:text-rose-400' : 'text-slate-700 dark:text-slate-200'}`}>{item.category} <span className="font-normal text-sm text-slate-500 dark:text-slate-400">(IMC {item.range})</span></p>

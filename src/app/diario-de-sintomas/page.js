@@ -1,42 +1,18 @@
 // src/app/diario-de-sintomas/page.js
 'use client';
 
-import { useState, useEffect } from 'react';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase';
-import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
+import { useState } from 'react';
 import AppNavigation from '@/components/AppNavigation';
 import JournalEntry from '@/components/JournalEntry';
 import JournalHistory from '@/components/JournalHistory';
-import SymptomChart from '@/components/SymptomChart'; // 1. IMPORTE O NOVO COMPONENTE
+import SymptomChart from '@/components/SymptomChart';
+import { useUser } from '@/context/UserContext'; // Usaremos o useUser para obter o usuário
+import { useJournalEntries } from '@/hooks/useJournalEntries'; // 1. IMPORTE O NOVO HOOK
 
 export default function JournalPage() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [entries, setEntries] = useState([]);
+  const { user, loading: userLoading } = useUser(); // Obtém o usuário do contexto
+  const { entries, loading: entriesLoading } = useJournalEntries(user); // 2. USA O HOOK PARA BUSCAR OS DADOS
   const [selectedEntry, setSelectedEntry] = useState(null);
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-      if (currentUser) {
-        const entriesRef = collection(db, 'users', currentUser.uid, 'symptomEntries');
-        const q = query(entriesRef, orderBy('date', 'desc'));
-        
-        const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-          const fetchedEntries = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-          setEntries(fetchedEntries);
-          setLoading(false);
-        });
-
-        return () => unsubscribeSnapshot();
-      } else {
-        setLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
 
   const handleEdit = (entry) => {
     setSelectedEntry(entry);
@@ -46,6 +22,9 @@ export default function JournalPage() {
   const handleFinishEditing = () => {
     setSelectedEntry(null);
   };
+
+  // Combina os estados de carregamento
+  const loading = userLoading || entriesLoading;
 
   if (loading) {
     return <div className="flex items-center justify-center flex-grow"><p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p></div>;
@@ -66,7 +45,6 @@ export default function JournalPage() {
           allEntries={entries} 
         />
 
-        {/* 2. ADICIONE O COMPONENTE DO GRÁFICO AQUI */}
         {entries.length > 0 && <SymptomChart entries={entries} />}
 
         <JournalHistory entries={entries} onEdit={handleEdit} user={user} />
