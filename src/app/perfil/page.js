@@ -2,13 +2,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { onAuthStateChanged, signOut } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { signOut } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import { useRouter } from 'next/navigation';
 import { toast } from 'react-toastify';
 import { useUser } from '@/context/UserContext';
 import AppNavigation from '@/components/AppNavigation';
+import Card from '@/components/Card'; // Supondo que Card.js foi criado
 
 // Função para calcular a idade a partir da data de nascimento
 const calculateAge = (birthDateString) => {
@@ -109,7 +110,7 @@ export default function ProfilePage() {
         <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
           Seu Perfil
         </h1>
-        <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
+        <Card className="mb-6">
           {user && (
             <div className="space-y-4">
               {isEditing ? (
@@ -146,7 +147,6 @@ export default function ProfilePage() {
             </div>
           )}
 
-          {/* AQUI ESTÁ A ALTERAÇÃO: removi 'flex-col sm:flex-row' para manter o layout flexível */}
           <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700 flex flex-row justify-between items-center gap-4">
             <div>
               {isEditing ? (
@@ -165,8 +165,8 @@ export default function ProfilePage() {
               Sair
             </button>
           </div>
-        </div>
-      <AppNavigation />
+        </Card>
+        <AppNavigation />
       </div>
     </div>
   );

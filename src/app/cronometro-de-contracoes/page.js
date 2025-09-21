@@ -8,12 +8,7 @@ import { collection, addDoc, onSnapshot, query, orderBy, deleteDoc, doc } from '
 import AppNavigation from '@/components/AppNavigation';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
-
-const formatTime = (seconds) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = seconds % 60;
-    return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
-};
+import { formatTime } from '@/lib/dateUtils';
 
 export default function ContractionTimerPage() {
     const [user, setUser] = useState(null);

@@ -5,31 +5,7 @@ import { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
-
-// Funções auxiliares de data
-const parseDateString = (dateStr) => {
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return null;
-  const [day, month, year] = dateStr.split('/').map(Number);
-  const dateObj = new Date(Date.UTC(year, month - 1, day)); // Usar UTC na criação
-  if (dateObj.getUTCFullYear() !== year || dateObj.getUTCMonth() !== month - 1 || dateObj.getUTCDate() !== day) {
-    return null;
-  }
-  return dateObj;
-};
-
-// CORREÇÃO: Padronizando a função de formatação
-const formatDateForDisplay = (date) => {
-    if (!date) return '';
-    // Adiciona T00:00:00Z para garantir que seja interpretado como UTC
-    const dateObj = new Date(date + 'T00:00:00Z');
-    return dateObj.toLocaleDateString('pt-BR', { timeZone: 'UTC' });
-}
-
-const formatDateForInput = (dateStr) => {
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return '';
-    const [day, month, year] = dateStr.split('/');
-    return `${year}-${month}-${day}`;
-};
+import { parseDateString, formatDateForDisplay, formatDateForInput } from '@/lib/dateUtils';
 
 export default function CalculadoraDUM({ user, onSaveSuccess, onCancel }) {
   const [lmp, setLmp] = useState('');

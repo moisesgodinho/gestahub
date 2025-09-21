@@ -5,29 +5,7 @@ import { useState, useEffect } from 'react';
 import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
-
-const parseDateString = (dateStr) => {
-  if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return null;
-  const [day, month, year] = dateStr.split('/').map(Number);
-  const dateObj = new Date(year, month - 1, day);
-  if (dateObj.getFullYear() !== year || dateObj.getMonth() !== month - 1 || dateObj.getDate() !== day) {
-    return null;
-  }
-  return dateObj;
-};
-const formatDateForDisplay = (date) => {
-    if (!date) return '';
-    const dateObj = new Date(date);
-    const day = String(dateObj.getUTCDate()).padStart(2, '0');
-    const month = String(dateObj.getUTCMonth() + 1).padStart(2, '0');
-    const year = dateObj.getUTCFullYear();
-    return `${day}/${month}/${year}`;
-}
-const formatDateForInput = (dateStr) => {
-    if (!/^\d{2}\/\d{2}\/\d{4}$/.test(dateStr)) return '';
-    const [day, month, year] = dateStr.split('/');
-    return `${year}-${month}-${day}`;
-};
+import { parseDateString, formatDateForDisplay, formatDateForInput } from '@/lib/dateUtils';
 
 export default function CalculadoraUltrassom({ user, onSaveSuccess, onCancel }) {
   const [examDate, setExamDate] = useState('');

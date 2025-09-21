@@ -3,15 +3,15 @@
 
 import { useState, useEffect } from 'react';
 import { onAuthStateChanged } from 'firebase/auth';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore'; // Importe o setDoc
+import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
 import { auth, db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
 import AppNavigation from '@/components/AppNavigation';
 import WeightChart from '@/components/WeightChart';
 import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge';
+import { getTodayString, calculateGestationalAgeOnDate } from '@/lib/dateUtils';
 
-// --- (O restante das funções auxiliares permanece o mesmo) ---
 const bmiCategories = [
   { category: 'Baixo Peso', range: '< 18.5', recommendation: '12.5 a 18 kg' },
   { category: 'Peso Adequado', range: '18.5 - 24.9', recommendation: '11.5 a 16 kg' },
@@ -30,25 +30,6 @@ const getBMICategory = (bmi) => {
   if (bmi >= 30) return bmiCategories[3];
   return { range: 'N/A', category: '', recommendation: 'N/A' };
 };
-const getTodayString = () => {
-  const today = new Date();
-  const year = today.getFullYear();
-  const month = String(today.getMonth() + 1).padStart(2, '0');
-  const day = String(today.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-const calculateGestationalAgeOnDate = (lmpDate, targetDate) => {
-    if (!lmpDate || !targetDate) return '';
-    const lmpTime = lmpDate.getTime();
-    const targetTime = new Date(targetDate + 'T00:00:00Z').getTime();
-    const gestationalAgeInMs = targetTime - lmpTime;
-    const gestationalAgeInDays = Math.floor(gestationalAgeInMs / (1000 * 60 * 60 * 24));
-    if (gestationalAgeInDays < 0) return '';
-    const weeks = Math.floor(gestationalAgeInDays / 7);
-    const days = gestationalAgeInDays % 7;
-    return `${weeks}s ${days}d`;
-};
-
 
 export default function WeightTrackerPage() {
   // --- (Estados existentes) ---
