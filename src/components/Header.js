@@ -50,25 +50,27 @@ export default function Header() {
 
   return (
     <header className="w-full p-4">
-      <div className="container mx-auto max-w-3xl flex justify-between items-center">
-        <Link href="/" className="text-2xl font-bold text-rose-500 dark:text-rose-400">
-          GestaHub
-        </Link>
+      <div className={`container mx-auto max-w-3xl flex items-center ${user ? 'justify-between' : 'justify-end'}`}>
+        {user && (
+            <Link href="/" className="text-2xl font-bold text-rose-500 dark:text-rose-400">
+                GestaHub
+            </Link>
+        )}
 
         <div className="flex items-center gap-4">
           {user && (
-            <span className="hidden sm:block text-slate-700 dark:text-slate-300">
-              Olá, <span className="font-semibold text-rose-500 dark:text-rose-400">{getDisplayName()}</span>!
-            </span>
+            <>
+                <span className="hidden sm:block text-slate-700 dark:text-slate-300">
+                Olá, <span className="font-semibold text-rose-500 dark:text-rose-400">{getDisplayName()}</span>!
+                </span>
+                <Link href="/perfil" title="Meu Perfil" className="p-2 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">
+                    <UserIcon className="w-5 h-5" />
+                </Link>
+            </>
           )}
           <button onClick={toggleTheme} className="p-2 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">
             {theme === 'light' ? <MoonIcon className="w-5 h-5" /> : <SunIcon className="w-5 h-5" />}
           </button>
-          {user && (
-            <Link href="/perfil" title="Meu Perfil" className="p-2 rounded-full bg-gray-200 dark:bg-slate-700 text-gray-800 dark:text-gray-200 hover:bg-gray-300 dark:hover:bg-slate-600 transition-colors">
-              <UserIcon className="w-5 h-5" />
-            </Link>
-          )}
         </div>
       </div>
     </header>
