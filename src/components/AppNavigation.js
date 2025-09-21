@@ -6,10 +6,9 @@ import { usePathname } from 'next/navigation';
 
 const navLinks = [
   { href: '/', title: 'Página Inicial', description: 'Veja o resumo da sua gestação.' },
-  { href: '/consultas', title: 'Consultas e Exames', description: 'Organize seus compromissos médicos.' },
+  { href: '/diario-de-sintomas', title: 'Diário de Sintomas', description: 'Registre seu humor e sintomas diários.' },
   { href: '/acompanhamento-de-peso', title: 'Acompanhamento de Peso', description: 'Registre seu peso e veja seu progresso.' },
   { href: '/contador-de-movimentos', title: 'Contador de Movimentos', description: 'Monitore os movimentos do seu bebê.' },
-  { href: '/diario-de-sintomas', title: 'Diário de Sintomas', description: 'Registre seu humor e sintomas diários.' },
   { href: '/cronometro-de-contracoes', title: 'Cronômetro de Contrações', description: 'Monitore a duração e frequência das contrações.' }
 ];
 
