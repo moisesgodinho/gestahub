@@ -4,23 +4,14 @@
 import { useState } from 'react';
 import { signInWithPopup } from 'firebase/auth';
 import { auth, googleProvider } from '@/lib/firebase';
+import Image from 'next/image';
 
-const FetusIllustration = (props) => (
-    <svg {...props} viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-      <path
-        fill="#FFDDD2"
-        d="M164.6,128.9c-7.9,25.9-32.9,42.7-58.8,47.3c-25.9,4.6-52.7-3-70.2-22.3s-25.7-49.9-19.9-74.2 C11.3,55.4,31.5,35.2,52.2,22.4C72.9,9.6,94.1,4.2,112.5,10.6c18.4,6.4,34,24.6,40.8,43.2 C159.9,72.3,172.5,103.1,164.6,128.9z"
-        transform="translate(-25, -30)"
-      />
-      <g fill="currentColor" transform="translate(2, 5)">
-        <circle cx="95" cy="70" r="22" />
-        <path d="M95,92c-15,0-25,15-25,28c0,10,12,20,25,20s25-10,25-20C120,107,110,92,95,92z" />
-        <path d="M82,128c-5,5-5,15,0,20c5,5,15,5,20,0" />
-      </g>
-    </svg>
+// Ícone de check
+const CheckIcon = () => ( 
+  <svg className="w-5 h-5 text-rose-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+    <polyline points="20 6 9 17 4 12"></polyline>
+  </svg> 
 );
-const CheckIcon = () => ( <svg className="w-5 h-5 text-rose-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round"> <polyline points="20 6 9 17 4 12"></polyline> </svg> );
-
 
 export default function Login() {
   const [error, setError] = useState('');
@@ -36,10 +27,19 @@ export default function Login() {
 
   return (
     <div className="w-full max-w-4xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden animate-fade-in">
-      <div className="w-full md:w-1/2 bg-rose-50 dark:bg-slate-900/50 p-8 flex-col gap-4 items-center justify-center hidden md:flex">
+      {/* MODIFICADO: A classe 'hidden' foi removida para exibir em todas as telas */}
+      <div className="w-full md:w-1/2 bg-rose-50 dark:bg-slate-900/50 p-8 flex-col gap-4 items-center justify-center flex">
          <h1 className="text-5xl font-bold text-rose-500 dark:text-rose-400 text-center">GestaHub</h1>
          <p className="text-slate-600 dark:text-slate-400 text-lg text-center">Sua jornada da maternidade, semana a semana.</p>
-         <FetusIllustration className="w-64 h-64 text-rose-300 dark:text-rose-500 opacity-80 dark:opacity-60" />
+         
+         <Image
+            src="/login.png"
+            alt="Ilustração da jornada da maternidade"
+            width={512}
+            height={512}
+            className="w-64 h-64 opacity-80 dark:opacity-60"
+            unoptimized={true}
+         />
       </div>
       <div className="w-full md:w-1/2 p-8 sm:p-10 flex flex-col justify-center">
         <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-200"> Bem-vinda! </h2>
