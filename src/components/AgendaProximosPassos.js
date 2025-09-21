@@ -39,6 +39,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
+  const [expandedNotesId, setExpandedNotesId] = useState(null);
 
   useEffect(() => {
     if (!user || !lmpDate) {
@@ -240,6 +241,10 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
   const upcomingEvents = combinedAppointments
     .filter(event => !event.done)
     .sort((a, b) => getSortDate(a) - getSortDate(b));
+    
+  const toggleNotes = (id) => {
+    setExpandedNotesId(expandedNotesId === id ? null : id);
+  };
 
   if (loading) {
     return <div className="text-center p-4">Carregando agenda...</div>;
@@ -270,6 +275,8 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
                   }
               }
 
+              const isExpanded = expandedNotesId === item.id;
+
               return (
                 <div key={`${item.type}-${item.id}`}>
                   <div className={`p-4 rounded-lg flex items-center gap-4 transition-colors ${item.type === 'ultrasound' ? 'border-l-4 border-rose-500' : 'border-l-4 border-indigo-500'} bg-slate-100 dark:bg-slate-700/50`}>
@@ -281,7 +288,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
                           </div>
                       </label>
                     </div>
-                    <div className="flex-grow">
+                    <div className="flex-grow min-w-0">
                       <p className="font-semibold text-slate-700 dark:text-slate-200">{item.title || item.name}</p>
                       <p className="text-sm font-medium text-indigo-600 dark:text-indigo-400">
                         {item.date ? formatDateDisplay(item.date) : 'Agendamento pendente'} {item.time && `às ${item.time}`}
@@ -289,7 +296,16 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
                       {idealWindowText && <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">{idealWindowText}</p>}
                       {item.professional && <p className="text-xs text-slate-500 dark:text-slate-400">Com: {item.professional}</p>}
                       {item.location && <p className="text-xs text-slate-500 dark:text-slate-400">Local: {item.location}</p>}
-                      {item.notes && <p className="text-xs text-slate-500 dark:text-slate-400 italic mt-1 truncate">Anotações: {item.notes}</p>}
+                      {item.notes && (
+                        <div className="text-xs text-slate-500 dark:text-slate-400 italic mt-1">
+                            <p className={!isExpanded ? 'truncate' : ''}>Anotações: {item.notes}</p>
+                            {item.notes.length > 50 && (
+                                <button onClick={() => toggleNotes(item.id)} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                    {isExpanded ? 'Ver menos' : 'Ver mais'}
+                                </button>
+                            )}
+                        </div>
+                      )}
                     </div>
                     <div className="flex gap-2">
                       <button onClick={() => handleStartEditing(item)} title="Editar" className="p-2 rounded-full text-slate-500 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/50"><svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg></button>
