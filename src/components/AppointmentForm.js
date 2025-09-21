@@ -1,7 +1,7 @@
 // src/components/AppointmentForm.js
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { db } from '@/lib/firebase';
 import { collection, addDoc, doc, setDoc, getDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
@@ -28,6 +28,7 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
   const [professional, setProfessional] = useState('');
   const [location, setLocation] = useState('');
   const [notes, setNotes] = useState('');
+  const notesTextareaRef = useRef(null);
 
   useEffect(() => {
     if (appointmentToEdit) {
@@ -46,6 +47,22 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
       setNotes('');
     }
   }, [appointmentToEdit]);
+  
+  // Efeito para autoajustar a altura do textarea ao carregar dados existentes
+  useEffect(() => {
+    if (notesTextareaRef.current) {
+        const textarea = notesTextareaRef.current;
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [notes]);
+
+  const handleNotesChange = (e) => {
+    const textarea = e.target;
+    setNotes(textarea.value);
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
 
   const handleSave = async (e) => {
     e.preventDefault();
@@ -113,7 +130,7 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
         }
       } else {
         const appointmentsRef = collection(db, 'users', user.uid, 'appointments');
-        await addDoc(appointmentsRef, { title, date, time, professional, location, notes });
+        await addDoc(appointmentsRef, { title, date, time, professional, location, notes, done: false });
         toast.success('Consulta adicionada com sucesso!');
       }
       onFinish();
@@ -174,10 +191,25 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
             {locationSuggestions?.map(item => <option key={item} value={item} />)}
           </datalist>
         </div>
+        
+        {/* CAMPO DE ANOTAÇÕES MODIFICADO */}
         <div>
           <label htmlFor="notes" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Anotações</label>
-          <textarea id="notes" rows="3" value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Dúvidas para perguntar, resultados de exames..." className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"></textarea>
+          <textarea 
+            id="notes" 
+            ref={notesTextareaRef}
+            rows="3" 
+            value={notes} 
+            onChange={handleNotesChange} 
+            maxLength="500"
+            placeholder="Dúvidas para perguntar, resultados de exames..." 
+            className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 resize-none overflow-hidden"
+          ></textarea>
+          <div className="text-right text-sm text-slate-400 dark:text-slate-500">
+            {notes.length} / 500
+          </div>
         </div>
+
         <div className="flex justify-end gap-4">
           <button type="button" onClick={onFinish} className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600">
             Cancelar

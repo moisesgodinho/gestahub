@@ -1,7 +1,7 @@
 // src/components/AgendaProximosPassos.js
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { doc, getDoc, onSnapshot, collection, query, where, setDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
@@ -40,6 +40,16 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const [showCelebration, setShowCelebration] = useState(false);
   const [expandedNotesId, setExpandedNotesId] = useState(null);
+  const notesTextareaRef = useRef(null);
+
+  // Efeito para autoajustar a altura do textarea ao abrir a edição
+  useEffect(() => {
+    if (editingItemId && notesTextareaRef.current) {
+      const textarea = notesTextareaRef.current;
+      textarea.style.height = 'auto';
+      textarea.style.height = `${textarea.scrollHeight}px`;
+    }
+  }, [editingItemId, editDetails.notes]);
 
   useEffect(() => {
     if (!user || !lmpDate) {
@@ -245,6 +255,14 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
   const toggleNotes = (id) => {
     setExpandedNotesId(expandedNotesId === id ? null : id);
   };
+  
+  // Função para autoajuste do textarea e atualização do estado
+  const handleNotesChange = (e) => {
+    const textarea = e.target;
+    setEditDetails({ ...editDetails, notes: textarea.value });
+    textarea.style.height = 'auto';
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
 
   if (loading) {
     return <div className="text-center p-4">Carregando agenda...</div>;
@@ -300,7 +318,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
                         <div className="text-xs text-slate-500 dark:text-slate-400 italic mt-1">
                             <p className={!isExpanded ? 'truncate' : ''}>Anotações: {item.notes}</p>
                             {item.notes.length > 50 && (
-                                <button onClick={() => toggleNotes(item.id)} className="text-indigo-600 dark:text-indigo-400 hover:underline">
+                                <button onClick={() => toggleNotes(item.id)} className="text-indigo-600 dark:text-indigo-400 hover:underline font-semibold">
                                     {isExpanded ? 'Ver menos' : 'Ver mais'}
                                 </button>
                             )}
@@ -329,7 +347,23 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
                         </div>
                         <input type="text" placeholder="Profissional/Laboratório" value={editDetails.professional} onChange={(e) => setEditDetails({...editDetails, professional: e.target.value})} className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm" />
                         <input type="text" placeholder="Local" value={editDetails.location} onChange={(e) => setEditDetails({...editDetails, location: e.target.value})} className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm" />
-                        <textarea placeholder="Anotações (dúvidas para a consulta, etc)" value={editDetails.notes} onChange={(e) => setEditDetails({...editDetails, notes: e.target.value})} className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm" rows="2"></textarea>
+                        
+                        {/* CAMPO DE ANOTAÇÕES MODIFICADO */}
+                        <div>
+                          <textarea 
+                            ref={notesTextareaRef}
+                            placeholder="Anotações (dúvidas para a consulta, etc)" 
+                            value={editDetails.notes} 
+                            onChange={handleNotesChange}
+                            maxLength="500"
+                            className="w-full px-2 py-1 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm resize-none overflow-hidden" 
+                            rows="2"
+                          ></textarea>
+                          <div className="text-right text-xs text-slate-400 dark:text-slate-500">
+                            {editDetails.notes.length} / 500
+                          </div>
+                        </div>
+
                         <div className="flex gap-2 justify-end">
                           <button onClick={handleCancelEdit} className="px-3 py-1 rounded-lg bg-slate-200 dark:bg-slate-600 text-sm hover:bg-slate-300">Cancelar</button>
                           <button onClick={() => handleSaveDetails(item)} className="px-3 py-1 rounded-lg bg-indigo-600 text-white text-sm hover:bg-indigo-700">Salvar</button>
