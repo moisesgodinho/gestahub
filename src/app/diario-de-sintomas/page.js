@@ -12,14 +12,16 @@ import SymptomChart from '@/components/SymptomChart';
 import JournalCalendar from '@/components/JournalCalendar';
 import JournalViewModal from '@/components/JournalViewModal';
 import ConfirmationModal from '@/components/ConfirmationModal';
-import { useUser } from '@/context/UserContext'; 
+import { useUser } from '@/context/UserContext';
 import { useJournalEntries } from '@/hooks/useJournalEntries';
+import { useGestationalData } from '@/hooks/useGestationalData'; // Importar o hook
 import SkeletonLoader from '@/components/SkeletonLoader';
 
 export default function JournalPage() {
   const { user, loading: userLoading } = useUser();
   const { entries, loading: entriesLoading } = useJournalEntries(user);
-  
+  const { estimatedLmp, loading: gestationalLoading } = useGestationalData(user); // Usar o hook de dados gestacionais
+
   const [entryToEdit, setEntryToEdit] = useState(null);
   const [entryToView, setEntryToView] = useState(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
@@ -53,7 +55,7 @@ export default function JournalPage() {
   // Confirma e abre o formulário para a nova entrada
   const confirmAndOpenForm = () => {
     setIsAddEntryModalOpen(false);
-    setEntryToEdit({ id: selectedDateForNew }); 
+    setEntryToEdit({ id: selectedDateForNew });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -70,7 +72,7 @@ export default function JournalPage() {
     setEntryToDelete(entry);
     setIsDeleteModalOpen(true);
   };
-  
+
   // Confirma e executa a exclusão
   const confirmDelete = async () => {
     if (!user || !entryToDelete) return;
@@ -92,7 +94,7 @@ export default function JournalPage() {
     return date.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
   }, [selectedDateForNew]);
 
-  const loading = userLoading || entriesLoading;
+  const loading = userLoading || entriesLoading || gestationalLoading;
 
   if (loading) {
     return (
@@ -104,7 +106,7 @@ export default function JournalPage() {
 
   return (
     <>
-      <JournalViewModal 
+      <JournalViewModal
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         entry={entryToView}
@@ -138,39 +140,40 @@ export default function JournalPage() {
           <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
             Diário de Sintomas e Humor
           </h1>
-          
+
           {isFormOpen ? (
-            <JournalEntry 
-              user={user} 
-              entry={entryToEdit} 
-              onSave={handleFinishForm} 
+            <JournalEntry
+              user={user}
+              entry={entryToEdit}
+              onSave={handleFinishForm}
               onCancel={handleFinishForm}
-              allEntries={entries} 
+              allEntries={entries}
             />
           ) : (
             <div className="mb-6 text-center">
-                <button
-                    onClick={() => {
-                        setEntryToEdit(null);
-                        setIsFormOpen(true);
-                    }}
-                    className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
-                >
-                    Adicionar Registro do Dia
-                </button>
+              <button
+                onClick={() => {
+                  setEntryToEdit(null);
+                  setIsFormOpen(true);
+                }}
+                className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+              >
+                Adicionar Registro do Dia
+              </button>
             </div>
           )}
 
-          <JournalCalendar 
-              entries={entries}
-              onDateSelect={handleDateSelect}
-              onEditEntry={handleView}
+          <JournalCalendar
+            entries={entries}
+            onDateSelect={handleDateSelect}
+            onEditEntry={handleView}
+            lmpDate={estimatedLmp}
           />
 
           {entries.length > 0 && <SymptomChart entries={entries} />}
 
           <JournalHistory entries={entries} onEdit={handleView} user={user} />
-          
+
           <AppNavigation />
         </div>
       </div>

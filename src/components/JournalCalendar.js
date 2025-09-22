@@ -1,9 +1,10 @@
 // src/components/JournalCalendar.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { moodOptions } from '@/data/journalData';
 import { getTodayString } from '@/lib/dateUtils';
+import { getDueDate } from '@/lib/gestationalAge';
 
 // Ícones para navegação
 const ChevronLeftIcon = () => (
@@ -19,8 +20,24 @@ const ChevronRightIcon = () => (
 );
 
 
-export default function JournalCalendar({ entries, onDateSelect, onEditEntry }) {
+export default function JournalCalendar({ entries, onDateSelect, onEditEntry, lmpDate }) {
     const [currentDate, setCurrentDate] = useState(new Date());
+
+    const { minDate, maxDate } = useMemo(() => {
+        if (!lmpDate) return { minDate: null, maxDate: null };
+
+        const dueDate = getDueDate(lmpDate);
+
+        const min = new Date(lmpDate);
+        min.setMonth(min.getMonth() - 1);
+        min.setDate(1);
+
+        const max = new Date(dueDate);
+        max.setMonth(max.getMonth() + 1);
+        max.setDate(1);
+
+        return { minDate: min, maxDate: max };
+    }, [lmpDate]);
 
     const entriesMap = new Map(entries.map(entry => [entry.id, entry]));
     const todayString = getTodayString();
@@ -29,6 +46,13 @@ export default function JournalCalendar({ entries, onDateSelect, onEditEntry }) 
         setCurrentDate(prevDate => {
             const newDate = new Date(prevDate);
             newDate.setMonth(newDate.getMonth() + amount);
+
+            if (minDate && newDate.getFullYear() === minDate.getFullYear() && newDate.getMonth() < minDate.getMonth()) {
+                return prevDate;
+            }
+            if (maxDate && newDate.getFullYear() === maxDate.getFullYear() && newDate.getMonth() > maxDate.getMonth()) {
+                return prevDate;
+            }
             return newDate;
         });
     };
@@ -43,6 +67,10 @@ export default function JournalCalendar({ entries, onDateSelect, onEditEntry }) 
     const totalDays = lastDayOfMonth.getDate();
 
     const calendarDays = [];
+
+    const canGoBack = !minDate || currentDate.getFullYear() > minDate.getFullYear() || (currentDate.getFullYear() === minDate.getFullYear() && currentDate.getMonth() > minDate.getMonth());
+    const canGoForward = !maxDate || currentDate.getFullYear() < maxDate.getFullYear() || (currentDate.getFullYear() === maxDate.getFullYear() && currentDate.getMonth() < maxDate.getMonth());
+
 
     // Adiciona dias em branco para o início do mês
     for (let i = 0; i < startDayOfWeek; i++) {
@@ -80,17 +108,17 @@ export default function JournalCalendar({ entries, onDateSelect, onEditEntry }) 
             </div>
         );
     }
-    
+
     return (
         <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl mb-6">
             <div className="flex justify-between items-center mb-4">
-                <button onClick={() => changeMonth(-1)} className="p-2 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                <button onClick={() => changeMonth(-1)} disabled={!canGoBack} className="p-2 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed">
                     <ChevronLeftIcon />
                 </button>
                 <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
                     {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
                 </h3>
-                <button onClick={() => changeMonth(1)} className="p-2 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
+                <button onClick={() => changeMonth(1)} disabled={!canGoForward} className="p-2 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed">
                     <ChevronRightIcon />
                 </button>
             </div>
