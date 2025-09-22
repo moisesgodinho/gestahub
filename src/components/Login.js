@@ -7,10 +7,10 @@ import { auth, googleProvider } from '@/lib/firebase';
 import Image from 'next/image';
 
 // Ícone de check
-const CheckIcon = () => ( 
+const CheckIcon = () => (
   <svg className="w-5 h-5 text-rose-500 flex-shrink-0" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
     <polyline points="20 6 9 17 4 12"></polyline>
-  </svg> 
+  </svg>
 );
 
 export default function Login() {
@@ -46,7 +46,10 @@ export default function Login() {
         <p className="mt-2 text-slate-600 dark:text-slate-400"> Acompanhe sua gravidez com ferramentas feitas para você. </p>
         <ul className="mt-6 space-y-3 text-slate-600 dark:text-slate-400">
           <li className="flex items-start gap-3"><CheckIcon /> <span>Calculadoras precisas (DUM e Ultrassom)</span></li>
+          <li className="flex items-start gap-3"><CheckIcon /> <span>Diário de Sintomas e Humor</span></li>
+          <li className="flex items-start gap-3"><CheckIcon /> <span>Acompanhamento de Peso</span></li>
           <li className="flex items-start gap-3"><CheckIcon /> <span>Contador de Movimentos com histórico salvo</span></li>
+          <li className="flex items-start gap-3"><CheckIcon /> <span>Cronômetro de Contrações</span></li>
           <li className="flex items-start gap-3"><CheckIcon /> <span>Cronograma de exames importantes</span></li>
           <li className="flex items-start gap-3"><CheckIcon /> <span>Informações semanais sobre você e seu bebê</span></li>
         </ul>
