@@ -1,6 +1,21 @@
 // src/components/AppointmentMultiViewModal.js
 'use client';
 
+// Ícones para os botões de ação
+const EditIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
+    </svg>
+);
+
+const DeleteIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <polyline points="3 6 5 6 21 6"></polyline>
+        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+    </svg>
+);
+
+
 const formatDateDisplay = (dateString) => {
     if (!dateString) return '';
     const date = new Date(`${dateString}T00:00:00Z`);
@@ -35,19 +50,22 @@ export default function AppointmentMultiViewModal({ isOpen, onClose, onEdit, onD
                                 <h4 className={`text-lg font-semibold mb-2 ${appointment.type === 'ultrasound' ? 'text-rose-500 dark:text-rose-400' : 'text-indigo-600 dark:text-indigo-400'}`}>
                                     {appointment.title || appointment.name}
                                 </h4>
-                                <div className="flex items-center gap-4 flex-shrink-0 ml-4">
+                                {/* BOTÕES ATUALIZADOS */}
+                                <div className="flex items-center gap-1 flex-shrink-0 ml-4">
                                     <button
                                         onClick={() => onEdit(appointment)}
-                                        className="text-sm font-semibold text-indigo-600 dark:text-indigo-400 hover:underline"
+                                        title="Editar"
+                                        className="p-2 rounded-full text-slate-500 hover:bg-blue-100 hover:text-blue-600 dark:hover:bg-blue-900/50 transition-colors"
                                     >
-                                        Editar
+                                        <EditIcon />
                                     </button>
                                     {appointment.type === 'manual' && (
                                         <button 
                                             onClick={() => onDelete(appointment)}
-                                            className="text-sm font-semibold text-red-600 dark:text-red-400 hover:underline"
+                                            title="Apagar"
+                                            className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors"
                                         >
-                                            Excluir
+                                            <DeleteIcon />
                                         </button>
                                     )}
                                 </div>

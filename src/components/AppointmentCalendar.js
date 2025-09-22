@@ -11,26 +11,31 @@ const ChevronRightIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="2
 // Mapeamento de cores para classes completas do Tailwind
 const colorClasses = {
   blue: {
-    bg: 'bg-blue-50 dark:bg-sky-900',
+    bg: 'bg-blue-100 dark:bg-sky-800/50',
+    legend: 'bg-blue-200 dark:bg-sky-700' 
   },
   green: {
-    bg: 'bg-green-50 dark:bg-emerald-900',
+    bg: 'bg-green-100 dark:bg-teal-800/50',
+    legend: 'bg-green-200 dark:bg-teal-700'
   },
-  yellow: {
-    bg: 'bg-yellow-50 dark:bg-amber-900',
+  pink: { 
+    bg: 'bg-pink-100 dark:bg-pink-800/50',
+    legend: 'bg-pink-200 dark:bg-pink-700'
   },
   purple: {
-    bg: 'bg-purple-50 dark:bg-violet-900',
+    bg: 'bg-purple-100 dark:bg-purple-800/50',
+    legend: 'bg-purple-200 dark:bg-purple-700'
   },
   teal: {
-    bg: 'bg-teal-50 dark:bg-cyan-900',
+    bg: 'bg-teal-100 dark:bg-cyan-800/50',
+    legend: 'bg-teal-200 dark:bg-cyan-700'
   },
 };
 
 const ultrasoundSchedule = [
   { id: 'transvaginal', name: '1º Ultrassom (Transvaginal)', startWeek: 8, endWeek: 11, type: 'ultrasound', color: 'blue' },
   { id: 'morfologico_1', name: 'Morfológico 1º Trimestre', startWeek: 12, endWeek: 14, type: 'ultrasound', color: 'green' },
-  { id: 'morfologico_2', name: 'Morfológico 2º Trimestre', startWeek: 22, endWeek: 24, type: 'ultrasound', color: 'yellow' },
+  { id: 'morfologico_2', name: 'Morfológico 2º Trimestre', startWeek: 22, endWeek: 24, type: 'ultrasound', color: 'pink' },
   { id: 'ecocardiograma', name: 'Ecocardiograma Fetal', startWeek: 26, endWeek: 28, type: 'ultrasound', color: 'purple' },
   { id: 'doppler_3', name: '3º Trimestre com Doppler', startWeek: 28, endWeek: 36, type: 'ultrasound', color: 'teal' },
 ];
@@ -92,7 +97,10 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
         const dayAppointments = appointmentsByDate.get(dateString) || [];
         const isToday = dateString === todayString;
         const windowExam = ultrasoundWindows.get(dateString);
-        const windowBgClass = windowExam ? colorClasses[windowExam.color]?.bg || '' : '';
+        
+        // --- LÓGICA MODIFICADA ---
+        // Define uma cor de fundo padrão para dias normais e uma cor específica para janelas de ultrassom.
+        const windowBgClass = windowExam ? colorClasses[windowExam.color]?.bg || '' : 'bg-slate-50 dark:bg-slate-700/50';
 
         // --- LÓGICA PARA ADICIONAR A BORDA ---
         let borderClass = 'border-2 border-transparent'; // Borda transparente por padrão
@@ -153,7 +161,7 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
                     <div className="flex flex-wrap gap-x-4 gap-y-2">
                         {ultrasoundSchedule.map(exam => (
                             <div key={exam.id} className="flex items-center gap-2">
-                                <span className={`w-4 h-4 rounded-lg ${colorClasses[exam.color]?.bg || ''}`}></span>
+                                <span className={`w-4 h-4 rounded-lg ${colorClasses[exam.color]?.legend || ''}`}></span>
                                 <span className="text-sm text-slate-600 dark:text-slate-400">{exam.name}</span>
                             </div>
                         ))}

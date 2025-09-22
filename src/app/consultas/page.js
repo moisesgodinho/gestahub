@@ -93,8 +93,6 @@ function AppointmentsPageContent() {
     return () => unsubscribeAuth();
   }, []);
 
-  // --- LÓGICA DE VISUALIZAÇÃO CORRIGIDA ---
-  // Este useEffect garante que os modais só abram DEPOIS que a lista de compromissos for atualizada.
   useEffect(() => {
     if (appointmentsToView.length === 1) {
         setIsSingleViewModalOpen(true);
@@ -118,20 +116,20 @@ function AppointmentsPageContent() {
   const handleEdit = (appointment) => {
     setIsSingleViewModalOpen(false);
     setIsMultiViewModalOpen(false);
+    setAppointmentsToView([]); // <-- ADICIONE ESTA LINHA
     setAppointmentToEdit(appointment);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   
-  // A função handleView agora apenas atualiza a lista de compromissos a serem vistos.
   const handleView = (appointments) => {
       setAppointmentsToView(appointments);
   };
   
-  // Função para fechar e limpar os modais de visualização
   const handleCloseViewModals = () => {
       setIsSingleViewModalOpen(false);
       setIsMultiViewModalOpen(false);
+      setAppointmentsToView([]); 
   }
 
   const handleAddNew = (dateString = null) => {

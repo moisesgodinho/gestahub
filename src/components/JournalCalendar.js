@@ -46,7 +46,7 @@ export default function JournalCalendar({ entries, onDateSelect, onEditEntry }) 
 
     // Adiciona dias em branco para o início do mês
     for (let i = 0; i < startDayOfWeek; i++) {
-        calendarDays.push(<div key={`empty-start-${i}`} className="p-2"></div>);
+        calendarDays.push(<div key={`empty-start-${i}`} className="p-1"></div>);
     }
 
     // Adiciona os dias do mês
@@ -60,28 +60,37 @@ export default function JournalCalendar({ entries, onDateSelect, onEditEntry }) 
             <div
                 key={day}
                 onClick={() => (entry ? onEditEntry(entry) : onDateSelect(dateString))}
-                className="p-2 text-center rounded-lg transition-colors cursor-pointer flex flex-col items-center justify-center aspect-square relative hover:bg-slate-200 dark:hover:bg-slate-700"
+                className="p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700"
             >
-                <span className={`w-8 h-8 flex items-center justify-center rounded-full ${isToday ? 'bg-rose-500 text-white' : 'text-slate-700 dark:text-slate-300'}`}>
+                <span className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end ${isToday ? 'bg-rose-500 text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                     {day}
                 </span>
-                {mood && (
-                    <span className="text-xl mt-1" title={mood.value}>{mood.label.split(' ')[0]}</span>
-                )}
+
+                <div className="flex-grow flex items-center justify-center -mt-2">
+                    {mood ? (
+                        <span className="text-2xl" title={mood.value}>{mood.label.split(' ')[0]}</span>
+                    ) : entry ? (
+                        // --- PONTO INDICADOR AUMENTADO ---
+                        <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full" title="Registro de sintoma/nota"></div>
+                    ) : (
+                        // Espaço vazio para manter o alinhamento
+                        <div></div>
+                    )}
+                </div>
             </div>
         );
     }
     
     return (
-        <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
+        <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl mb-6">
             <div className="flex justify-between items-center mb-4">
-                <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                <button onClick={() => changeMonth(-1)} className="p-2 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
                     <ChevronLeftIcon />
                 </button>
                 <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
                     {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
                 </h3>
-                <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700">
+                <button onClick={() => changeMonth(1)} className="p-2 rounded-full text-slate-500 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700">
                     <ChevronRightIcon />
                 </button>
             </div>
