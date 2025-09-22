@@ -107,7 +107,11 @@ function AppointmentsPageContent() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center flex-grow"><p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p></div>;
+    return (
+      <div className="flex items-center justify-center flex-grow p-4">
+        <SkeletonLoader type="fullPage" />
+      </div>
+    );
   }
 
   return (

@@ -6,12 +6,13 @@ import AppNavigation from '@/components/AppNavigation';
 import JournalEntry from '@/components/JournalEntry';
 import JournalHistory from '@/components/JournalHistory';
 import SymptomChart from '@/components/SymptomChart';
-import { useUser } from '@/context/UserContext'; // Usaremos o useUser para obter o usuário
-import { useJournalEntries } from '@/hooks/useJournalEntries'; // 1. IMPORTE O NOVO HOOK
+import { useUser } from '@/context/UserContext';
+import { useJournalEntries } from '@/hooks/useJournalEntries';
+import SkeletonLoader from '@/components/SkeletonLoader'; // 1. Importe o componente
 
 export default function JournalPage() {
-  const { user, loading: userLoading } = useUser(); // Obtém o usuário do contexto
-  const { entries, loading: entriesLoading } = useJournalEntries(user); // 2. USA O HOOK PARA BUSCAR OS DADOS
+  const { user, loading: userLoading } = useUser();
+  const { entries, loading: entriesLoading } = useJournalEntries(user);
   const [selectedEntry, setSelectedEntry] = useState(null);
 
   const handleEdit = (entry) => {
@@ -23,11 +24,15 @@ export default function JournalPage() {
     setSelectedEntry(null);
   };
 
-  // Combina os estados de carregamento
   const loading = userLoading || entriesLoading;
 
+  // 2. Substitua o texto pelo SkeletonLoader
   if (loading) {
-    return <div className="flex items-center justify-center flex-grow"><p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p></div>;
+    return (
+      <div className="flex items-center justify-center flex-grow p-4">
+        <SkeletonLoader type="fullPage" />
+      </div>
+    );
   }
 
   return (

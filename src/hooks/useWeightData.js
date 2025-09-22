@@ -1,6 +1,6 @@
 // src/hooks/useWeightData.js
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, collection, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge';
 
@@ -22,6 +22,8 @@ export function useWeightData(user) {
   const [estimatedLmp, setEstimatedLmp] = useState(null);
   const [dueDate, setDueDate] = useState(null);
 
+  // Efeito 1: Lida com os dados do documento principal do usuário.
+  // Roda apenas quando o 'user' muda.
   useEffect(() => {
     if (!user) {
       setLoading(false);
@@ -29,7 +31,7 @@ export function useWeightData(user) {
     }
 
     const userDocRef = doc(db, 'users', user.uid);
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
+    const unsubscribeUserDoc = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const userData = docSnap.data();
         const lmpDate = getEstimatedLmp(userData);
@@ -41,29 +43,50 @@ export function useWeightData(user) {
 
         if (userData.weightProfile) {
           const profile = userData.weightProfile;
-          const history = profile.history?.sort((a, b) => new Date(b.date) - new Date(a.date)) || [];
           setWeightProfile(profile);
-          setWeightHistory(history);
-
           if (profile.height && profile.prePregnancyWeight) {
             const initialBmi = calculateBMI(profile.prePregnancyWeight, profile.height);
-            let currentBmi = initialBmi;
-            let currentGain = 0;
-
-            if (history.length > 0) {
-              const latestEntry = history[0]; // Already sorted desc
-              currentGain = (latestEntry.weight - profile.prePregnancyWeight).toFixed(2);
-              currentBmi = latestEntry.bmi;
-            }
-            setCalculations({ initialBmi, currentBmi, currentGain });
+            setCalculations(prev => ({ ...prev, initialBmi }));
           }
         }
       }
+      // O 'loading' será controlado pelo segundo efeito para garantir que ambos os dados chegaram.
+    });
+
+    return () => unsubscribeUserDoc();
+  }, [user]);
+
+  // Efeito 2: Lida com a subcoleção de histórico de peso.
+  // Roda quando 'user' ou 'weightProfile' mudam.
+  useEffect(() => {
+    if (!user || !weightProfile) {
+        // Se não houver perfil, não há nada a calcular, então paramos o carregamento.
+        if(!loading){ setLoading(false);}
+        return;
+    }
+
+    const weightHistoryRef = collection(db, 'users', user.uid, 'weightHistory');
+    const q = query(weightHistoryRef, orderBy('date', 'desc'));
+
+    const unsubscribeHistory = onSnapshot(q, (snapshot) => {
+      const history = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setWeightHistory(history);
+
+      // Atualiza os cálculos com base no histórico mais recente
+      let currentBmi = calculateBMI(weightProfile.prePregnancyWeight, weightProfile.height);
+      let currentGain = 0;
+
+      if (history.length > 0) {
+        const latestEntry = history[0];
+        currentGain = (latestEntry.weight - weightProfile.prePregnancyWeight).toFixed(2);
+        currentBmi = latestEntry.bmi;
+      }
+      setCalculations(prev => ({ ...prev, currentBmi, currentGain }));
       setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [user]);
+    return () => unsubscribeHistory();
+  }, [user, weightProfile]);
 
   return { loading, weightProfile, weightHistory, calculations, estimatedLmp, dueDate, setWeightHistory };
 }

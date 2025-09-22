@@ -8,7 +8,8 @@ import CalculatorPanel from '@/components/CalculatorPanel';
 import AppNavigation from '@/components/AppNavigation';
 import AgendaProximosPassos from '@/components/AgendaProximosPassos';
 import { useUser } from '@/context/UserContext';
-import { useGestationalData } from '@/hooks/useGestationalData'; // Importa o novo hook
+import { useGestationalData } from '@/hooks/useGestationalData';
+import SkeletonLoader from '@/components/SkeletonLoader'; // 1. Importe o componente
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
@@ -17,26 +18,28 @@ export default function Home() {
   const [isEditing, setIsEditing] = useState(false);
   const [activeCalculator, setActiveCalculator] = useState('dum');
 
-  // Controla a exibição do formulário de edição
   useEffect(() => {
-    // Se não estiver carregando e não tiver dados, mostra o formulário
     if (!userLoading && !dataLoading) {
       setIsEditing(!hasData);
     }
-    // Se tiver dados, garante que o formulário correto seja exibido ao editar
     if (hasData) {
       setActiveCalculator(dataSource);
     }
   }, [userLoading, dataLoading, hasData, dataSource]);
 
   const handleSaveSuccess = () => {
-    setIsEditing(false); // Apenas fecha o painel, o hook já vai atualizar os dados
+    setIsEditing(false);
   };
   
   const loading = userLoading || dataLoading;
 
+  // 2. Substitua o texto pelo SkeletonLoader
   if (loading) {
-    return ( <div className="flex items-center justify-center flex-grow"> <p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p> </div> );
+    return (
+      <div className="flex items-center justify-center flex-grow p-4">
+        <SkeletonLoader type="fullPage" />
+      </div>
+    );
   }
 
   return (
@@ -51,7 +54,6 @@ export default function Home() {
               activeCalculator={activeCalculator}
               onSwitch={setActiveCalculator}
               onSaveSuccess={handleSaveSuccess}
-              // Só permite cancelar se já existirem dados salvos
               onCancel={() => hasData && setIsEditing(false)}
             />
           ) : (

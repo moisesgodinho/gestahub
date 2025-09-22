@@ -1,6 +1,6 @@
 // src/hooks/useKickCounter.js
 import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { collection, onSnapshot, query, orderBy } from 'firebase/firestore'; // Import 'collection', 'query', 'orderBy'
 import { db } from '@/lib/firebase';
 
 export function useKickCounter(user) {
@@ -14,15 +14,13 @@ export function useKickCounter(user) {
       return;
     }
 
-    const userDocRef = doc(db, 'users', user.uid);
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      if (docSnap.exists() && docSnap.data().kickSessions) {
-        // Ordena as sessões da mais recente para a mais antiga
-        const fetchedSessions = docSnap.data().kickSessions.sort((a, b) => b.timestamp - a.timestamp);
-        setSessions(fetchedSessions);
-      } else {
-        setSessions([]);
-      }
+    // NOVO: Referência para a subcoleção
+    const sessionsRef = collection(db, 'users', user.uid, 'kickSessions');
+    const q = query(sessionsRef, orderBy('timestamp', 'desc'));
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const fetchedSessions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+      setSessions(fetchedSessions);
       setLoading(false);
     }, (error) => {
       console.error("Erro ao buscar sessões do contador:", error);

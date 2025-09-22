@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { doc, setDoc, updateDoc, arrayUnion, arrayRemove } from 'firebase/firestore';
+import { doc, addDoc, deleteDoc, collection } from 'firebase/firestore'; // Import 'addDoc', 'deleteDoc', 'collection'
 import { db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
@@ -13,7 +13,7 @@ import { formatTime } from '@/lib/dateUtils';
 
 export default function KickCounterPage() {
   const { user, loading: userLoading } = useUser();
-  const { sessions, loading: sessionsLoading, setSessions } = useKickCounter(user);
+  const { sessions, loading: sessionsLoading } = useKickCounter(user); // setSessions não é mais necessário aqui
 
   const [kickCount, setKickCount] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
@@ -45,6 +45,7 @@ export default function KickCounterPage() {
     }
   };
   
+  // MODIFICADO: Salva um novo documento na subcoleção
   const handleStopAndSave = async () => {
     setIsCounting(false);
     if (user && kickCount > 0) {
@@ -55,8 +56,8 @@ export default function KickCounterPage() {
         timestamp: startTime.getTime(),
       };
       try {
-        const userDocRef = doc(db, 'users', user.uid);
-        await setDoc(userDocRef, { kickSessions: arrayUnion(newSession) }, { merge: true });
+        const sessionsRef = collection(db, 'users', user.uid, 'kickSessions');
+        await addDoc(sessionsRef, newSession);
         toast.success("Sessão salva no histórico!");
       } catch (e) {
         console.error("Erro ao salvar sessão:", e);
@@ -72,11 +73,13 @@ export default function KickCounterPage() {
     setIsModalOpen(true);
   };
 
+  // MODIFICADO: Deleta o documento da subcoleção
   const confirmDeleteSession = async () => {
     if (!user || !sessionToDelete) return;
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, { kickSessions: arrayRemove(sessionToDelete) });
+      // O ID da sessão agora corresponde ao ID do documento
+      const sessionRef = doc(db, 'users', user.uid, 'kickSessions', sessionToDelete.id);
+      await deleteDoc(sessionRef);
       toast.info("Sessão removida do histórico.");
     } catch (error) {
       console.error("Erro ao apagar sessão: ", error);
@@ -97,6 +100,7 @@ export default function KickCounterPage() {
     );
   }
 
+  // O restante do JSX permanece o mesmo
   return (
     <>
       <ConfirmationModal
@@ -165,7 +169,7 @@ export default function KickCounterPage() {
               <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Histórico de Sessões</h2>
               <div className="space-y-3">
                 {sessions.map((session) => (
-                  <div key={session.timestamp} className="flex justify-between items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
+                  <div key={session.id} className="flex justify-between items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
                     <div className="flex-grow">
                       <p className="font-semibold text-slate-700 dark:text-slate-200">{session.date}</p>
                       <p className="text-sm text-slate-500 dark:text-slate-400">{session.kicks} movimentos</p>

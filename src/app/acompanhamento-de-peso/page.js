@@ -2,16 +2,17 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { doc, updateDoc, arrayRemove, setDoc } from 'firebase/firestore';
+import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore'; // Import 'collection' e 'deleteDoc'
 import { db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
 import AppNavigation from '@/components/AppNavigation';
 import WeightChart from '@/components/WeightChart';
 import { useUser } from '@/context/UserContext';
-import { useWeightData } from '@/hooks/useWeightData'; // Importa o hook
+import { useWeightData } from '@/hooks/useWeightData';
 import { getTodayString, calculateGestationalAgeOnDate } from '@/lib/dateUtils';
 
+// ... (funções calculateBMI e getBMICategory permanecem as mesmas)
 const bmiCategories = [
   { category: 'Baixo Peso', range: '< 18.5', recommendation: '12.5 a 18 kg' },
   { category: 'Peso Adequado', range: '18.5 - 24.9', recommendation: '11.5 a 16 kg' },
@@ -75,8 +76,9 @@ export default function WeightTrackerPage() {
     if (parsedWeight < 30 || parsedWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
 
     try {
+      // Salva apenas o perfil no documento principal, sem o histórico
       const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { weightProfile: { height: parsedHeight, prePregnancyWeight: parsedWeight, history: weightHistory } }, { merge: true });
+      await setDoc(userDocRef, { weightProfile: { height: parsedHeight, prePregnancyWeight: parsedWeight } }, { merge: true });
       toast.success('Dados iniciais salvos com sucesso!');
       setIsEditing(false);
     } catch (error) {
@@ -85,18 +87,23 @@ export default function WeightTrackerPage() {
     }
   };
 
+  // MODIFICADO: Salva um novo documento na subcoleção
   const proceedWithSave = async () => {
     const parsedCurrentWeight = parseFloat(currentWeight);
-    const newEntry = { weight: parsedCurrentWeight, date: entryDate, bmi: calculateBMI(parsedCurrentWeight, height) };
-    const oldEntry = weightHistory.find(entry => entry.date === entryDate);
-    const historyWithoutOldEntry = oldEntry ? weightHistory.filter(entry => entry.date !== entryDate) : weightHistory;
+    const newEntry = { 
+      weight: parsedCurrentWeight, 
+      date: entryDate, 
+      bmi: calculateBMI(parsedCurrentWeight, height) 
+    };
 
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { weightProfile: { ...weightProfile, history: [...historyWithoutOldEntry, newEntry] } }, { merge: true });
+      // O ID do documento será a própria data (YYYY-MM-DD), o que previne duplicatas
+      const entryRef = doc(db, 'users', user.uid, 'weightHistory', entryDate);
+      await setDoc(entryRef, newEntry);
+      
       setCurrentWeight('');
       setEntryDate(getTodayString());
-      toast.success(oldEntry ? "Registro de peso atualizado!" : "Peso adicionado ao histórico!");
+      toast.success(weightHistory.some(e => e.id === entryDate) ? "Registro de peso atualizado!" : "Peso adicionado ao histórico!");
     } catch (error) {
       console.error("Erro ao adicionar/atualizar peso:", error);
       toast.error("Erro ao salvar o registro.");
@@ -121,7 +128,8 @@ export default function WeightTrackerPage() {
       toast.warn("A data do registro não pode ser anterior ao início da gestação.");
       return;
     }
-    if (weightHistory.some(entry => entry.date === entryDate)) {
+    // Verifica se já existe um registro para a data (o ID do documento é a data)
+    if (weightHistory.some(entry => entry.id === entryDate)) {
       setIsOverwriteModalOpen(true);
       return;
     }
@@ -133,13 +141,13 @@ export default function WeightTrackerPage() {
     setIsModalOpen(true);
   };
 
+  // MODIFICADO: Deleta o documento da subcoleção
   const confirmDeleteEntry = async () => {
     if (!user || !entryToDelete) return;
     try {
-      const userDocRef = doc(db, 'users', user.uid);
-      await updateDoc(userDocRef, { "weightProfile.history": arrayRemove(entryToDelete) });
-      const updatedHistory = weightHistory.filter(e => e.date !== entryToDelete.date || e.weight !== entryToDelete.weight);
-      setWeightHistory(updatedHistory);
+      // O ID da entrada agora corresponde ao ID do documento
+      const entryRef = doc(db, 'users', user.uid, 'weightHistory', entryToDelete.id);
+      await deleteDoc(entryRef);
       toast.info("Registro de peso removido.");
     } catch (error) {
       console.error("Erro ao apagar registro:", error);
@@ -158,6 +166,7 @@ export default function WeightTrackerPage() {
   
   const recommendation = getBMICategory(calculations.initialBmi);
 
+  // O restante do JSX permanece o mesmo
   return (
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmDeleteEntry} title="Confirmar Exclusão" message="Tem certeza que deseja apagar este registro de peso?"/>
@@ -252,7 +261,7 @@ export default function WeightTrackerPage() {
                   <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Histórico de Peso</h2>
                   <div className="space-y-2">
                     {weightHistory.map((entry, index) => (
-                      <div key={`${entry.date}-${index}`} className="flex items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
+                      <div key={entry.id} className="flex items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg">
                         <div className="flex-grow">
                           <p className="font-semibold text-slate-700 dark:text-slate-200">{new Date(entry.date + 'T00:00:00Z').toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</p>
                           {estimatedLmp && (<p className="text-xs text-rose-500 dark:text-rose-400 font-medium">{calculateGestationalAgeOnDate(estimatedLmp, entry.date)}</p>)}

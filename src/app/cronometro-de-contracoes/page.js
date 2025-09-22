@@ -9,14 +9,17 @@ import AppNavigation from '@/components/AppNavigation';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
 import { formatTime } from '@/lib/dateUtils';
+import SkeletonLoader from '@/components/SkeletonLoader'; // 1. Importe o componente
+import { useUser } from '@/context/UserContext'; // É uma boa prática usar o hook de contexto
+import { useContractions } from '@/hooks/useContractions'; // Importe o hook de contrações
 
 export default function ContractionTimerPage() {
-    const [user, setUser] = useState(null);
-    const [loading, setLoading] = useState(true);
+    const { user, loading: userLoading } = useUser();
+    const { contractions, loading: contractionsLoading } = useContractions(user);
+
     const [isTiming, setIsTiming] = useState(false);
     const [timer, setTimer] = useState(0);
     const [startTime, setStartTime] = useState(null);
-    const [contractions, setContractions] = useState([]);
     
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [contractionToDelete, setContractionToDelete] = useState(null);
@@ -30,26 +33,6 @@ export default function ContractionTimerPage() {
         }
         return () => clearInterval(interval);
     }, [isTiming]);
-
-    useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) {
-                const contractionsRef = collection(db, 'users', currentUser.uid, 'contractions');
-                const q = query(contractionsRef, orderBy('startTime', 'desc'));
-
-                const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
-                    const fetchedContractions = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    setContractions(fetchedContractions);
-                    setLoading(false);
-                });
-                return () => unsubscribeSnapshot();
-            } else {
-                setLoading(false);
-            }
-        });
-        return () => unsubscribeAuth();
-    }, []);
     
     const handleStartStop = async () => {
         if (!isTiming) {
@@ -96,9 +79,20 @@ export default function ContractionTimerPage() {
             setContractionToDelete(null);
         }
     };
+    
+    const loading = userLoading || contractionsLoading;
+
+    // 2. Substitua a mensagem de carregamento pelo SkeletonLoader
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center flex-grow p-4">
+                <SkeletonLoader type="fullPage" />
+            </div>
+        );
+    }
 
     const lastContraction = contractions[0];
-    let lastDate = null; // Variável para controlar a data do cabeçalho
+    let lastDate = null;
 
     return (
         <>
@@ -134,7 +128,6 @@ export default function ContractionTimerPage() {
                         )}
                     </div>
                     
-                    {/* SEÇÃO MODIFICADA */}
                     <div className="mt-8 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl space-y-2 border-l-4 border-blue-500">
                         <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">Quando ir para a maternidade?</h3>
                         <p className="text-sm text-slate-600 dark:text-slate-400">Uma referência comum é a <strong>Regra 5-1-1</strong>: contrações que duram <strong>1 minuto</strong>, ocorrem a cada <strong>5 minutos</strong>, por pelo menos <strong>1 hora</strong>. No entanto, siga sempre a orientação do seu médico. Esta ferramenta é um auxílio, mas não substitui a avaliação profissional.</p>
