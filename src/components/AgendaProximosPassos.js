@@ -1,4 +1,3 @@
-// src/components/AgendaProximosPassos.js
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -6,9 +5,9 @@ import { doc, getDoc, onSnapshot, collection, query, setDoc, deleteDoc } from 'f
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
 import Link from 'next/link';
-import ConfirmationModal from './ConfirmationModal';
+import ConfirmationModal from '@/components/ConfirmationModal'; // CORRIGIDO
 import CompletionCelebration from './CompletionCelebration';
-import AppointmentItem from './AppointmentItem'; // 1. IMPORTE O NOVO COMPONENTE
+import AppointmentItem from './AppointmentItem';
 
 const ultrasoundSchedule = [
   { id: 'transvaginal', name: '1º Ultrassom (Transvaginal)', startWeek: 8, endWeek: 11, type: 'ultrasound' },

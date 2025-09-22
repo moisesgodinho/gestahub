@@ -1,11 +1,10 @@
-// src/components/JournalHistory.js
 'use client';
 
-import { useState, useMemo } from 'react'; // useMemo foi importado
+import { useState, useMemo } from 'react';
 import { doc, deleteDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
-import ConfirmationModal from './ConfirmationModal';
+import ConfirmationModal from '@/components/ConfirmationModal'; // Caminho corrigido
 import { moodOptions, symptomOptions } from '@/data/journalData';
 
 export default function JournalHistory({ entries, onEdit, user }) {

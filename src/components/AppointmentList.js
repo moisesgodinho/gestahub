@@ -5,8 +5,8 @@ import { useState } from 'react';
 import { db } from '@/lib/firebase';
 import { doc, deleteDoc, setDoc, getDoc } from 'firebase/firestore';
 import { toast } from 'react-toastify';
-import ConfirmationModal from './ConfirmationModal';
-import AppointmentItem from './AppointmentItem'; // Importa o novo componente
+import ConfirmationModal from '@/components/ConfirmationModal'; // CORRIGIDO
+import AppointmentItem from './AppointmentItem';
 
 const getUTCDate = (date) => {
   if (!date) return null;

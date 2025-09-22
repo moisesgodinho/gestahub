@@ -10,6 +10,7 @@ import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge'; // Importa g
 import AppNavigation from '@/components/AppNavigation';
 import AppointmentForm from '@/components/AppointmentForm';
 import AppointmentList from '@/components/AppointmentList';
+import SkeletonLoader from '@/components/SkeletonLoader';
 
 const ultrasoundSchedule = [
   { id: 'transvaginal', name: '1º Ultrassom (Transvaginal)', startWeek: 8, endWeek: 11, type: 'ultrasound' },

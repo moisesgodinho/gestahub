@@ -5,7 +5,7 @@ import { doc, setDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { toast } from 'react-toastify';
 import { moodOptions, symptomOptions } from '@/data/journalData';
-import ConfirmationModal from './ConfirmationModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { getTodayString } from '@/lib/dateUtils';
 
 export default function JournalEntry({ user, entry, onSave, onCancel, allEntries }) {
@@ -15,7 +15,8 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
   const [notes, setNotes] = useState('');
   const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
   const [isExistingEntry, setIsExistingEntry] = useState(false);
-  const notesTextareaRef = useRef(null); // Ref para o textarea
+  const [isFutureDate, setIsFutureDate] = useState(false); // 1. Novo estado para controlar a data futura
+  const notesTextareaRef = useRef(null);
 
   useEffect(() => {
     if (entry) {
@@ -34,17 +35,19 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
     }
   }, [entry, allEntries]);
 
-  // Efeito para ajustar a altura do textarea ao carregar uma anotação existente
   useEffect(() => {
     if (notesTextareaRef.current) {
         const textarea = notesTextareaRef.current;
-        textarea.style.height = 'auto'; // Reseta a altura
-        textarea.style.height = `${textarea.scrollHeight}px`; // Ajusta para o conteúdo
+        textarea.style.height = 'auto';
+        textarea.style.height = `${textarea.scrollHeight}px`;
     }
   }, [notes]);
 
-
+  // 2. useEffect atualizado para verificar a data em tempo real
   useEffect(() => {
+    const today = getTodayString();
+    setIsFutureDate(date > today);
+
     if (!entry) {
       setIsExistingEntry(allEntries.some(e => e.id === date));
     }
@@ -56,7 +59,6 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
     );
   };
   
-  // Função para lidar com a mudança no textarea de anotações
   const handleNotesChange = (e) => {
     const textarea = e.target;
     setNotes(textarea.value);
@@ -86,6 +88,12 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
     if (!date) {
       toast.warn('Por favor, selecione uma data.');
       return;
+    }
+    
+    // A validação de data futura continua aqui como uma segurança final
+    if (isFutureDate) {
+        toast.warn("Não é possível adicionar registros para uma data futura.");
+        return;
     }
     
     if (!mood && selectedSymptoms.length === 0 && notes.trim() === '') {
@@ -125,9 +133,16 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
             value={date} 
             onChange={(e) => setDate(e.target.value)}
             disabled={!!entry}
+            max={getTodayString()}
             className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 disabled:opacity-50"
           />
-          {isExistingEntry && !entry && (
+          {/* 3. Renderização condicional da nova mensagem de aviso */}
+          {isFutureDate && !entry && (
+            <p className="text-sm text-red-500 dark:text-red-400 mt-2">
+              Não é possível criar um registro para uma data futura.
+            </p>
+          )}
+          {isExistingEntry && !entry && !isFutureDate && (
             <p className="text-sm text-amber-600 dark:text-amber-400 mt-2">
               Atenção: Já existe um registro para este dia. Salvar irá sobrescrevê-lo.
             </p>
@@ -156,7 +171,6 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
           </div>
         </div>
         
-        {/* CAMPO DE ANOTAÇÕES MODIFICADO */}
         <div className="mb-6">
           <label htmlFor="notes" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Anotações Adicionais</label>
           <textarea 
@@ -175,9 +189,9 @@ export default function JournalEntry({ user, entry, onSave, onCancel, allEntries
         </div>
 
         <div className="flex justify-end gap-4">
-          {!!entry && (
+          {!!onCancel && ( // Renderiza o botão de cancelar apenas se a prop for passada
               <button onClick={onCancel} className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors">
-                  Cancelar Edição
+                  Cancelar
               </button>
           )}
           <button onClick={handleSave} className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">
