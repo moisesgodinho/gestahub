@@ -9,7 +9,7 @@ import AppNavigation from '@/components/AppNavigation';
 import AgendaProximosPassos from '@/components/AgendaProximosPassos';
 import { useUser } from '@/context/UserContext';
 import { useGestationalData } from '@/hooks/useGestationalData';
-import SkeletonLoader from '@/components/SkeletonLoader'; // 1. Importe o componente
+import SkeletonLoader from '@/components/SkeletonLoader';
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
@@ -33,7 +33,6 @@ export default function Home() {
   
   const loading = userLoading || dataLoading;
 
-  // 2. Substitua o texto pelo SkeletonLoader
   if (loading) {
     return (
       <div className="flex items-center justify-center flex-grow p-4">

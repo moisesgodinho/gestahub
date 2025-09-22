@@ -19,7 +19,6 @@ export const metadata = {
 
 export default function RootLayout({ children }) {
   return (
-    // Adicione suppressHydrationWarning aqui
     <html lang="pt-BR" className="h-full" suppressHydrationWarning>
       <body className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900`}>
         <script
@@ -58,7 +57,7 @@ export default function RootLayout({ children }) {
 
         <UserProvider>
           <Header />
-          <main className="flex-grow">
+          <main className="flex-grow flex flex-col">
             {children}
           </main>
         </UserProvider>
