@@ -23,7 +23,7 @@ const getUTCDate = (date) => {
 
 export default function AppointmentForm({ user, appointmentToEdit, onFinish, professionalSuggestions, locationSuggestions, lmpDate, dueDate }) {
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState(getTodayString());
+  const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [professional, setProfessional] = useState('');
   const [location, setLocation] = useState('');
@@ -32,13 +32,14 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
 
   useEffect(() => {
     if (appointmentToEdit) {
-      setTitle(appointmentToEdit.title || appointmentToEdit.name);
+      setTitle(appointmentToEdit.title || appointmentToEdit.name || '');
       setDate(appointmentToEdit.date || getTodayString());
       setTime(appointmentToEdit.time || '');
       setProfessional(appointmentToEdit.professional || '');
       setLocation(appointmentToEdit.location || '');
       setNotes(appointmentToEdit.notes || '');
     } else {
+      // Reset fields for a completely new appointment (e.g., clicking the main button)
       setTitle('');
       setDate(getTodayString());
       setTime('');
@@ -48,7 +49,6 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
     }
   }, [appointmentToEdit]);
   
-  // Efeito para autoajustar a altura do textarea ao carregar dados existentes
   useEffect(() => {
     if (notesTextareaRef.current) {
         const textarea = notesTextareaRef.current;
@@ -72,11 +72,10 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
       return;
     }
     
-    // VALIDAÇÃO ATUALIZADA com tolerância de 2 semanas após o parto
     if (lmpDate && dueDate) {
       const selectedDate = new Date(date + 'T00:00:00Z');
       const extendedDueDate = new Date(dueDate.getTime());
-      extendedDueDate.setUTCDate(extendedDueDate.getUTCDate() + 14); // Adiciona 14 dias
+      extendedDueDate.setUTCDate(extendedDueDate.getUTCDate() + 14);
 
       if (selectedDate < lmpDate || selectedDate > extendedDueDate) {
         toast.error('A data da consulta deve estar dentro do período da gestação.');
@@ -102,11 +101,15 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
         }
     }
 
+    const dataToSave = { title, date, time, professional, location, notes };
+
     try {
-      if (appointmentToEdit) {
+      // --- LÓGICA CORRIGIDA ---
+      // Se 'appointmentToEdit' tiver um 'id', é uma edição. Senão, é uma nova adição.
+      if (appointmentToEdit && appointmentToEdit.id) {
         if (appointmentToEdit.type === 'manual') {
             const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentToEdit.id);
-            await setDoc(appointmentRef, { title, date, time, professional, location, notes }, { merge: true });
+            await setDoc(appointmentRef, dataToSave, { merge: true });
             toast.success('Consulta atualizada com sucesso!');
         } else if (appointmentToEdit.type === 'ultrasound') {
             const userDocRef = doc(db, 'users', user.uid);
@@ -129,8 +132,9 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
             }
         }
       } else {
+        // Criar uma nova consulta manual
         const appointmentsRef = collection(db, 'users', user.uid, 'appointments');
-        await addDoc(appointmentsRef, { title, date, time, professional, location, notes, done: false });
+        await addDoc(appointmentsRef, { ...dataToSave, done: false });
         toast.success('Consulta adicionada com sucesso!');
       }
       onFinish();
@@ -143,7 +147,7 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
   return (
     <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
       <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
-        {appointmentToEdit ? 'Editar Consulta' : 'Adicionar Nova Consulta'}
+        {appointmentToEdit && appointmentToEdit.id ? 'Editar Consulta' : 'Adicionar Nova Consulta'}
       </h2>
       <form onSubmit={handleSave} className="space-y-4">
         <div>
@@ -192,7 +196,6 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
           </datalist>
         </div>
         
-        {/* CAMPO DE ANOTAÇÕES MODIFICADO */}
         <div>
           <label htmlFor="notes" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Anotações</label>
           <textarea 
@@ -215,7 +218,7 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
             Cancelar
           </button>
           <button type="submit" className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700">
-            {appointmentToEdit ? 'Atualizar' : 'Salvar'}
+            {appointmentToEdit && appointmentToEdit.id ? 'Atualizar' : 'Salvar'}
           </button>
         </div>
       </form>

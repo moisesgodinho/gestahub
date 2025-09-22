@@ -92,15 +92,24 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
         const dayAppointments = appointmentsByDate.get(dateString) || [];
         const isToday = dateString === todayString;
         const windowExam = ultrasoundWindows.get(dateString);
-
         const windowBgClass = windowExam ? colorClasses[windowExam.color]?.bg || '' : '';
+
+        // --- LÓGICA PARA ADICIONAR A BORDA ---
+        let borderClass = 'border-2 border-transparent'; // Borda transparente por padrão
+        if (dayAppointments.length > 0) {
+            const hasUltrasound = dayAppointments.some(app => app.type === 'ultrasound');
+            borderClass = hasUltrasound 
+                ? 'border-2 border-rose-200 dark:border-rose-800' 
+                : 'border-2 border-indigo-200 dark:border-indigo-800';
+        }
 
         calendarDays.push(
             <div
                 key={day}
-                onClick={() => dayAppointments.length > 0 ? onViewAppointment(dayAppointments[0]) : onDateSelect(dateString)}
-                className={`p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col justify-between aspect-square relative group
+                onClick={() => dayAppointments.length > 0 ? onViewAppointment(dayAppointments) : onDateSelect(dateString)}
+                className={`p-1 text-center rounded-lg transition-all duration-200 cursor-pointer flex flex-col justify-between aspect-square relative group
                     ${windowBgClass}
+                    ${borderClass}
                     hover:bg-slate-100 dark:hover:bg-slate-700
                 `}
                 title={windowExam ? `Janela ideal para: ${windowExam.name}`: ''}
@@ -111,8 +120,8 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
                     {day}
                 </span>
                 <div className="space-y-1 overflow-hidden">
-                    {dayAppointments.slice(0, 2).map(app => ( // Limita a 2 eventos visíveis
-                        <div key={app.id} className={`w-full text-xs p-1 rounded truncate
+                    {dayAppointments.slice(0, 2).map(app => (
+                        <div key={app.id || app.name} className={`w-full text-xs p-1 rounded truncate
                             ${app.type === 'ultrasound' ? 'bg-rose-200 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200' : 'bg-indigo-200 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200'}`}
                         >
                             {app.title || app.name}
@@ -126,11 +135,11 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
     return (
         <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl mb-6">
              <div className="flex justify-between items-center mb-4">
-                <button onClick={() => changeMonth(-1)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ChevronLeftIcon /></button>
+                <button onClick={() => changeMonth(-1)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"><ChevronLeftIcon /></button>
                 <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
                     {currentDate.toLocaleString('pt-BR', { month: 'long', year: 'numeric' })}
                 </h3>
-                <button onClick={() => changeMonth(1)} className="p-2 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700"><ChevronRightIcon /></button>
+                <button onClick={() => changeMonth(1)} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700"><ChevronRightIcon /></button>
             </div>
             <div className="grid grid-cols-7 gap-1 text-sm">
                 {['Dom', 'Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb'].map(day => (

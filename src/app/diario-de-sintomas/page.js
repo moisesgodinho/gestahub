@@ -1,13 +1,17 @@
 // src/app/diario-de-sintomas/page.js
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import { doc, deleteDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
+import { toast } from 'react-toastify';
 import AppNavigation from '@/components/AppNavigation';
 import JournalEntry from '@/components/JournalEntry';
 import JournalHistory from '@/components/JournalHistory';
 import SymptomChart from '@/components/SymptomChart';
 import JournalCalendar from '@/components/JournalCalendar';
 import JournalViewModal from '@/components/JournalViewModal';
+import ConfirmationModal from '@/components/ConfirmationModal';
 import { useUser } from '@/context/UserContext'; 
 import { useJournalEntries } from '@/hooks/useJournalEntries';
 import SkeletonLoader from '@/components/SkeletonLoader';
@@ -21,10 +25,16 @@ export default function JournalPage() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
+  const [isAddEntryModalOpen, setIsAddEntryModalOpen] = useState(false);
+  const [selectedDateForNew, setSelectedDateForNew] = useState(null);
+
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [entryToDelete, setEntryToDelete] = useState(null);
+
   // Abre o formulário de edição
   const handleEdit = (entry) => {
     setEntryToEdit(entry);
-    setIsFormOpen(true); // Abre o formulário
+    setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -34,10 +44,17 @@ export default function JournalPage() {
     setIsViewModalOpen(true);
   }
 
-  // Abre o formulário para uma nova entrada a partir do calendário
+  // Abre o modal de confirmação para adicionar nova entrada
   const handleDateSelect = (dateString) => {
-    setEntryToEdit({ id: dateString }); 
-    setIsFormOpen(true); // Abre o formulário
+    setSelectedDateForNew(dateString);
+    setIsAddEntryModalOpen(true);
+  };
+
+  // Confirma e abre o formulário para a nova entrada
+  const confirmAndOpenForm = () => {
+    setIsAddEntryModalOpen(false);
+    setEntryToEdit({ id: selectedDateForNew }); 
+    setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -46,6 +63,34 @@ export default function JournalPage() {
     setEntryToEdit(null);
     setIsFormOpen(false);
   };
+
+  // Abre o modal de confirmação para exclusão
+  const handleDeleteRequest = (entry) => {
+    setIsViewModalOpen(false); // Fecha o modal de visualização
+    setEntryToDelete(entry);
+    setIsDeleteModalOpen(true);
+  };
+  
+  // Confirma e executa a exclusão
+  const confirmDelete = async () => {
+    if (!user || !entryToDelete) return;
+    try {
+      const entryRef = doc(db, 'users', user.uid, 'symptomEntries', entryToDelete.id);
+      await deleteDoc(entryRef);
+      toast.info("Entrada do diário removida.");
+    } catch (error) {
+      toast.error("Não foi possível apagar a entrada.");
+    } finally {
+      setIsDeleteModalOpen(false);
+      setEntryToDelete(null);
+    }
+  };
+
+  const formattedDateForModal = useMemo(() => {
+    if (!selectedDateForNew) return '';
+    const date = new Date(`${selectedDateForNew}T00:00:00Z`);
+    return date.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+  }, [selectedDateForNew]);
 
   const loading = userLoading || entriesLoading;
 
@@ -63,10 +108,29 @@ export default function JournalPage() {
         isOpen={isViewModalOpen}
         onClose={() => setIsViewModalOpen(false)}
         entry={entryToView}
-        onEdit={() => {
+        onEdit={(entry) => {
           setIsViewModalOpen(false);
-          handleEdit(entryToView);
+          handleEdit(entry);
         }}
+        onDelete={handleDeleteRequest}
+      />
+
+      <ConfirmationModal
+        isOpen={isAddEntryModalOpen}
+        onClose={() => setIsAddEntryModalOpen(false)}
+        onConfirm={confirmAndOpenForm}
+        title="Nenhum Registro no Diário"
+        message={`Nenhum registro para o dia ${formattedDateForModal}. Deseja adicionar um?`}
+        confirmButtonText="Adicionar Registro"
+        confirmButtonClass="bg-indigo-600 hover:bg-indigo-700"
+      />
+
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja apagar esta entrada do diário?"
       />
 
       <div className="flex items-center justify-center flex-grow p-4">
