@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore'; // Import 'collection' e 'deleteDoc'
+import { doc, setDoc, deleteDoc, collection } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
@@ -77,7 +77,6 @@ export default function WeightTrackerPage() {
 
     try {
       const userDocRef = doc(db, 'users', user.uid);
-      // MODIFICADO: Salva o weightProfile dentro de gestationalProfile
       const dataToSave = {
         gestationalProfile: {
           weightProfile: {
@@ -95,7 +94,6 @@ export default function WeightTrackerPage() {
     }
   };
 
-  // MODIFICADO: Salva um novo documento na subcoleção
   const proceedWithSave = async () => {
     const parsedCurrentWeight = parseFloat(currentWeight);
     const newEntry = { 
@@ -105,7 +103,6 @@ export default function WeightTrackerPage() {
     };
 
     try {
-      // O ID do documento será a própria data (YYYY-MM-DD), o que previne duplicatas
       const entryRef = doc(db, 'users', user.uid, 'weightHistory', entryDate);
       await setDoc(entryRef, newEntry);
       
@@ -136,7 +133,6 @@ export default function WeightTrackerPage() {
       toast.warn("A data do registro não pode ser anterior ao início da gestação.");
       return;
     }
-    // Verifica se já existe um registro para a data (o ID do documento é a data)
     if (weightHistory.some(entry => entry.id === entryDate)) {
       setIsOverwriteModalOpen(true);
       return;
@@ -149,11 +145,9 @@ export default function WeightTrackerPage() {
     setIsModalOpen(true);
   };
 
-  // MODIFICADO: Deleta o documento da subcoleção
   const confirmDeleteEntry = async () => {
     if (!user || !entryToDelete) return;
     try {
-      // O ID da entrada agora corresponde ao ID do documento
       const entryRef = doc(db, 'users', user.uid, 'weightHistory', entryToDelete.id);
       await deleteDoc(entryRef);
       toast.info("Registro de peso removido.");
@@ -174,7 +168,6 @@ export default function WeightTrackerPage() {
   
   const recommendation = getBMICategory(calculations.initialBmi);
 
-  // O restante do JSX permanece o mesmo
   return (
     <>
       <ConfirmationModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} onConfirm={confirmDeleteEntry} title="Confirmar Exclusão" message="Tem certeza que deseja apagar este registro de peso?"/>
@@ -278,8 +271,8 @@ export default function WeightTrackerPage() {
                           <p className="font-bold text-lg text-slate-800 dark:text-slate-100">{parseFloat(entry.weight).toFixed(1)} kg</p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">IMC: {entry.bmi}</p>
                         </div>
-                        <button onClick={() => openDeleteConfirmation(entry)} title="Apagar registro" className="p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                        <button onClick={() => openDeleteConfirmation(entry)} title="Apagar registro" className="flex items-center justify-center p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors">
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                         </button>
                       </div>
                     ))}
