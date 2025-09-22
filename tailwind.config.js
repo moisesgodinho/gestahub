@@ -1,6 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
+  // Safelist ATUALIZADA para as cores escuras e sólidas
+  safelist: [
+    {
+      pattern: /bg-(blue|green|yellow|purple|teal)-(50|200)/,
+    },
+    {
+      pattern: /dark:bg-(sky|emerald|amber|violet|cyan)-(400|900)/,
+    },
+     {
+      pattern: /text-(blue|green|yellow|purple|teal)-(800|200)/,
+    }
+  ],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",
@@ -22,15 +34,14 @@ module.exports = {
         },
         'pop-in': {
           '0%': { opacity: '0', transform: 'scale(0.9)' },
-          '100%': { opacity: '1', transform: 'scale(1)' },
+          '100%': { opacity: '1' },
         },
-        // As animações de confete foram removidas daqui
       },
       animation: {
         'fade-in': 'fadeIn 0.4s ease-out forwards',
         'fade-in-fast': 'fade-in-fast 0.3s ease-out forwards',
         'pop-in': 'pop-in 0.4s ease-out forwards',
-        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite', // Adicione esta linha
+        'pulse': 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
       },
     },
   },

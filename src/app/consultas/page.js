@@ -6,10 +6,12 @@ import { useSearchParams } from 'next/navigation';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase';
 import { collection, onSnapshot, query, orderBy, doc } from 'firebase/firestore';
-import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge'; // Importa getDueDate
+import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge';
 import AppNavigation from '@/components/AppNavigation';
 import AppointmentForm from '@/components/AppointmentForm';
 import AppointmentList from '@/components/AppointmentList';
+import AppointmentCalendar from '@/components/AppointmentCalendar'; // Importe o calendário
+import AppointmentViewModal from '@/components/AppointmentViewModal'; // Importe o modal de visualização
 import SkeletonLoader from '@/components/SkeletonLoader';
 
 const ultrasoundSchedule = [
@@ -26,8 +28,10 @@ function AppointmentsPageContent() {
   const [manualAppointments, setManualAppointments] = useState([]);
   const [ultrasoundAppointments, setUltrasoundAppointments] = useState([]);
   const [appointmentToEdit, setAppointmentToEdit] = useState(null);
+  const [appointmentToView, setAppointmentToView] = useState(null);
+  const [isViewModalOpen, setIsViewModalOpen] = useState(false);
   const [lmpDate, setLmpDate] = useState(null);
-  const [dueDate, setDueDate] = useState(null); // Estado para a Data Provável do Parto
+  const [dueDate, setDueDate] = useState(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
   
   const searchParams = useSearchParams();
@@ -56,7 +60,7 @@ function AppointmentsPageContent() {
           setLmpDate(estimatedLmp);
           
           if (estimatedLmp) {
-            setDueDate(getDueDate(estimatedLmp)); // Calcula e salva a DPP
+            setDueDate(getDueDate(estimatedLmp));
           }
 
           const ultrasoundData = userData.ultrasoundSchedule || {};
@@ -96,9 +100,14 @@ function AppointmentsPageContent() {
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
+  
+  const handleView = (appointment) => {
+      setAppointmentToView(appointment);
+      setIsViewModalOpen(true);
+  };
 
-  const handleAddNew = () => {
-    setAppointmentToEdit(null);
+  const handleAddNew = (dateString = null) => {
+    setAppointmentToEdit(dateString ? { date: dateString } : null);
     setIsFormOpen(true);
   };
 
@@ -108,51 +117,62 @@ function AppointmentsPageContent() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center flex-grow p-4">
-        <SkeletonLoader type="fullPage" />
-      </div>
-    );
+    return <div className="flex items-center justify-center flex-grow p-4"><SkeletonLoader type="fullPage" /></div>;
   }
 
   return (
-    <div className="flex items-center justify-center flex-grow p-4">
-      <div className="w-full max-w-3xl">
-        <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
-          Registro de Consultas e Exames
-        </h1>
-        
-        {isFormOpen ? (
-          <AppointmentForm 
-            user={user}
-            appointmentToEdit={appointmentToEdit}
-            onFinish={handleCloseForm}
-            professionalSuggestions={professionalSuggestions}
-            locationSuggestions={locationSuggestions}
+    <>
+      <AppointmentViewModal
+        isOpen={isViewModalOpen}
+        onClose={() => setIsViewModalOpen(false)}
+        appointment={appointmentToView}
+        onEdit={(app) => {
+            setIsViewModalOpen(false);
+            handleEdit(app);
+        }}
+      />
+      <div className="flex items-center justify-center flex-grow p-4">
+        <div className="w-full max-w-3xl">
+          <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
+            Registro de Consultas e Exames
+          </h1>
+          
+          {isFormOpen ? (
+            <AppointmentForm 
+              user={user}
+              appointmentToEdit={appointmentToEdit}
+              onFinish={handleCloseForm}
+              professionalSuggestions={professionalSuggestions}
+              locationSuggestions={locationSuggestions}
+              lmpDate={lmpDate}
+              dueDate={dueDate}
+            />
+          ) : (
+            <div className="mb-6 text-center">
+              <button onClick={() => handleAddNew()} className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">
+                Adicionar Nova Consulta
+              </button>
+            </div>
+          )}
+          
+          <AppointmentCalendar
+            appointments={combinedAppointments}
             lmpDate={lmpDate}
-            dueDate={dueDate}
+            onDateSelect={handleAddNew}
+            onViewAppointment={handleView}
           />
-        ) : (
-          <div className="mb-6 text-center">
-            <button
-              onClick={handleAddNew}
-              className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
-            >
-              Adicionar Nova Consulta
-            </button>
-          </div>
-        )}
-        
-        <AppointmentList 
-          appointments={combinedAppointments}
-          onEdit={handleEdit}
-          user={user}
-          lmpDate={lmpDate}
-        />
-        
-        <AppNavigation />
+
+          <AppointmentList 
+            appointments={combinedAppointments}
+            onEdit={handleEdit}
+            user={user}
+            lmpDate={lmpDate}
+          />
+          
+          <AppNavigation />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
 
