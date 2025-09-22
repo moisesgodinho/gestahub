@@ -1,18 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: 'class',
-  // Safelist ATUALIZADA para as cores escuras e sólidas
-  safelist: [
-    {
-      pattern: /bg-(blue|green|yellow|purple|teal)-(50|200)/,
-    },
-    {
-      pattern: /dark:bg-(sky|emerald|amber|violet|cyan)-(400|900)/,
-    },
-     {
-      pattern: /text-(blue|green|yellow|purple|teal)-(800|200)/,
-    }
-  ],
   content: [
     "./src/pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./src/components/**/*.{js,ts,jsx,tsx,mdx}",

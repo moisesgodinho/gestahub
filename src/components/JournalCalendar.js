@@ -7,13 +7,13 @@ import { getTodayString } from '@/lib/dateUtils';
 
 // Ícones para navegação
 const ChevronLeftIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="15 18 9 12 15 6"></polyline>
     </svg>
 );
 
 const ChevronRightIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
         <polyline points="9 18 15 12 9 6"></polyline>
     </svg>
 );
@@ -60,7 +60,7 @@ export default function JournalCalendar({ entries, onDateSelect, onEditEntry }) 
             <div
                 key={day}
                 onClick={() => (entry ? onEditEntry(entry) : onDateSelect(dateString))}
-                className="p-2 text-center rounded-lg transition-colors cursor-pointer flex flex-col items-center justify-center h-16 relative hover:bg-slate-200 dark:hover:bg-slate-700"
+                className="p-2 text-center rounded-lg transition-colors cursor-pointer flex flex-col items-center justify-center aspect-square relative hover:bg-slate-200 dark:hover:bg-slate-700"
             >
                 <span className={`w-8 h-8 flex items-center justify-center rounded-full ${isToday ? 'bg-rose-500 text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                     {day}

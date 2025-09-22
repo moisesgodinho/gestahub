@@ -8,13 +8,31 @@ import { getTodayString } from '@/lib/dateUtils';
 const ChevronLeftIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>);
 const ChevronRightIcon = () => (<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>);
 
-// Paleta de cores definida para modo claro e escuro
+// Mapeamento de cores para classes completas do Tailwind
+const colorClasses = {
+  blue: {
+    bg: 'bg-blue-50 dark:bg-sky-900',
+  },
+  green: {
+    bg: 'bg-green-50 dark:bg-emerald-900',
+  },
+  yellow: {
+    bg: 'bg-yellow-50 dark:bg-amber-900',
+  },
+  purple: {
+    bg: 'bg-purple-50 dark:bg-violet-900',
+  },
+  teal: {
+    bg: 'bg-teal-50 dark:bg-cyan-900',
+  },
+};
+
 const ultrasoundSchedule = [
-  { id: 'transvaginal', name: '1º Ultrassom (Transvaginal)', startWeek: 8, endWeek: 11, type: 'ultrasound', color: 'blue', darkColor: 'sky' },
-  { id: 'morfologico_1', name: 'Morfológico 1º Trimestre', startWeek: 12, endWeek: 14, type: 'ultrasound', color: 'green', darkColor: 'emerald' },
-  { id: 'morfologico_2', name: 'Morfológico 2º Trimestre', startWeek: 22, endWeek: 24, type: 'ultrasound', color: 'yellow', darkColor: 'amber' },
-  { id: 'ecocardiograma', name: 'Ecocardiograma Fetal', startWeek: 26, endWeek: 28, type: 'ultrasound', color: 'purple', darkColor: 'violet' },
-  { id: 'doppler_3', name: '3º Trimestre com Doppler', startWeek: 28, endWeek: 36, type: 'ultrasound', color: 'teal', darkColor: 'cyan' },
+  { id: 'transvaginal', name: '1º Ultrassom (Transvaginal)', startWeek: 8, endWeek: 11, type: 'ultrasound', color: 'blue' },
+  { id: 'morfologico_1', name: 'Morfológico 1º Trimestre', startWeek: 12, endWeek: 14, type: 'ultrasound', color: 'green' },
+  { id: 'morfologico_2', name: 'Morfológico 2º Trimestre', startWeek: 22, endWeek: 24, type: 'ultrasound', color: 'yellow' },
+  { id: 'ecocardiograma', name: 'Ecocardiograma Fetal', startWeek: 26, endWeek: 28, type: 'ultrasound', color: 'purple' },
+  { id: 'doppler_3', name: '3º Trimestre com Doppler', startWeek: 28, endWeek: 36, type: 'ultrasound', color: 'teal' },
 ];
 
 export default function AppointmentCalendar({ appointments, lmpDate, onDateSelect, onViewAppointment }) {
@@ -75,14 +93,13 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
         const isToday = dateString === todayString;
         const windowExam = ultrasoundWindows.get(dateString);
 
-        // CORREÇÃO: Usando cores sólidas e escuras para o modo escuro
-        const windowBgClass = windowExam ? `bg-${windowExam.color}-50 dark:bg-${windowExam.darkColor}-900` : '';
+        const windowBgClass = windowExam ? colorClasses[windowExam.color]?.bg || '' : '';
 
         calendarDays.push(
             <div
                 key={day}
                 onClick={() => dayAppointments.length > 0 ? onViewAppointment(dayAppointments[0]) : onDateSelect(dateString)}
-                className={`p-1 text-center rounded-lg transition-colors cursor-pointer min-h-[6rem] flex flex-col relative group
+                className={`p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col justify-between aspect-square relative group
                     ${windowBgClass}
                     hover:bg-slate-100 dark:hover:bg-slate-700
                 `}
@@ -93,8 +110,8 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
                 `}>
                     {day}
                 </span>
-                <div className="flex-grow space-y-1 mt-1 overflow-hidden">
-                    {dayAppointments.map(app => (
+                <div className="space-y-1 overflow-hidden">
+                    {dayAppointments.slice(0, 2).map(app => ( // Limita a 2 eventos visíveis
                         <div key={app.id} className={`w-full text-xs p-1 rounded truncate
                             ${app.type === 'ultrasound' ? 'bg-rose-200 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200' : 'bg-indigo-200 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200'}`}
                         >
@@ -127,8 +144,7 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
                     <div className="flex flex-wrap gap-x-4 gap-y-2">
                         {ultrasoundSchedule.map(exam => (
                             <div key={exam.id} className="flex items-center gap-2">
-                                {/* Legenda também usa cores mais vibrantes no modo escuro */}
-                                <span className={`w-4 h-4 rounded-full bg-${exam.color}-200 dark:bg-${exam.darkColor}-400`}></span>
+                                <span className={`w-4 h-4 rounded-lg ${colorClasses[exam.color]?.bg || ''}`}></span>
                                 <span className="text-sm text-slate-600 dark:text-slate-400">{exam.name}</span>
                             </div>
                         ))}
