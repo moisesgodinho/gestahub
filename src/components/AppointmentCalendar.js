@@ -1,7 +1,7 @@
 // src/components/AppointmentCalendar.js
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { getTodayString } from '@/lib/dateUtils';
 
 // Ícones
@@ -30,6 +30,10 @@ const colorClasses = {
     bg: 'bg-teal-100 dark:bg-cyan-800/50',
     legend: 'bg-teal-200 dark:bg-cyan-700'
   },
+  appointment: {
+    bg: 'bg-red-200 dark:bg-red-800/60',
+    legend: 'bg-red-300 dark:bg-red-700'
+  }
 };
 
 const ultrasoundSchedule = [
@@ -42,7 +46,17 @@ const ultrasoundSchedule = [
 
 export default function AppointmentCalendar({ appointments, lmpDate, onDateSelect, onViewAppointment }) {
     const [currentDate, setCurrentDate] = useState(new Date());
+    const [isMobile, setIsMobile] = useState(false);
     const todayString = getTodayString();
+
+    useEffect(() => {
+        const checkScreenSize = () => {
+            setIsMobile(window.innerWidth < 640);
+        };
+        checkScreenSize();
+        window.addEventListener('resize', checkScreenSize);
+        return () => window.removeEventListener('resize', checkScreenSize);
+    }, []);
 
     const appointmentsByDate = useMemo(() => {
         const map = new Map();
@@ -98,17 +112,12 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
         const isToday = dateString === todayString;
         const windowExam = ultrasoundWindows.get(dateString);
         
-        // --- LÓGICA MODIFICADA ---
-        // Define uma cor de fundo padrão para dias normais e uma cor específica para janelas de ultrassom.
-        const windowBgClass = windowExam ? colorClasses[windowExam.color]?.bg || '' : 'bg-slate-50 dark:bg-slate-700/50';
-
-        // --- LÓGICA PARA ADICIONAR A BORDA ---
-        let borderClass = 'border-2 border-transparent'; // Borda transparente por padrão
+        let bgClass = 'bg-slate-50 dark:bg-slate-700/50';
+        if (windowExam) {
+            bgClass = colorClasses[windowExam.color]?.bg || bgClass;
+        }
         if (dayAppointments.length > 0) {
-            const hasUltrasound = dayAppointments.some(app => app.type === 'ultrasound');
-            borderClass = hasUltrasound 
-                ? 'border-2 border-rose-200 dark:border-rose-800' 
-                : 'border-2 border-indigo-200 dark:border-indigo-800';
+            bgClass = colorClasses.appointment.bg;
         }
 
         calendarDays.push(
@@ -116,25 +125,36 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
                 key={day}
                 onClick={() => dayAppointments.length > 0 ? onViewAppointment(dayAppointments) : onDateSelect(dateString)}
                 className={`p-1 text-center rounded-lg transition-all duration-200 cursor-pointer flex flex-col justify-between aspect-square relative group
-                    ${windowBgClass}
-                    ${borderClass}
-                    hover:bg-slate-100 dark:hover:bg-slate-700
+                    ${bgClass}
+                    ${isToday ? 'brightness-90' : ''}
+                    hover:brightness-95
                 `}
                 title={windowExam ? `Janela ideal para: ${windowExam.name}`: ''}
             >
-                <span className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end
-                    ${isToday ? 'bg-rose-500 text-white' : 'text-slate-700 dark:text-slate-300'}
+                <span className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end font-semibold
+                    ${isToday ? 'text-rose-500 dark:text-rose-400' : 'text-slate-700 dark:text-slate-300'}
                 `}>
                     {day}
                 </span>
-                <div className="space-y-1 overflow-hidden">
-                    {dayAppointments.slice(0, 2).map(app => (
-                        <div key={app.id || app.name} className={`w-full text-xs p-1 rounded truncate
-                            ${app.type === 'ultrasound' ? 'bg-rose-200 text-rose-800 dark:bg-rose-900/50 dark:text-rose-200' : 'bg-indigo-200 text-indigo-800 dark:bg-indigo-900/50 dark:text-indigo-200'}`}
-                        >
-                            {app.title || app.name}
+                <div className="flex-grow flex items-center justify-center -mt-2">
+                    {isMobile ? (
+                        dayAppointments.length > 0 && (
+                            <div className="flex gap-1">
+                                {dayAppointments.some(a => a.type === 'ultrasound') && <div className="w-2 h-2 bg-rose-500 rounded-full"></div>}
+                                {dayAppointments.some(a => a.type === 'manual') && <div className="w-2 h-2 bg-red-500 rounded-full"></div>}
+                            </div>
+                        )
+                    ) : (
+                        <div className="space-y-1 overflow-hidden w-full">
+                            {dayAppointments.slice(0, 2).map(app => (
+                                <div key={app.id || app.name} className={`w-full text-xs p-1 rounded truncate
+                                    ${app.type === 'ultrasound' ? 'bg-pink-200 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200' : 'bg-red-300 text-red-800 dark:bg-red-900/50 dark:text-red-200'}`}
+                                >
+                                    {app.title || app.name}
+                                </div>
+                            ))}
                         </div>
-                    ))}
+                    )}
                 </div>
             </div>
         );
@@ -159,6 +179,10 @@ export default function AppointmentCalendar({ appointments, lmpDate, onDateSelec
                 <div className="mt-6 pt-4 border-t border-slate-200 dark:border-slate-700">
                     <h4 className="text-md font-semibold text-slate-700 dark:text-slate-300 mb-2">Legenda das Janelas Ideais:</h4>
                     <div className="flex flex-wrap gap-x-4 gap-y-2">
+                        <div className="flex items-center gap-2">
+                            <span className={`w-4 h-4 rounded-lg ${colorClasses.appointment.legend}`}></span>
+                            <span className="text-sm text-slate-600 dark:text-slate-400">Consultas/Exames Agendados</span>
+                        </div>
                         {ultrasoundSchedule.map(exam => (
                             <div key={exam.id} className="flex items-center gap-2">
                                 <span className={`w-4 h-4 rounded-lg ${colorClasses[exam.color]?.legend || ''}`}></span>
