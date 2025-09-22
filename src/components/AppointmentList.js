@@ -47,7 +47,8 @@ export default function AppointmentList({ appointments, onEdit, user, lmpDate })
         const userDocRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
-          const scheduleData = docSnap.data().ultrasoundSchedule || {};
+          // MODIFICADO: Acessa o ultrasoundSchedule de dentro do gestationalProfile
+          const scheduleData = docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
           const updatedSchedule = {
             ...scheduleData,
             [appointment.id]: {
@@ -55,7 +56,8 @@ export default function AppointmentList({ appointments, onEdit, user, lmpDate })
               done: newDoneStatus,
             },
           };
-          await setDoc(userDocRef, { ultrasoundSchedule: updatedSchedule }, { merge: true });
+          // MODIFICADO: Salva o ultrasoundSchedule dentro de gestationalProfile
+          await setDoc(userDocRef, { gestationalProfile: { ultrasoundSchedule: updatedSchedule } }, { merge: true });
         }
       }
       toast.success(`Marcado como ${newDoneStatus ? 'concluído' : 'pendente'}!`);

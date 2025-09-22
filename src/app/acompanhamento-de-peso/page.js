@@ -76,9 +76,17 @@ export default function WeightTrackerPage() {
     if (parsedWeight < 30 || parsedWeight > 300) { toast.warn('Por favor, insira um peso realista (entre 30 e 300 kg).'); return; }
 
     try {
-      // Salva apenas o perfil no documento principal, sem o histórico
       const userDocRef = doc(db, 'users', user.uid);
-      await setDoc(userDocRef, { weightProfile: { height: parsedHeight, prePregnancyWeight: parsedWeight } }, { merge: true });
+      // MODIFICADO: Salva o weightProfile dentro de gestationalProfile
+      const dataToSave = {
+        gestationalProfile: {
+          weightProfile: {
+            height: parsedHeight,
+            prePregnancyWeight: parsedWeight,
+          },
+        },
+      };
+      await setDoc(userDocRef, dataToSave, { merge: true });
       toast.success('Dados iniciais salvos com sucesso!');
       setIsEditing(false);
     } catch (error) {
@@ -271,7 +279,7 @@ export default function WeightTrackerPage() {
                           <p className="text-xs text-slate-500 dark:text-slate-400">IMC: {entry.bmi}</p>
                         </div>
                         <button onClick={() => openDeleteConfirmation(entry)} title="Apagar registro" className="p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors">
-                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
                         </button>
                       </div>
                     ))}

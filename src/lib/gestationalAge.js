@@ -23,11 +23,13 @@ const parseUTCDate = (dateString) => {
  * @returns {Date|null} - Um objeto de Data representando a DUM estimada em UTC, ou nulo.
  */
 export function getEstimatedLmp(userData) {
-  if (!userData) return null;
+  // MODIFICADO: Acessa o novo objeto 'gestationalProfile'
+  const profile = userData?.gestationalProfile;
+  if (!profile) return null;
 
   // Prioridade 1: Dados do Ultrassom
-  if (userData.ultrasound && userData.ultrasound.examDate) {
-    const { examDate, weeksAtExam, daysAtExam } = userData.ultrasound;
+  if (profile.ultrasound && profile.ultrasound.examDate) {
+    const { examDate, weeksAtExam, daysAtExam } = profile.ultrasound;
     const examDateObj = parseUTCDate(examDate);
     if (!examDateObj) return null;
 
@@ -40,8 +42,8 @@ export function getEstimatedLmp(userData) {
   }
 
   // Prioridade 2: Dados da DUM
-  if (userData.lmp) {
-    return parseUTCDate(userData.lmp);
+  if (profile.lmp) {
+    return parseUTCDate(profile.lmp);
   }
 
   return null;

@@ -19,8 +19,9 @@ export default function CalculadoraDUM({ user, onSaveSuccess, onCancel }) {
       const fetchLmp = async () => {
         const docRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().lmp) {
-          const savedLmp = docSnap.data().lmp;
+        // MODIFICADO: Busca o lmp de dentro do gestationalProfile
+        if (docSnap.exists() && docSnap.data().gestationalProfile?.lmp) {
+          const savedLmp = docSnap.data().gestationalProfile.lmp;
           setLmp(formatDateForDisplay(savedLmp));
         }
       };
@@ -52,7 +53,9 @@ export default function CalculadoraDUM({ user, onSaveSuccess, onCancel }) {
     if (user && dateObject) {
       try {
         const dateToSave = dateObject.toISOString().split('T')[0];
-        await setDoc(doc(db, 'users', user.uid), { lmp: dateToSave }, { merge: true });
+        // MODIFICADO: Salva o lmp dentro de gestationalProfile
+        const data = { gestationalProfile: { lmp: dateToSave } };
+        await setDoc(doc(db, 'users', user.uid), data, { merge: true });
         toast.success("Data salva com sucesso!");
         if (onSaveSuccess) onSaveSuccess();
       } catch (error) {

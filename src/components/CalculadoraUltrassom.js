@@ -21,8 +21,9 @@ export default function CalculadoraUltrassom({ user, onSaveSuccess, onCancel }) 
       const fetchExamData = async () => {
         const docRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(docRef);
-        if (docSnap.exists() && docSnap.data().ultrasound) {
-          const { examDate, weeksAtExam, daysAtExam } = docSnap.data().ultrasound;
+        // MODIFICADO: Busca os dados de ultrassom de dentro do gestationalProfile
+        if (docSnap.exists() && docSnap.data().gestationalProfile?.ultrasound) {
+          const { examDate, weeksAtExam, daysAtExam } = docSnap.data().gestationalProfile.ultrasound;
           const displayDate = formatDateForDisplay(examDate);
           setExamDate(displayDate);
           setWeeksAtExam(weeksAtExam);
@@ -72,7 +73,9 @@ export default function CalculadoraUltrassom({ user, onSaveSuccess, onCancel }) 
           weeksAtExam,
           daysAtExam: daysAtExam || '0',
         };
-        await setDoc(doc(db, 'users', user.uid), { ultrasound: ultrasoundData }, { merge: true });
+        // MODIFICADO: Salva os dados de ultrassom dentro de gestationalProfile
+        const data = { gestationalProfile: { ultrasound: ultrasoundData } };
+        await setDoc(doc(db, 'users', user.uid), data, { merge: true });
         toast.success("Dados do ultrassom salvos!");
         if (onSaveSuccess) onSaveSuccess();
       } catch (error) {

@@ -41,8 +41,9 @@ export function useWeightData(user) {
           setDueDate(getDueDate(lmpDate));
         }
 
-        if (userData.weightProfile) {
-          const profile = userData.weightProfile;
+        // MODIFICADO: Acessa o weightProfile dentro de gestationalProfile
+        const profile = userData.gestationalProfile?.weightProfile;
+        if (profile) {
           setWeightProfile(profile);
           if (profile.height && profile.prePregnancyWeight) {
             const initialBmi = calculateBMI(profile.prePregnancyWeight, profile.height);

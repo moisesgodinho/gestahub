@@ -54,7 +54,8 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
       const ultrasoundItems = [];
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        const ultrasoundData = userData.ultrasoundSchedule || {};
+        // MODIFICADO: Acessa o ultrasoundSchedule de dentro do gestationalProfile
+        const ultrasoundData = userData.gestationalProfile?.ultrasoundSchedule || {};
         
         ultrasoundSchedule.forEach(exam => {
           const examData = ultrasoundData[exam.id] || {};
@@ -112,9 +113,10 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
         const userDocRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
-          const scheduleData = docSnap.data().ultrasoundSchedule || {};
+          const scheduleData = docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
           const updatedSchedule = { ...scheduleData, [appointment.id]: { ...scheduleData[appointment.id], done: newDoneStatus } };
-          await setDoc(userDocRef, { ultrasoundSchedule: updatedSchedule }, { merge: true });
+          // MODIFICADO: Salva o ultrasoundSchedule dentro de gestationalProfile
+          await setDoc(userDocRef, { gestationalProfile: { ultrasoundSchedule: updatedSchedule } }, { merge: true });
 
           if (newDoneStatus) {
             const allUltrasoundsDone = ultrasoundSchedule.every(exam => updatedSchedule[exam.id]?.done);
@@ -205,7 +207,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
         const userDocRef = doc(db, 'users', user.uid);
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
-          const scheduleData = docSnap.data().ultrasoundSchedule || {};
+          const scheduleData = docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
           const updatedSchedule = {
             ...scheduleData,
             [item.id]: {
@@ -217,7 +219,8 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
               notes: editDetails.notes,
             }
           };
-          await setDoc(userDocRef, { ultrasoundSchedule: updatedSchedule }, { merge: true });
+          // MODIFICADO: Salva o ultrasoundSchedule dentro de gestationalProfile
+          await setDoc(userDocRef, { gestationalProfile: { ultrasoundSchedule: updatedSchedule } }, { merge: true });
           toast.success("Detalhes do ultrassom salvos!");
         }
       }

@@ -27,11 +27,12 @@ export function useGestationalData(user) {
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        const lmpDate = getEstimatedLmp(userData);
+        const lmpDate = getEstimatedLmp(userData); // A lógica já está centralizada aqui
 
         if (lmpDate) {
           setEstimatedLmp(lmpDate);
-          setDataSource(userData.ultrasound?.examDate ? 'ultrassom' : 'dum');
+          // MODIFICADO: Verifica a fonte dos dados dentro de gestationalProfile
+          setDataSource(userData.gestationalProfile?.ultrasound?.examDate ? 'ultrassom' : 'dum');
           setHasData(true);
           
           // Calcula as informações gestacionais

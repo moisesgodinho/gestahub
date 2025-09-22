@@ -73,7 +73,8 @@ function AppointmentsPageContent() {
             setDueDate(getDueDate(estimatedLmp));
           }
 
-          const ultrasoundData = userData.ultrasoundSchedule || {};
+          // MODIFICADO: Acessa o ultrasoundSchedule de dentro do gestationalProfile
+          const ultrasoundData = userData.gestationalProfile?.ultrasoundSchedule || {};
           const scheduledUltrasounds = ultrasoundSchedule.map(exam => {
             const examData = ultrasoundData[exam.id] || {};
             return { ...exam, ...examData, date: examData.scheduledDate || null, isScheduled: !!examData.scheduledDate, done: !!examData.done };
