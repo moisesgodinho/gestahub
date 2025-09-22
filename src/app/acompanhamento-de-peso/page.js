@@ -11,8 +11,8 @@ import WeightChart from '@/components/WeightChart';
 import { useUser } from '@/context/UserContext';
 import { useWeightData } from '@/hooks/useWeightData';
 import { getTodayString, calculateGestationalAgeOnDate } from '@/lib/dateUtils';
+import SkeletonLoader from '@/components/SkeletonLoader'; // Importado
 
-// ... (funções calculateBMI e getBMICategory permanecem as mesmas)
 const bmiCategories = [
   { category: 'Baixo Peso', range: '< 18.5', recommendation: '12.5 a 18 kg' },
   { category: 'Peso Adequado', range: '18.5 - 24.9', recommendation: '11.5 a 16 kg' },
@@ -163,7 +163,11 @@ export default function WeightTrackerPage() {
   const loading = userLoading || dataLoading;
 
   if (loading) {
-    return <main className="flex items-center justify-center min-h-screen"><p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p></main>;
+    return (
+      <div className="flex items-center justify-center flex-grow p-4">
+        <SkeletonLoader type="fullPage" />
+      </div>
+    );
   }
   
   const recommendation = getBMICategory(calculations.initialBmi);
