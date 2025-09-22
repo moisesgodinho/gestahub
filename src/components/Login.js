@@ -30,7 +30,7 @@ export default function Login() {
     <div className="w-full max-w-3xl bg-white dark:bg-slate-800 rounded-2xl shadow-xl flex flex-col md:flex-row overflow-hidden animate-fade-in">
       <div className="w-full md:w-1/2 bg-rose-50 dark:bg-slate-900/50 p-8 flex-col gap-4 items-center justify-center flex">
          <h1 className="text-5xl font-bold text-rose-500 dark:text-rose-400 text-center">GestaHub</h1>
-         <p className="text-slate-600 dark:text-slate-400 text-lg text-center">Sua jornada da maternidade, semana a semana.</p>
+         <p className="text-slate-600 dark:text-slate-400 text-lg text-center">Sua jornada da maternidade semana a semana.</p>
          
          <Image
             src="/login.png"
