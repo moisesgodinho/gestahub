@@ -104,8 +104,6 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
     const dataToSave = { title, date, time, professional, location, notes };
 
     try {
-      // --- LÓGICA CORRIGIDA ---
-      // Se 'appointmentToEdit' tiver um 'id', é uma edição. Senão, é uma nova adição.
       if (appointmentToEdit && appointmentToEdit.id) {
         if (appointmentToEdit.type === 'manual') {
             const appointmentRef = doc(db, 'users', user.uid, 'appointments', appointmentToEdit.id);
@@ -115,24 +113,24 @@ export default function AppointmentForm({ user, appointmentToEdit, onFinish, pro
             const userDocRef = doc(db, 'users', user.uid);
             const docSnap = await getDoc(userDocRef);
             if (docSnap.exists()) {
-                const scheduleData = docSnap.data().ultrasoundSchedule || {};
-                const updatedSchedule = { 
-                    ...scheduleData, 
-                    [appointmentToEdit.id]: { 
-                        ...scheduleData[appointmentToEdit.id], 
-                        scheduledDate: date, 
-                        time, 
-                        professional, 
-                        location, 
-                        notes 
-                    } 
+                const gestationalProfile = docSnap.data().gestationalProfile || {};
+                const scheduleData = gestationalProfile.ultrasoundSchedule || {};
+                const updatedSchedule = {
+                    ...scheduleData,
+                    [appointmentToEdit.id]: {
+                        ...scheduleData[appointmentToEdit.id],
+                        scheduledDate: date,
+                        time,
+                        professional,
+                        location,
+                        notes
+                    }
                 };
-                await setDoc(userDocRef, { ultrasoundSchedule: updatedSchedule }, { merge: true });
+                await setDoc(userDocRef, { gestationalProfile: { ...gestationalProfile, ultrasoundSchedule: updatedSchedule } }, { merge: true });
                 toast.success('Ultrassom atualizado com sucesso!');
             }
         }
       } else {
-        // Criar uma nova consulta manual
         const appointmentsRef = collection(db, 'users', user.uid, 'appointments');
         await addDoc(appointmentsRef, { ...dataToSave, done: false });
         toast.success('Consulta adicionada com sucesso!');
