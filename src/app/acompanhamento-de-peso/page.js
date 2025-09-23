@@ -11,7 +11,7 @@ import WeightChart from "@/components/WeightChart";
 import { useUser } from "@/context/UserContext";
 import { useWeightData } from "@/hooks/useWeightData";
 import { getTodayString, calculateGestationalAgeOnDate } from "@/lib/dateUtils";
-import SkeletonLoader from "@/components/SkeletonLoader"; // Importado
+import SkeletonLoader from "@/components/SkeletonLoader";
 
 const bmiCategories = [
   { category: "Baixo Peso", range: "< 18.5", recommendation: "12.5 a 18 kg" },
@@ -42,6 +42,9 @@ const getBMICategory = (bmi) => {
   return { range: "N/A", category: "", recommendation: "N/A" };
 };
 
+const INITIAL_VISIBLE_COUNT = 10;
+const LOAD_MORE_COUNT = 10;
+
 export default function WeightTrackerPage() {
   const { user, loading: userLoading } = useUser();
   const {
@@ -51,7 +54,6 @@ export default function WeightTrackerPage() {
     calculations,
     estimatedLmp,
     dueDate,
-    setWeightHistory,
   } = useWeightData(user);
 
   const [height, setHeight] = useState("");
@@ -62,6 +64,9 @@ export default function WeightTrackerPage() {
   const [entryToDelete, setEntryToDelete] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
+  const [visibleHistoryCount, setVisibleHistoryCount] = useState(
+    INITIAL_VISIBLE_COUNT
+  );
 
   useEffect(() => {
     if (weightProfile) {
@@ -142,7 +147,7 @@ export default function WeightTrackerPage() {
       toast.success(
         weightHistory.some((e) => e.id === entryDate)
           ? "Registro de peso atualizado!"
-          : "Peso adicionado ao histórico!",
+          : "Peso adicionado ao histórico!"
       );
     } catch (error) {
       console.error("Erro ao adicionar/atualizar peso:", error);
@@ -175,7 +180,7 @@ export default function WeightTrackerPage() {
     }
     if (estimatedLmp && selectedDate < estimatedLmp) {
       toast.warn(
-        "A data do registro não pode ser anterior ao início da gestação.",
+        "A data do registro não pode ser anterior ao início da gestação."
       );
       return;
     }
@@ -199,7 +204,7 @@ export default function WeightTrackerPage() {
         "users",
         user.uid,
         "weightHistory",
-        entryToDelete.id,
+        entryToDelete.id
       );
       await deleteDoc(entryRef);
       toast.info("Registro de peso removido.");
@@ -223,6 +228,7 @@ export default function WeightTrackerPage() {
   }
 
   const recommendation = getBMICategory(calculations.initialBmi);
+  const displayedHistory = weightHistory.slice(0, visibleHistoryCount);
 
   return (
     <>
@@ -412,10 +418,18 @@ export default function WeightTrackerPage() {
                     return (
                       <div
                         key={item.category}
-                        className={`p-4 rounded-lg transition-all ${isActive ? "border-l-4 border-rose-500 bg-slate-100 dark:bg-slate-700/50" : "bg-slate-50 dark:bg-slate-700/20"}`}
+                        className={`p-4 rounded-lg transition-all ${
+                          isActive
+                            ? "border-l-4 border-rose-500 bg-slate-100 dark:bg-slate-700/50"
+                            : "bg-slate-50 dark:bg-slate-700/20"
+                        }`}
                       >
                         <p
-                          className={`font-semibold ${isActive ? "text-rose-500 dark:text-rose-400" : "text-slate-700 dark:text-slate-200"}`}
+                          className={`font-semibold ${
+                            isActive
+                              ? "text-rose-500 dark:text-rose-400"
+                              : "text-slate-700 dark:text-slate-200"
+                          }`}
                         >
                           {item.category}{" "}
                           <span className="font-normal text-sm text-slate-500 dark:text-slate-400">
@@ -446,7 +460,7 @@ export default function WeightTrackerPage() {
                     Histórico de Peso
                   </h2>
                   <div className="space-y-2">
-                    {weightHistory.map((entry, index) => (
+                    {displayedHistory.map((entry) => (
                       <div
                         key={entry.id}
                         className="flex items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg"
@@ -454,14 +468,14 @@ export default function WeightTrackerPage() {
                         <div className="flex-grow">
                           <p className="font-semibold text-slate-700 dark:text-slate-200">
                             {new Date(
-                              entry.date + "T00:00:00Z",
+                              entry.date + "T00:00:00Z"
                             ).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
                           </p>
                           {estimatedLmp && (
                             <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">
                               {calculateGestationalAgeOnDate(
                                 estimatedLmp,
-                                entry.date,
+                                entry.date
                               )}
                             </p>
                           )}
@@ -497,6 +511,20 @@ export default function WeightTrackerPage() {
                       </div>
                     ))}
                   </div>
+                  {visibleHistoryCount < weightHistory.length && (
+                    <div className="mt-4 text-center">
+                      <button
+                        onClick={() =>
+                          setVisibleHistoryCount(
+                            (prev) => prev + LOAD_MORE_COUNT
+                          )
+                        }
+                        className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                      >
+                        Carregar Mais
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
             </>

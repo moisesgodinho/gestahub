@@ -152,7 +152,6 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
         handleStartEditing(appointment);
         return;
       }
-      // src/components/AgendaProximosPassos.js
 
       const today = new Date();
       const todayUTC = new Date(
