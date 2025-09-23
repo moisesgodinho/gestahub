@@ -4,7 +4,7 @@
   "description": "Sua jornada da maternidade, semana a semana.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#ffffff",
+  "background_color": "transparent",
   "theme_color": "#f43f5e",
   "icons": [
     {
