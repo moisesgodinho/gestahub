@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  /* Aplica o padding para a barra lateral apenas quando o usuário está logado */
+  body.user-logged-in .main-layout-container,
+  body.user-logged-in .main-layout-footer {
+    @apply md:pl-64;
+  }
+}
+
 .dark select {
   background-color: #334155; /* slate-700 */
   color: #e2e8f0; /* slate-200 */

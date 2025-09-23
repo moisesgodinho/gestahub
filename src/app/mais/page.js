@@ -21,23 +21,24 @@ const otherLinks = [
 
 export default function MorePage() {
   return (
-    <div className="flex items-center justify-center flex-grow p-4">
+    // CORREÇÃO: Alterado "items-center" para "items-start" para alinhar ao topo
+    <div className="flex items-start justify-center flex-grow p-4">
       <div className="w-full max-w-3xl">
         <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
           Mais Ferramentas
         </h1>
         <Card>
-          <nav className="flex flex-col gap-2">
+          <nav className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
             {otherLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex items-center gap-4 p-4 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
+                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors aspect-square"
                 >
-                  <Icon className="w-8 h-8 text-rose-500 dark:text-rose-400" />
-                  <span className="text-lg text-slate-700 dark:text-slate-300 font-semibold">
+                  <Icon className="w-12 h-12 text-rose-500 dark:text-rose-400" />
+                  <span className="font-semibold text-slate-700 dark:text-slate-300">
                     {link.label}
                   </span>
                 </Link>

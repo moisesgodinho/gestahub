@@ -17,6 +17,7 @@ export function UserProvider({ children }) {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
       setUser(currentUser);
       if (currentUser) {
+        document.body.classList.add("user-logged-in");
         // Busca o perfil inicial uma vez
         const docRef = doc(db, "users", currentUser.uid);
         const docSnap = await getDoc(docRef);
@@ -24,6 +25,7 @@ export function UserProvider({ children }) {
           setUserProfile(docSnap.data().profile);
         }
       } else {
+        document.body.classList.remove("user-logged-in");
         setUserProfile(null);
       }
       setLoading(false);

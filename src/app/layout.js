@@ -22,7 +22,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR" className="h-full" suppressHydrationWarning>
       <body
-        className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900`}
+        className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900 pb-16 md:pb-0`}
       >
         <script
           dangerouslySetInnerHTML={{
@@ -59,20 +59,13 @@ export default function RootLayout({ children }) {
         />
 
         <UserProvider>
-          {/* Alterar o padding para corresponder à nova largura da sidebar */}
-          <div className="md:pl-64">
+          <div className="main-layout-container flex-grow flex flex-col">
             <Header />
-            <main className="flex-grow flex flex-col pb-16 md:pb-0">
-              {children}
-            </main>
+            <main className="flex-grow flex flex-col">{children}</main>
           </div>
           <ResponsiveNav />
+          {/* O rodapé foi removido daqui */}
         </UserProvider>
-
-        {/* Alterar o padding para corresponder à nova largura da sidebar */}
-        <footer className="w-full text-center p-4 text-slate-500 dark:text-slate-400 text-sm md:pl-64">
-          Feito com ❤️ por Godinho
-        </footer>
       </body>
     </html>
   );

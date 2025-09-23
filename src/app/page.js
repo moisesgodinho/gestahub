@@ -48,7 +48,8 @@ export default function Home() {
   }
 
   return (
-    <div className="flex items-center justify-center flex-grow p-4">
+    // CORREÇÃO: Garante que o container ocupe todo o espaço disponível
+    <div className="flex-grow flex flex-col items-center justify-center p-4">
       {!user ? (
         <Login />
       ) : (
