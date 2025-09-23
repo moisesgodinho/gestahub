@@ -137,7 +137,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
 
   const combinedAppointments = useMemo(
     () => [...manualAppointments, ...ultrasoundAppointments],
-    [manualAppointments, ultrasoundAppointments],
+    [manualAppointments, ultrasoundAppointments]
   );
 
   const handleToggleDone = async (appointment) => {
@@ -147,15 +147,19 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
     if (newDoneStatus) {
       if (appointment.type === "ultrasound" && !appointment.isScheduled) {
         toast.warn(
-          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.",
+          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído."
         );
         handleStartEditing(appointment);
         return;
       }
+      // src/components/AgendaProximosPassos.js
+
       const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const todayUTC = new Date(
+        Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+      );
       const appointmentDate = new Date(appointment.date + "T00:00:00Z");
-      if (appointmentDate > today) {
+      if (appointmentDate.getTime() > todayUTC.getTime()) {
         toast.warn("Não é possível marcar como concluída uma consulta futura.");
         return;
       }
@@ -168,7 +172,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
           "users",
           user.uid,
           "appointments",
-          appointment.id,
+          appointment.id
         );
         await setDoc(appointmentRef, { done: newDoneStatus }, { merge: true });
       } else if (appointment.type === "ultrasound") {
@@ -188,12 +192,12 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
           await setDoc(
             userDocRef,
             { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
-            { merge: true },
+            { merge: true }
           );
 
           if (newDoneStatus) {
             const allUltrasoundsDone = ultrasoundSchedule.every(
-              (exam) => updatedSchedule[exam.id]?.done,
+              (exam) => updatedSchedule[exam.id]?.done
             );
             if (allUltrasoundsDone) {
               setShowCelebration(true);
@@ -202,7 +206,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
         }
       }
       toast.success(
-        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`,
+        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`
       );
     } catch (error) {
       toast.error("Não foi possível atualizar o status.");
@@ -223,7 +227,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
         "users",
         user.uid,
         "appointments",
-        appointmentToDelete.id,
+        appointmentToDelete.id
       );
       await deleteDoc(appointmentRef);
       toast.info("Consulta removida.");
@@ -269,7 +273,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
       const selectedDate = new Date(editDetails.date + "T00:00:00Z");
       const idealStartDate = new Date(lmpUTCDate.getTime());
       idealStartDate.setUTCDate(
-        idealStartDate.getUTCDate() + item.startWeek * 7,
+        idealStartDate.getUTCDate() + item.startWeek * 7
       );
       const idealEndDate = new Date(lmpUTCDate.getTime());
       idealEndDate.setUTCDate(idealEndDate.getUTCDate() + item.endWeek * 7 + 6);
@@ -283,7 +287,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
         selectedDate > toleranceEndDate
       ) {
         toast.error(
-          "A data está fora do período recomendado (tolerância de 2 semanas).",
+          "A data está fora do período recomendado (tolerância de 2 semanas)."
         );
         return;
       }
@@ -296,7 +300,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
           "users",
           user.uid,
           "appointments",
-          item.id,
+          item.id
         );
         await setDoc(appointmentRef, { ...editDetails }, { merge: true });
         toast.success("Consulta atualizada!");
@@ -321,7 +325,7 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
           await setDoc(
             userDocRef,
             { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
-            { merge: true },
+            { merge: true }
           );
           toast.success("Detalhes do ultrassom salvos!");
         }
@@ -385,12 +389,12 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
                 if (lmpUTCDate) {
                   const startDate = new Date(lmpUTCDate.getTime());
                   startDate.setUTCDate(
-                    startDate.getUTCDate() + item.startWeek * 7,
+                    startDate.getUTCDate() + item.startWeek * 7
                   );
 
                   const endDate = new Date(lmpUTCDate.getTime());
                   endDate.setUTCDate(
-                    endDate.getUTCDate() + item.endWeek * 7 + 6,
+                    endDate.getUTCDate() + item.endWeek * 7 + 6
                   );
 
                   idealWindowText = `Janela ideal: ${startDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })} a ${endDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`;

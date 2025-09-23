@@ -18,7 +18,7 @@ export default function CalculadoraDUM({ user, onSaveSuccess, onCancel }) {
   useEffect(() => {
     const isMobileDevice =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent,
+        navigator.userAgent
       );
     setIsMobile(isMobileDevice);
 
@@ -45,7 +45,7 @@ export default function CalculadoraDUM({ user, onSaveSuccess, onCancel }) {
 
     const today = new Date();
     const todayUTC = new Date(
-      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()),
+      Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
     );
 
     if (dateObject.getTime() > todayUTC.getTime()) {
@@ -54,7 +54,7 @@ export default function CalculadoraDUM({ user, onSaveSuccess, onCancel }) {
     }
 
     const gestationalAgeInDays = Math.floor(
-      (todayUTC.getTime() - dateObject.getTime()) / (1000 * 60 * 60 * 24),
+      (todayUTC.getTime() - dateObject.getTime()) / (1000 * 60 * 60 * 24)
     );
     if (gestationalAgeInDays > 294) {
       // 42 semanas

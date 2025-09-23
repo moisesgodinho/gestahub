@@ -24,7 +24,7 @@ export default function CalculadoraUltrassom({
   useEffect(() => {
     const isMobileDevice =
       /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(
-        navigator.userAgent,
+        navigator.userAgent
       );
     setIsMobile(isMobileDevice);
 
@@ -51,13 +51,15 @@ export default function CalculadoraUltrassom({
     const weeksValue = parseInt(weeksAtExam, 10);
     const daysValue = parseInt(daysAtExam, 10) || 0;
     const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const todayUTC = new Date(
+      Date.UTC(today.getFullYear(), today.getMonth(), today.getDate())
+    );
 
     if (!examDateObj || !weeksAtExam) {
       toast.warn("Preencha a data e as semanas do ultrassom.");
       return;
     }
-    if (examDateObj.getTime() > today.getTime()) {
+    if (examDateObj.getTime() > todayUTC.getTime()) {
       toast.warn("A data do exame não pode ser no futuro.");
       return;
     }
@@ -71,7 +73,7 @@ export default function CalculadoraUltrassom({
     }
 
     const daysSinceExam = Math.floor(
-      (today.getTime() - examDateObj.getTime()) / (1000 * 60 * 60 * 24),
+      (today.getTime() - examDateObj.getTime()) / (1000 * 60 * 60 * 24)
     );
     const currentGestationalAgeInDays =
       weeksValue * 7 + daysValue + daysSinceExam;
@@ -79,7 +81,7 @@ export default function CalculadoraUltrassom({
     if (currentGestationalAgeInDays > 294) {
       // 42 semanas
       toast.warn(
-        "A data do exame informada, somada aos dias atuais, ultrapassa 42 semanas de gestação.",
+        "A data do exame informada, somada aos dias atuais, ultrapassa 42 semanas de gestação."
       );
       return;
     }
