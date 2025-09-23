@@ -98,9 +98,7 @@ export default function ProfilePage() {
   if (loading || !user) {
     return (
       <main className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-rose-500 dark:text-rose-400">
-          Carregando...
-        </p>
+        <p className="text-lg text-rose-500 dark:text-rose-400">Carregando..</p>
       </main>
     );
   }
