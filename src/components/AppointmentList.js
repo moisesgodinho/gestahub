@@ -14,6 +14,9 @@ const getUTCDate = (date) => {
   return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 };
 
+const INITIAL_VISIBLE_COUNT = 5;
+const LOAD_MORE_COUNT = 5;
+
 export default function AppointmentList({
   appointments,
   onEdit,
@@ -22,6 +25,9 @@ export default function AppointmentList({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
+  const [visiblePastCount, setVisiblePastCount] = useState(
+    INITIAL_VISIBLE_COUNT
+  );
 
   const handleToggleDone = async (appointment) => {
     if (!user) return;
@@ -31,7 +37,7 @@ export default function AppointmentList({
     if (newDoneStatus) {
       if (appointment.type === "ultrasound" && !appointment.isScheduled) {
         toast.warn(
-          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.",
+          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído."
         );
         onEdit(appointment);
         return;
@@ -42,7 +48,7 @@ export default function AppointmentList({
 
       if (appointmentDate > today) {
         toast.warn(
-          "Não é possível marcar como concluída uma consulta agendada para o futuro.",
+          "Não é possível marcar como concluída uma consulta agendada para o futuro."
         );
         return;
       }
@@ -55,14 +61,13 @@ export default function AppointmentList({
           "users",
           user.uid,
           "appointments",
-          appointment.id,
+          appointment.id
         );
         await setDoc(appointmentRef, { done: newDoneStatus }, { merge: true });
       } else if (appointment.type === "ultrasound") {
         const userDocRef = doc(db, "users", user.uid);
         const docSnap = await getDoc(userDocRef);
         if (docSnap.exists()) {
-          // MODIFICADO: Acessa o ultrasoundSchedule de dentro do gestationalProfile
           const scheduleData =
             docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
           const updatedSchedule = {
@@ -72,16 +77,15 @@ export default function AppointmentList({
               done: newDoneStatus,
             },
           };
-          // MODIFICADO: Salva o ultrasoundSchedule dentro de gestationalProfile
           await setDoc(
             userDocRef,
             { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
-            { merge: true },
+            { merge: true }
           );
         }
       }
       toast.success(
-        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`,
+        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`
       );
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
@@ -102,7 +106,7 @@ export default function AppointmentList({
         "users",
         user.uid,
         "appointments",
-        appointmentToDelete.id,
+        appointmentToDelete.id
       );
       await deleteDoc(appointmentRef);
       toast.info("Consulta removida.");
@@ -115,7 +119,6 @@ export default function AppointmentList({
     }
   };
 
-  // LÓGICA DE ORDENAÇÃO ATUALIZADA
   const getSortDate = (item) => {
     if (item.date) {
       return new Date(item.date);
@@ -135,6 +138,8 @@ export default function AppointmentList({
   const pastAppointments = appointments
     .filter((a) => a.done)
     .sort((a, b) => new Date(b.date) - new Date(a.date));
+
+  const displayedPastAppointments = pastAppointments.slice(0, visiblePastCount);
 
   return (
     <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mt-6">
@@ -161,12 +166,12 @@ export default function AppointmentList({
                     if (lmpUTCDate) {
                       const startDate = new Date(lmpUTCDate.getTime());
                       startDate.setUTCDate(
-                        startDate.getUTCDate() + app.startWeek * 7,
+                        startDate.getUTCDate() + app.startWeek * 7
                       );
 
                       const endDate = new Date(lmpUTCDate.getTime());
                       endDate.setUTCDate(
-                        endDate.getUTCDate() + app.endWeek * 7 + 6,
+                        endDate.getUTCDate() + app.endWeek * 7 + 6
                       );
 
                       idealWindowText = `Janela ideal: ${startDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })} a ${endDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`;
@@ -193,7 +198,7 @@ export default function AppointmentList({
                 Consultas Passadas
               </h3>
               <div className="space-y-4">
-                {pastAppointments.map((app) => (
+                {displayedPastAppointments.map((app) => (
                   <AppointmentItem
                     key={`${app.type}-${app.id}`}
                     item={app}
@@ -203,6 +208,18 @@ export default function AppointmentList({
                   />
                 ))}
               </div>
+              {visiblePastCount < pastAppointments.length && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() =>
+                      setVisiblePastCount((prev) => prev + LOAD_MORE_COUNT)
+                    }
+                    className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Carregar Mais
+                  </button>
+                </div>
+              )}
             </div>
           )}
         </>
