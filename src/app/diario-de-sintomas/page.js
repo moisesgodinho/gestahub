@@ -5,7 +5,6 @@ import { useState, useMemo } from "react";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
-import AppNavigation from "@/components/AppNavigation";
 import JournalEntry from "@/components/JournalEntry";
 import JournalHistory from "@/components/JournalHistory";
 import SymptomChart from "@/components/SymptomChart";
@@ -83,7 +82,7 @@ export default function JournalPage() {
         "users",
         user.uid,
         "symptomEntries",
-        entryToDelete.id,
+        entryToDelete.id
       );
       await deleteDoc(entryRef);
       toast.info("Entrada do diário removida.");
@@ -185,8 +184,6 @@ export default function JournalPage() {
           {entries.length > 0 && <SymptomChart entries={entries} />}
 
           <JournalHistory entries={entries} onEdit={handleView} user={user} />
-
-          <AppNavigation />
         </div>
       </div>
     </>

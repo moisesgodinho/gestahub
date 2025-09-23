@@ -48,3 +48,18 @@ select {
       rotate(var(--r, 0));
   }
 }
+
+/* Adicione isso no final do seu src/app/globals.css */
+
+@keyframes slide-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}

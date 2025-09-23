@@ -13,7 +13,6 @@ import {
   deleteDoc,
   doc,
 } from "firebase/firestore";
-import AppNavigation from "@/components/AppNavigation";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { toast } from "react-toastify";
 import { formatTime } from "@/lib/dateUtils";
@@ -51,7 +50,7 @@ export default function ContractionTimerPage() {
       setIsTiming(false);
       const endTime = new Date();
       const duration = Math.round(
-        (endTime.getTime() - startTime.getTime()) / 1000,
+        (endTime.getTime() - startTime.getTime()) / 1000
       );
       const lastContraction = contractions[0];
       // Garante que lastContraction.startTime é um objeto de data para o cálculo
@@ -59,7 +58,7 @@ export default function ContractionTimerPage() {
         ? Math.round(
             (startTime.getTime() -
               lastContraction.startTime.toDate().getTime()) /
-              1000,
+              1000
           )
         : 0;
 
@@ -69,7 +68,7 @@ export default function ContractionTimerPage() {
             db,
             "users",
             user.uid,
-            "contractions",
+            "contractions"
           );
           await addDoc(contractionsRef, { startTime, duration, frequency });
           toast.success("Contração registrada!");
@@ -95,7 +94,7 @@ export default function ContractionTimerPage() {
         "users",
         user.uid,
         "contractions",
-        contractionToDelete.id,
+        contractionToDelete.id
       );
       await deleteDoc(docRef);
       toast.info("Registro de contração removido.");
@@ -266,8 +265,6 @@ export default function ContractionTimerPage() {
               </div>
             </div>
           )}
-
-          <AppNavigation />
         </div>
       </div>
     </>

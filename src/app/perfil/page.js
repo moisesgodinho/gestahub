@@ -8,7 +8,6 @@ import { auth, db } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { useUser } from "@/context/UserContext";
-import AppNavigation from "@/components/AppNavigation";
 import Card from "@/components/Card"; // Supondo que Card.js foi criado
 
 // Função para calcular a idade a partir da data de nascimento
@@ -221,7 +220,6 @@ export default function ProfilePage() {
             </button>
           </div>
         </Card>
-        <AppNavigation />
       </div>
     </div>
   );

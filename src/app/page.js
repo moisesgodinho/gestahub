@@ -5,7 +5,6 @@ import { useState, useEffect } from "react";
 import Login from "@/components/Login";
 import GestationalInfoDashboard from "@/components/GestationalInfoDashboard";
 import CalculatorPanel from "@/components/CalculatorPanel";
-import AppNavigation from "@/components/AppNavigation";
 import AgendaProximosPassos from "@/components/AgendaProximosPassos";
 import { useUser } from "@/context/UserContext";
 import { useGestationalData } from "@/hooks/useGestationalData";
@@ -77,8 +76,6 @@ export default function Home() {
               <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
             </>
           )}
-
-          <AppNavigation />
         </div>
       )}
     </div>

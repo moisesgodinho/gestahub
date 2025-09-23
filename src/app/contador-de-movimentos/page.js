@@ -6,7 +6,6 @@ import { doc, addDoc, deleteDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { toast } from "react-toastify";
-import AppNavigation from "@/components/AppNavigation";
 import { useUser } from "@/context/UserContext";
 import { useKickCounter } from "@/hooks/useKickCounter";
 import { useGestationalData } from "@/hooks/useGestationalData";
@@ -316,10 +315,6 @@ export default function KickCounterPage() {
               )}
             </div>
           )}
-
-          <div className="mt-8 text-center">
-            <AppNavigation />
-          </div>
         </div>
       </div>
     </>

@@ -5,6 +5,7 @@ import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
 import Header from "@/components/Header";
 import { UserProvider } from "@/context/UserContext";
+import ResponsiveNav from "@/components/ResponsiveNav";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -58,11 +59,18 @@ export default function RootLayout({ children }) {
         />
 
         <UserProvider>
-          <Header />
-          <main className="flex-grow flex flex-col">{children}</main>
+          {/* Alterar o padding para corresponder à nova largura da sidebar */}
+          <div className="md:pl-64">
+            <Header />
+            <main className="flex-grow flex flex-col pb-16 md:pb-0">
+              {children}
+            </main>
+          </div>
+          <ResponsiveNav />
         </UserProvider>
 
-        <footer className="w-full text-center p-4 text-slate-500 dark:text-slate-400 text-sm">
+        {/* Alterar o padding para corresponder à nova largura da sidebar */}
+        <footer className="w-full text-center p-4 text-slate-500 dark:text-slate-400 text-sm md:pl-64">
           Feito com ❤️ por Godinho
         </footer>
       </body>

@@ -14,7 +14,6 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { getEstimatedLmp, getDueDate } from "@/lib/gestationalAge";
-import AppNavigation from "@/components/AppNavigation";
 import AppointmentForm from "@/components/AppointmentForm";
 import AppointmentList from "@/components/AppointmentList";
 import AppointmentCalendar from "@/components/AppointmentCalendar";
@@ -97,7 +96,7 @@ function AppointmentsPageContent() {
           db,
           "users",
           currentUser.uid,
-          "appointments",
+          "appointments"
         );
         const q = query(appointmentsRef, orderBy("date", "desc"));
         const unsubscribeAppointments = onSnapshot(q, (snapshot) => {
@@ -157,7 +156,7 @@ function AppointmentsPageContent() {
 
   const combinedAppointments = useMemo(
     () => [...manualAppointments, ...ultrasoundAppointments],
-    [manualAppointments, ultrasoundAppointments],
+    [manualAppointments, ultrasoundAppointments]
   );
 
   const professionalSuggestions = useMemo(() => {
@@ -229,7 +228,7 @@ function AppointmentsPageContent() {
         "users",
         user.uid,
         "appointments",
-        appointmentToDelete.id,
+        appointmentToDelete.id
       );
       await deleteDoc(appointmentRef);
       toast.info("Consulta removida.");
@@ -333,8 +332,6 @@ function AppointmentsPageContent() {
             user={user}
             lmpDate={lmpDate}
           />
-
-          <AppNavigation />
         </div>
       </div>
     </>

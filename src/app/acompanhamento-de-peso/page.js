@@ -6,7 +6,6 @@ import { doc, setDoc, deleteDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { toast } from "react-toastify";
-import AppNavigation from "@/components/AppNavigation";
 import WeightChart from "@/components/WeightChart";
 import { useUser } from "@/context/UserContext";
 import { useWeightData } from "@/hooks/useWeightData";
@@ -529,10 +528,6 @@ export default function WeightTrackerPage() {
               )}
             </>
           )}
-
-          <div className="mt-8 text-center">
-            <AppNavigation />
-          </div>
         </div>
       </div>
     </>
