@@ -16,11 +16,19 @@ const poppins = Poppins({
 export const metadata = {
   title: "GestaHub",
   description: "Sua jornada da maternidade, semana a semana.",
+  manifest: "/manifest.json", // Adicionado para linkar o manifesto
 };
 
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR" className="h-full" suppressHydrationWarning>
+      <head>
+        {/* Adicionado para PWA em dispositivos Apple e cor do tema */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="GestaHub" />
+        <meta name="theme-color" content="#f43f5e" />
+      </head>
       <body
         className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900 pb-16 md:pb-0`}
       >
@@ -64,7 +72,6 @@ export default function RootLayout({ children }) {
             <main className="flex-grow flex flex-col">{children}</main>
           </div>
           <ResponsiveNav />
-          {/* O rodapé foi removido daqui */}
         </UserProvider>
       </body>
     </html>
