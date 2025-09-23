@@ -7,9 +7,16 @@
  * @returns {Date|null}
  */
 const parseUTCDate = (dateString) => {
-  if (!dateString || typeof dateString !== 'string') return null;
-  const parts = dateString.split('-').map(Number);
-  if (parts.length !== 3 || parts.some(isNaN) || parts[1] < 1 || parts[1] > 12 || parts[2] < 1 || parts[2] > 31) {
+  if (!dateString || typeof dateString !== "string") return null;
+  const parts = dateString.split("-").map(Number);
+  if (
+    parts.length !== 3 ||
+    parts.some(isNaN) ||
+    parts[1] < 1 ||
+    parts[1] > 12 ||
+    parts[2] < 1 ||
+    parts[2] > 31
+  ) {
     return null;
   }
   // Cria a data usando UTC para garantir consistência
@@ -35,9 +42,10 @@ export function getEstimatedLmp(userData) {
 
     const weeks = parseInt(weeksAtExam, 10) || 0;
     const days = parseInt(daysAtExam, 10) || 0;
-    const daysAtExamTotal = (weeks * 7) + days;
-    
-    const lmpTime = examDateObj.getTime() - (daysAtExamTotal * 24 * 60 * 60 * 1000);
+    const daysAtExamTotal = weeks * 7 + days;
+
+    const lmpTime =
+      examDateObj.getTime() - daysAtExamTotal * 24 * 60 * 60 * 1000;
     return new Date(lmpTime);
   }
 

@@ -1,15 +1,15 @@
 // src/app/perfil/page.js
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { signOut } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase';
-import { useRouter } from 'next/navigation';
-import { toast } from 'react-toastify';
-import { useUser } from '@/context/UserContext';
-import AppNavigation from '@/components/AppNavigation';
-import Card from '@/components/Card'; // Supondo que Card.js foi criado
+import { useState, useEffect } from "react";
+import { signOut } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
+import { auth, db } from "@/lib/firebase";
+import { useRouter } from "next/navigation";
+import { toast } from "react-toastify";
+import { useUser } from "@/context/UserContext";
+import AppNavigation from "@/components/AppNavigation";
+import Card from "@/components/Card"; // Supondo que Card.js foi criado
 
 // Função para calcular a idade a partir da data de nascimento
 const calculateAge = (birthDateString) => {
@@ -27,12 +27,12 @@ const calculateAge = (birthDateString) => {
 
 // Função para capitalizar o nome
 const capitalizeName = (name) => {
-  if (!name) return '';
+  if (!name) return "";
   return name
     .toLowerCase()
-    .split(' ')
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(' ');
+    .split(" ")
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(" ");
 };
 
 export default function ProfilePage() {
@@ -40,18 +40,18 @@ export default function ProfilePage() {
   const [isEditing, setIsEditing] = useState(false);
 
   // Campos do formulário
-  const [displayName, setDisplayName] = useState('');
-  const [dob, setDob] = useState(''); // dob = Date of Birth
-  
+  const [displayName, setDisplayName] = useState("");
+  const [dob, setDob] = useState(""); // dob = Date of Birth
+
   const router = useRouter();
 
   useEffect(() => {
     if (!loading && !user) {
-      router.push('/');
+      router.push("/");
     }
     if (user) {
-      setDisplayName(userProfile?.displayName || user.displayName || '');
-      setDob(userProfile?.dob || '');
+      setDisplayName(userProfile?.displayName || user.displayName || "");
+      setDob(userProfile?.dob || "");
     }
   }, [user, userProfile, loading, router]);
 
@@ -59,8 +59,8 @@ export default function ProfilePage() {
     if (!user) return;
 
     if (dob && new Date(dob) > new Date()) {
-        toast.warn("A data de nascimento não pode ser no futuro.");
-        return;
+      toast.warn("A data de nascimento não pode ser no futuro.");
+      return;
     }
 
     const formattedDisplayName = capitalizeName(displayName);
@@ -71,7 +71,7 @@ export default function ProfilePage() {
     };
 
     try {
-      const userDocRef = doc(db, 'users', user.uid);
+      const userDocRef = doc(db, "users", user.uid);
       await setDoc(userDocRef, { profile: profileData }, { merge: true });
       updateUserProfile(profileData);
       setDisplayName(formattedDisplayName);
@@ -86,20 +86,22 @@ export default function ProfilePage() {
   const handleSignOut = async () => {
     try {
       await signOut(auth);
-      router.push('/');
+      router.push("/");
     } catch (error) {
       console.error("Erro ao fazer logout:", error);
     }
   };
-  
+
   const handleNameChange = (e) => {
-      setDisplayName(capitalizeName(e.target.value));
-  }
+    setDisplayName(capitalizeName(e.target.value));
+  };
 
   if (loading || !user) {
     return (
       <main className="flex items-center justify-center min-h-screen">
-        <p className="text-lg text-rose-500 dark:text-rose-400">Carregando...</p>
+        <p className="text-lg text-rose-500 dark:text-rose-400">
+          Carregando...
+        </p>
       </main>
     );
   }
@@ -116,31 +118,69 @@ export default function ProfilePage() {
               {isEditing ? (
                 <>
                   <div>
-                    <label htmlFor="displayName" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Nome de Exibição</label>
-                    <input type="text" id="displayName" value={displayName} onChange={handleNameChange} className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/>
+                    <label
+                      htmlFor="displayName"
+                      className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                    >
+                      Nome de Exibição
+                    </label>
+                    <input
+                      type="text"
+                      id="displayName"
+                      value={displayName}
+                      onChange={handleNameChange}
+                      className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"
+                    />
                   </div>
                   <div>
-                    <label htmlFor="dob" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Data de Nascimento</label>
-                    <input type="date" id="dob" value={dob} onChange={(e) => setDob(e.target.value)} className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/>
+                    <label
+                      htmlFor="dob"
+                      className="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                    >
+                      Data de Nascimento
+                    </label>
+                    <input
+                      type="date"
+                      id="dob"
+                      value={dob}
+                      onChange={(e) => setDob(e.target.value)}
+                      className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"
+                    />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
-                    <p className="text-md text-slate-500 dark:text-slate-400 mt-1">{user.email} (não pode ser alterado)</p>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Email
+                    </label>
+                    <p className="text-md text-slate-500 dark:text-slate-400 mt-1">
+                      {user.email} (não pode ser alterado)
+                    </p>
                   </div>
                 </>
               ) : (
                 <>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Nome de Exibição</label>
-                    <p className="text-lg text-slate-900 dark:text-slate-100">{displayName || 'Não definido'}</p>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Nome de Exibição
+                    </label>
+                    <p className="text-lg text-slate-900 dark:text-slate-100">
+                      {displayName || "Não definido"}
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Idade</label>
-                    <p className="text-lg text-slate-900 dark:text-slate-100">{dob ? `${calculateAge(dob)} anos` : 'Não definida'}</p>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Idade
+                    </label>
+                    <p className="text-lg text-slate-900 dark:text-slate-100">
+                      {dob ? `${calculateAge(dob)} anos` : "Não definida"}
+                    </p>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">Email</label>
-                    <p className="text-lg text-slate-900 dark:text-slate-100">{user.email}</p>
+                    <label className="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Email
+                    </label>
+                    <p className="text-lg text-slate-900 dark:text-slate-100">
+                      {user.email}
+                    </p>
                   </div>
                 </>
               )}
@@ -151,11 +191,26 @@ export default function ProfilePage() {
             <div>
               {isEditing ? (
                 <div className="flex gap-4">
-                  <button onClick={handleSave} className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">Salvar</button>
-                  <button onClick={() => setIsEditing(false)} className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500">Cancelar</button>
+                  <button
+                    onClick={handleSave}
+                    className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+                  >
+                    Salvar
+                  </button>
+                  <button
+                    onClick={() => setIsEditing(false)}
+                    className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-500"
+                  >
+                    Cancelar
+                  </button>
                 </div>
               ) : (
-                <button onClick={() => setIsEditing(true)} className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors">Editar Perfil</button>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-6 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+                >
+                  Editar Perfil
+                </button>
               )}
             </div>
             <button

@@ -1,14 +1,14 @@
 // src/hooks/useGestationalData.js
-import { useState, useEffect } from 'react';
-import { doc, onSnapshot } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { getEstimatedLmp, getDueDate } from '@/lib/gestationalAge';
-import { weeklyInfo } from '@/data/weeklyInfo';
+import { useState, useEffect } from "react";
+import { doc, onSnapshot } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { getEstimatedLmp, getDueDate } from "@/lib/gestationalAge";
+import { weeklyInfo } from "@/data/weeklyInfo";
 
 export function useGestationalData(user) {
   const [loading, setLoading] = useState(true);
   const [estimatedLmp, setEstimatedLmp] = useState(null);
-  const [dataSource, setDataSource] = useState('dum');
+  const [dataSource, setDataSource] = useState("dum");
   const [hasData, setHasData] = useState(false);
   const [gestationalInfo, setGestationalInfo] = useState(null);
   const [countdown, setCountdown] = useState({ weeks: 0, days: 0 });
@@ -23,7 +23,7 @@ export function useGestationalData(user) {
       return;
     }
 
-    const userDocRef = doc(db, 'users', user.uid);
+    const userDocRef = doc(db, "users", user.uid);
     const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
       if (docSnap.exists()) {
         const userData = docSnap.data();
@@ -32,34 +32,47 @@ export function useGestationalData(user) {
         if (lmpDate) {
           setEstimatedLmp(lmpDate);
           // MODIFICADO: Verifica a fonte dos dados dentro de gestationalProfile
-          setDataSource(userData.gestationalProfile?.ultrasound?.examDate ? 'ultrassom' : 'dum');
+          setDataSource(
+            userData.gestationalProfile?.ultrasound?.examDate
+              ? "ultrassom"
+              : "dum",
+          );
           setHasData(true);
-          
+
           // Calcula as informações gestacionais
           const lmpDateTime = lmpDate.getTime();
+          // src/hooks/useGestationalData.js
+
           const today = new Date();
-          const todayTime = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
-          
+          // Use as partes da data local para criar uma data UTC consistente
+          const todayTime = Date.UTC(
+            today.getFullYear(),
+            today.getMonth(),
+            today.getDate(),
+          );
+
           const gestationalAgeInMs = todayTime - lmpDateTime;
-          const gestationalAgeInDays = Math.floor(gestationalAgeInMs / (1000 * 60 * 60 * 24));
+          const gestationalAgeInDays = Math.floor(
+            gestationalAgeInMs / (1000 * 60 * 60 * 24),
+          );
           const weeks = Math.floor(gestationalAgeInDays / 7);
           const days = gestationalAgeInDays % 7;
-          
+
           const dueDate = getDueDate(lmpDate);
-      
+
           const totalPregnancyDays = 280;
           const remainingDaysTotal = totalPregnancyDays - gestationalAgeInDays;
           setCountdown({
-              weeks: Math.floor(remainingDaysTotal / 7),
-              days: remainingDaysTotal % 7,
-          });
-      
-          setGestationalInfo({
-              weeks, days,
-              dueDate: dueDate.toLocaleDateString('pt-BR', { timeZone: 'UTC' }),
-              currentWeekInfo: weeklyInfo[weeks] || weeklyInfo[42],
+            weeks: Math.floor(remainingDaysTotal / 7),
+            days: remainingDaysTotal % 7,
           });
 
+          setGestationalInfo({
+            weeks,
+            days,
+            dueDate: dueDate.toLocaleDateString("pt-BR", { timeZone: "UTC" }),
+            currentWeekInfo: weeklyInfo[weeks] || weeklyInfo[42],
+          });
         } else {
           setHasData(false);
           setGestationalInfo(null);
@@ -74,5 +87,12 @@ export function useGestationalData(user) {
     return () => unsubscribe();
   }, [user]);
 
-  return { loading, estimatedLmp, gestationalInfo, countdown, dataSource, hasData };
+  return {
+    loading,
+    estimatedLmp,
+    gestationalInfo,
+    countdown,
+    dataSource,
+    hasData,
+  };
 }

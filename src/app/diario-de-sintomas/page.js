@@ -1,26 +1,27 @@
 // src/app/diario-de-sintomas/page.js
-'use client';
+"use client";
 
-import { useState, useMemo } from 'react';
-import { doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
-import { toast } from 'react-toastify';
-import AppNavigation from '@/components/AppNavigation';
-import JournalEntry from '@/components/JournalEntry';
-import JournalHistory from '@/components/JournalHistory';
-import SymptomChart from '@/components/SymptomChart';
-import JournalCalendar from '@/components/JournalCalendar';
-import JournalViewModal from '@/components/JournalViewModal';
-import ConfirmationModal from '@/components/ConfirmationModal';
-import { useUser } from '@/context/UserContext';
-import { useJournalEntries } from '@/hooks/useJournalEntries';
-import { useGestationalData } from '@/hooks/useGestationalData'; // Importar o hook
-import SkeletonLoader from '@/components/SkeletonLoader';
+import { useState, useMemo } from "react";
+import { doc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+import { toast } from "react-toastify";
+import AppNavigation from "@/components/AppNavigation";
+import JournalEntry from "@/components/JournalEntry";
+import JournalHistory from "@/components/JournalHistory";
+import SymptomChart from "@/components/SymptomChart";
+import JournalCalendar from "@/components/JournalCalendar";
+import JournalViewModal from "@/components/JournalViewModal";
+import ConfirmationModal from "@/components/ConfirmationModal";
+import { useUser } from "@/context/UserContext";
+import { useJournalEntries } from "@/hooks/useJournalEntries";
+import { useGestationalData } from "@/hooks/useGestationalData"; // Importar o hook
+import SkeletonLoader from "@/components/SkeletonLoader";
 
 export default function JournalPage() {
   const { user, loading: userLoading } = useUser();
   const { entries, loading: entriesLoading } = useJournalEntries(user);
-  const { estimatedLmp, loading: gestationalLoading } = useGestationalData(user); // Usar o hook de dados gestacionais
+  const { estimatedLmp, loading: gestationalLoading } =
+    useGestationalData(user); // Usar o hook de dados gestacionais
 
   const [entryToEdit, setEntryToEdit] = useState(null);
   const [entryToView, setEntryToView] = useState(null);
@@ -37,14 +38,14 @@ export default function JournalPage() {
   const handleEdit = (entry) => {
     setEntryToEdit(entry);
     setIsFormOpen(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Abre o modal de visualização
   const handleView = (entry) => {
     setEntryToView(entry);
     setIsViewModalOpen(true);
-  }
+  };
 
   // Abre o modal de confirmação para adicionar nova entrada
   const handleDateSelect = (dateString) => {
@@ -57,7 +58,7 @@ export default function JournalPage() {
     setIsAddEntryModalOpen(false);
     setEntryToEdit({ id: selectedDateForNew });
     setIsFormOpen(true);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   // Função para fechar o formulário (seja salvando ou cancelando)
@@ -77,7 +78,13 @@ export default function JournalPage() {
   const confirmDelete = async () => {
     if (!user || !entryToDelete) return;
     try {
-      const entryRef = doc(db, 'users', user.uid, 'symptomEntries', entryToDelete.id);
+      const entryRef = doc(
+        db,
+        "users",
+        user.uid,
+        "symptomEntries",
+        entryToDelete.id,
+      );
       await deleteDoc(entryRef);
       toast.info("Entrada do diário removida.");
     } catch (error) {
@@ -89,9 +96,14 @@ export default function JournalPage() {
   };
 
   const formattedDateForModal = useMemo(() => {
-    if (!selectedDateForNew) return '';
+    if (!selectedDateForNew) return "";
     const date = new Date(`${selectedDateForNew}T00:00:00Z`);
-    return date.toLocaleDateString('pt-BR', { timeZone: 'UTC', day: '2-digit', month: '2-digit', year: 'numeric' });
+    return date.toLocaleDateString("pt-BR", {
+      timeZone: "UTC",
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
   }, [selectedDateForNew]);
 
   const loading = userLoading || entriesLoading || gestationalLoading;

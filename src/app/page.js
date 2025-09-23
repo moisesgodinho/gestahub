@@ -1,22 +1,29 @@
 // src/app/page.js
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import Login from '@/components/Login';
-import GestationalInfoDashboard from '@/components/GestationalInfoDashboard';
-import CalculatorPanel from '@/components/CalculatorPanel';
-import AppNavigation from '@/components/AppNavigation';
-import AgendaProximosPassos from '@/components/AgendaProximosPassos';
-import { useUser } from '@/context/UserContext';
-import { useGestationalData } from '@/hooks/useGestationalData';
-import SkeletonLoader from '@/components/SkeletonLoader';
+import { useState, useEffect } from "react";
+import Login from "@/components/Login";
+import GestationalInfoDashboard from "@/components/GestationalInfoDashboard";
+import CalculatorPanel from "@/components/CalculatorPanel";
+import AppNavigation from "@/components/AppNavigation";
+import AgendaProximosPassos from "@/components/AgendaProximosPassos";
+import { useUser } from "@/context/UserContext";
+import { useGestationalData } from "@/hooks/useGestationalData";
+import SkeletonLoader from "@/components/SkeletonLoader";
 
 export default function Home() {
   const { user, loading: userLoading } = useUser();
-  const { loading: dataLoading, estimatedLmp, gestationalInfo, countdown, dataSource, hasData } = useGestationalData(user);
+  const {
+    loading: dataLoading,
+    estimatedLmp,
+    gestationalInfo,
+    countdown,
+    dataSource,
+    hasData,
+  } = useGestationalData(user);
 
   const [isEditing, setIsEditing] = useState(false);
-  const [activeCalculator, setActiveCalculator] = useState('dum');
+  const [activeCalculator, setActiveCalculator] = useState("dum");
 
   useEffect(() => {
     if (!userLoading && !dataLoading) {
@@ -30,7 +37,7 @@ export default function Home() {
   const handleSaveSuccess = () => {
     setIsEditing(false);
   };
-  
+
   const loading = userLoading || dataLoading;
 
   if (loading) {
@@ -57,12 +64,12 @@ export default function Home() {
             />
           ) : (
             <>
-              <GestationalInfoDashboard 
+              <GestationalInfoDashboard
                 gestationalInfo={gestationalInfo}
                 countdown={countdown}
                 dataSource={dataSource}
                 onSwitchToUltrasound={() => {
-                  setActiveCalculator('ultrassom');
+                  setActiveCalculator("ultrassom");
                   setIsEditing(true);
                 }}
                 onEdit={() => setIsEditing(true)}
@@ -70,7 +77,7 @@ export default function Home() {
               <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
             </>
           )}
-          
+
           <AppNavigation />
         </div>
       )}

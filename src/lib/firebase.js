@@ -21,8 +21,8 @@ export const db = initializeFirestore(app, {
   localCache: persistentLocalCache({
     // Configura o tamanho do cache em bytes. O padrão é 40MB.
     // Você pode ajustar se necessário. 100000000 bytes = 100MB
-    cacheSizeBytes: 100000000 
-  })
+    cacheSizeBytes: 100000000,
+  }),
 });
 
 // 3. O bloco try...catch foi removido, pois o novo método é mais integrado.

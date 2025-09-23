@@ -1,15 +1,15 @@
 // src/app/layout.js
-import { Poppins } from 'next/font/google';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Poppins } from "next/font/google";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import "./globals.css";
-import Header from '@/components/Header';
-import { UserProvider } from '@/context/UserContext';
+import Header from "@/components/Header";
+import { UserProvider } from "@/context/UserContext";
 
 const poppins = Poppins({
-  subsets: ['latin'],
-  weight: ['400', '500', '600', '700'],
-  variable: '--font-poppins',
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-poppins",
 });
 
 export const metadata = {
@@ -20,7 +20,9 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR" className="h-full" suppressHydrationWarning>
-      <body className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900`}>
+      <body
+        className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900`}
+      >
         <script
           dangerouslySetInnerHTML={{
             __html: `
@@ -41,7 +43,7 @@ export default function RootLayout({ children }) {
             `,
           }}
         />
-        
+
         <ToastContainer
           position="top-right"
           autoClose={3000}
@@ -57,9 +59,7 @@ export default function RootLayout({ children }) {
 
         <UserProvider>
           <Header />
-          <main className="flex-grow flex flex-col">
-            {children}
-          </main>
+          <main className="flex-grow flex flex-col">{children}</main>
         </UserProvider>
 
         <footer className="w-full text-center p-4 text-slate-500 dark:text-slate-400 text-sm">

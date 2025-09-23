@@ -1,16 +1,16 @@
 // src/components/ConfirmationModal.js
-'use client';
+"use client";
 
-import React from 'react';
+import React from "react";
 
-export default function ConfirmationModal({ 
-  isOpen, 
-  onClose, 
-  onConfirm, 
-  title, 
+export default function ConfirmationModal({
+  isOpen,
+  onClose,
+  onConfirm,
+  title,
   message,
   confirmButtonText = "Confirmar",
-  confirmButtonClass = "bg-red-500 hover:bg-red-600" // Cor padrão vermelha para exclusão
+  confirmButtonClass = "bg-red-500 hover:bg-red-600", // Cor padrão vermelha para exclusão
 }) {
   if (!isOpen) {
     return null;
@@ -24,9 +24,7 @@ export default function ConfirmationModal({
         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
           {title}
         </h3>
-        <p className="mt-2 text-slate-600 dark:text-slate-400">
-          {message}
-        </p>
+        <p className="mt-2 text-slate-600 dark:text-slate-400">{message}</p>
         {/* Botões de ação */}
         <div className="mt-6 flex justify-end gap-4">
           <button
