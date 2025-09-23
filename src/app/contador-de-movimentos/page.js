@@ -2,18 +2,25 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { doc, addDoc, deleteDoc, collection } from "firebase/firestore"; // Import 'addDoc', 'deleteDoc', 'collection'
+import { doc, addDoc, deleteDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { toast } from "react-toastify";
 import AppNavigation from "@/components/AppNavigation";
 import { useUser } from "@/context/UserContext";
 import { useKickCounter } from "@/hooks/useKickCounter";
-import { formatTime } from "@/lib/dateUtils";
+import { useGestationalData } from "@/hooks/useGestationalData";
+import { formatTime, calculateGestationalAgeOnDate } from "@/lib/dateUtils";
+import SkeletonLoader from "@/components/SkeletonLoader";
+
+const INITIAL_VISIBLE_COUNT = 10;
+const LOAD_MORE_COUNT = 10;
 
 export default function KickCounterPage() {
   const { user, loading: userLoading } = useUser();
-  const { sessions, loading: sessionsLoading } = useKickCounter(user); // setSessions não é mais necessário aqui
+  const { sessions, loading: sessionsLoading } = useKickCounter(user);
+  const { estimatedLmp, loading: gestationalLoading } =
+    useGestationalData(user);
 
   const [kickCount, setKickCount] = useState(0);
   const [isCounting, setIsCounting] = useState(false);
@@ -21,6 +28,9 @@ export default function KickCounterPage() {
   const [startTime, setStartTime] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState(null);
+  const [visibleSessionsCount, setVisibleSessionsCount] = useState(
+    INITIAL_VISIBLE_COUNT
+  );
 
   useEffect(() => {
     let interval = null;
@@ -45,15 +55,15 @@ export default function KickCounterPage() {
     }
   };
 
-  // MODIFICADO: Salva um novo documento na subcoleção
   const handleStopAndSave = async () => {
     setIsCounting(false);
     if (user && kickCount > 0) {
+      const endTime = new Date();
       const newSession = {
         kicks: kickCount,
         duration: timer,
-        date: startTime.toLocaleDateString("pt-BR"),
-        timestamp: startTime.getTime(),
+        timestamp: startTime,
+        endTime: endTime,
       };
       try {
         const sessionsRef = collection(db, "users", user.uid, "kickSessions");
@@ -73,17 +83,15 @@ export default function KickCounterPage() {
     setIsModalOpen(true);
   };
 
-  // MODIFICADO: Deleta o documento da subcoleção
   const confirmDeleteSession = async () => {
     if (!user || !sessionToDelete) return;
     try {
-      // O ID da sessão agora corresponde ao ID do documento
       const sessionRef = doc(
         db,
         "users",
         user.uid,
         "kickSessions",
-        sessionToDelete.id,
+        sessionToDelete.id
       );
       await deleteDoc(sessionRef);
       toast.info("Sessão removida do histórico.");
@@ -96,19 +104,17 @@ export default function KickCounterPage() {
     }
   };
 
-  const loading = userLoading || sessionsLoading;
+  const loading = userLoading || sessionsLoading || gestationalLoading;
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center flex-grow">
-        <p className="text-lg text-rose-500 dark:text-rose-400">
-          Carregando...
-        </p>
+      <div className="flex items-center justify-center flex-grow p-4">
+        <SkeletonLoader type="fullPage" />
       </div>
     );
   }
+  const displayedSessions = sessions.slice(0, visibleSessionsCount);
 
-  // O restante do JSX permanece o mesmo
   return (
     <>
       <ConfirmationModal
@@ -217,47 +223,97 @@ export default function KickCounterPage() {
                 Histórico de Sessões
               </h2>
               <div className="space-y-3">
-                {sessions.map((session) => (
-                  <div
-                    key={session.id}
-                    className="flex justify-between items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg"
-                  >
-                    <div className="flex-grow">
-                      <p className="font-semibold text-slate-700 dark:text-slate-200">
-                        {session.date}
-                      </p>
-                      <p className="text-sm text-slate-500 dark:text-slate-400">
-                        {session.kicks} movimentos
-                      </p>
-                    </div>
-                    <p className="font-medium text-indigo-600 dark:text-indigo-400 mx-4">
-                      em {formatTime(session.duration)}
-                    </p>
-                    <button
-                      onClick={() => openDeleteConfirmation(session)}
-                      title="Apagar sessão"
-                      className="p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors"
+                {displayedSessions.map((session) => {
+                  const sessionDate =
+                    session.timestamp &&
+                    typeof session.timestamp.toDate === "function"
+                      ? session.timestamp.toDate()
+                      : new Date(session.timestamp);
+
+                  const endDate =
+                    session.endTime &&
+                    typeof session.endTime.toDate === "function"
+                      ? session.endTime.toDate()
+                      : session.endTime
+                        ? new Date(session.endTime)
+                        : null;
+
+                  const dateStringForAge = sessionDate
+                    .toISOString()
+                    .split("T")[0];
+
+                  return (
+                    <div
+                      key={session.id}
+                      className="flex justify-between items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg"
                     >
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
+                      <div className="flex-grow">
+                        <p className="font-semibold text-slate-700 dark:text-slate-200">
+                          {sessionDate.toLocaleDateString("pt-BR")}{" "}
+                          {sessionDate.toLocaleTimeString("pt-BR", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                          {endDate &&
+                            ` - ${endDate.toLocaleTimeString("pt-BR", {
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}`}
+                        </p>
+                        <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">
+                          {calculateGestationalAgeOnDate(
+                            estimatedLmp,
+                            dateStringForAge
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-center mx-4">
+                        <p className="font-medium text-indigo-600 dark:text-indigo-400">
+                          {session.kicks} movimentos
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
+                          em {formatTime(session.duration)}
+                        </p>
+                      </div>
+                      <button
+                        onClick={() => openDeleteConfirmation(session)}
+                        title="Apagar sessão"
+                        className="p-2 rounded-full text-slate-400 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50 transition-colors"
                       >
-                        <polyline points="3 6 5 6 21 6"></polyline>
-                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        <line x1="10" y1="11" x2="10" y2="17"></line>
-                        <line x1="14" y1="11" x2="14" y2="17"></line>
-                      </svg>
-                    </button>
-                  </div>
-                ))}
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          width="18"
+                          height="18"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        >
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          <line x1="10" y1="11" x2="10" y2="17"></line>
+                          <line x1="14" y1="11" x2="14" y2="17"></line>
+                        </svg>
+                      </button>
+                    </div>
+                  );
+                })}
               </div>
+
+              {visibleSessionsCount < sessions.length && (
+                <div className="mt-4 text-center">
+                  <button
+                    onClick={() =>
+                      setVisibleSessionsCount((prev) => prev + LOAD_MORE_COUNT)
+                    }
+                    className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                  >
+                    Carregar Mais
+                  </button>
+                </div>
+              )}
             </div>
           )}
 
