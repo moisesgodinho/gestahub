@@ -106,7 +106,8 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex items-center justify-center flex-grow p-4">
+    // CORREÇÃO: Alterado "items-center" para "items-start" para alinhar ao topo
+    <div className="flex items-start justify-center flex-grow p-4">
       <div className="w-full max-w-3xl">
         <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
           Seu Perfil
