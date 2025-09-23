@@ -39,3 +39,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Arquivos de script e chaves de serviço
+seed.js
+serviceAccountKey.json
