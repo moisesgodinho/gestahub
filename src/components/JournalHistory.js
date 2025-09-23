@@ -1,3 +1,4 @@
+// src/components/JournalHistory.js
 "use client";
 
 import { useState, useMemo, useEffect } from "react";
@@ -39,6 +40,9 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
+const INITIAL_VISIBLE_COUNT = 5;
+const LOAD_MORE_COUNT = 5;
+
 export default function JournalHistory({ entries, onEdit, user }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
@@ -47,8 +51,10 @@ export default function JournalHistory({ entries, onEdit, user }) {
   const [symptomFilter, setSymptomFilter] = useState("");
   const [textFilter, setTextFilter] = useState("");
 
-  // --- NOVO: Lógica de paginação por mês ---
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
+  const [visibleEntriesCount, setVisibleEntriesCount] = useState(
+    INITIAL_VISIBLE_COUNT
+  );
 
   const filteredEntries = useMemo(() => {
     return entries.filter((entry) => {
@@ -84,20 +90,30 @@ export default function JournalHistory({ entries, onEdit, user }) {
     }, {});
   }, [filteredEntries]);
 
-  // --- NOVO: Array de meses e entradas do mês atual ---
   const availableMonths = useMemo(
     () => Object.keys(entriesGroupedByMonth),
-    [entriesGroupedByMonth],
-  );
-  const currentMonthEntries = useMemo(
-    () => entriesGroupedByMonth[availableMonths[currentMonthIndex]] || [],
-    [entriesGroupedByMonth, availableMonths, currentMonthIndex],
+    [entriesGroupedByMonth]
   );
 
-  // Resetar o índice quando os filtros mudarem
+  const currentMonthEntries = useMemo(
+    () => entriesGroupedByMonth[availableMonths[currentMonthIndex]] || [],
+    [entriesGroupedByMonth, availableMonths, currentMonthIndex]
+  );
+
+  const displayedEntries = useMemo(
+    () => currentMonthEntries.slice(0, visibleEntriesCount),
+    [currentMonthEntries, visibleEntriesCount]
+  );
+
   useEffect(() => {
     setCurrentMonthIndex(0);
+    setVisibleEntriesCount(INITIAL_VISIBLE_COUNT); // Reset on filter change
   }, [moodFilter, symptomFilter, textFilter]);
+
+  // Reset visible count when month changes
+  useEffect(() => {
+    setVisibleEntriesCount(INITIAL_VISIBLE_COUNT);
+  }, [currentMonthIndex]);
 
   const handlePreviousMonth = () => {
     setCurrentMonthIndex((prev) => Math.max(0, prev - 1));
@@ -105,7 +121,7 @@ export default function JournalHistory({ entries, onEdit, user }) {
 
   const handleNextMonth = () => {
     setCurrentMonthIndex((prev) =>
-      Math.min(availableMonths.length - 1, prev + 1),
+      Math.min(availableMonths.length - 1, prev + 1)
     );
   };
 
@@ -122,7 +138,7 @@ export default function JournalHistory({ entries, onEdit, user }) {
         "users",
         user.uid,
         "symptomEntries",
-        entryToDelete.id,
+        entryToDelete.id
       );
       await deleteDoc(entryRef);
       toast.info("Entrada do diário removida.");
@@ -236,7 +252,6 @@ export default function JournalHistory({ entries, onEdit, user }) {
 
         {availableMonths.length > 0 ? (
           <div>
-            {/* --- NOVO: Cabeçalho de navegação por mês --- */}
             <div className="flex justify-between items-center mb-4 p-2 rounded-lg bg-slate-100 dark:bg-slate-700/50">
               <button
                 onClick={handleNextMonth}
@@ -258,7 +273,7 @@ export default function JournalHistory({ entries, onEdit, user }) {
             </div>
 
             <div className="space-y-4">
-              {currentMonthEntries.map((entry) => (
+              {displayedEntries.map((entry) => (
                 <div
                   key={entry.id}
                   className="bg-slate-100 dark:bg-slate-700/50 p-4 rounded-lg"
@@ -348,6 +363,19 @@ export default function JournalHistory({ entries, onEdit, user }) {
                 </div>
               ))}
             </div>
+
+            {visibleEntriesCount < currentMonthEntries.length && (
+              <div className="mt-4 text-center">
+                <button
+                  onClick={() =>
+                    setVisibleEntriesCount((prev) => prev + LOAD_MORE_COUNT)
+                  }
+                  className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
+                >
+                  Carregar Mais
+                </button>
+              </div>
+            )}
           </div>
         ) : (
           <div className="text-center py-8">
