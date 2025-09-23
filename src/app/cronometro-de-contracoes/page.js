@@ -9,9 +9,9 @@ import AppNavigation from '@/components/AppNavigation';
 import ConfirmationModal from '@/components/ConfirmationModal';
 import { toast } from 'react-toastify';
 import { formatTime } from '@/lib/dateUtils';
-import SkeletonLoader from '@/components/SkeletonLoader'; // 1. Importe o componente
-import { useUser } from '@/context/UserContext'; // É uma boa prática usar o hook de contexto
-import { useContractions } from '@/hooks/useContractions'; // Importe o hook de contrações
+import SkeletonLoader from '@/components/SkeletonLoader';
+import { useUser } from '@/context/UserContext';
+import { useContractions } from '@/hooks/useContractions';
 
 export default function ContractionTimerPage() {
     const { user, loading: userLoading } = useUser();
@@ -44,7 +44,8 @@ export default function ContractionTimerPage() {
             const endTime = new Date();
             const duration = Math.round((endTime.getTime() - startTime.getTime()) / 1000);
             const lastContraction = contractions[0];
-            const frequency = lastContraction ? Math.round((startTime.getTime() - lastContraction.startTime.seconds * 1000) / 1000) : 0;
+            // Garante que lastContraction.startTime é um objeto de data para o cálculo
+            const frequency = lastContraction ? Math.round((startTime.getTime() - lastContraction.startTime.toDate().getTime()) / 1000) : 0;
             
             if (user) {
                 try {
@@ -82,7 +83,6 @@ export default function ContractionTimerPage() {
     
     const loading = userLoading || contractionsLoading;
 
-    // 2. Substitua a mensagem de carregamento pelo SkeletonLoader
     if (loading) {
         return (
             <div className="flex items-center justify-center flex-grow p-4">
@@ -138,7 +138,10 @@ export default function ContractionTimerPage() {
                             <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">Histórico de Contrações</h2>
                             <div className="space-y-3">
                                 {contractions.map((c) => {
-                                    const currentDate = new Date(c.startTime.seconds * 1000).toLocaleDateString('pt-BR');
+                                    // --- MUDANÇA AQUI ---
+                                    // Usando .toDate() para converter o Timestamp do Firebase para um objeto Date
+                                    const entryDate = c.startTime.toDate();
+                                    const currentDate = entryDate.toLocaleDateString('pt-BR');
                                     const showDateHeader = currentDate !== lastDate;
                                     lastDate = currentDate;
 
@@ -151,7 +154,8 @@ export default function ContractionTimerPage() {
                                             )}
                                             <div className="flex items-center bg-slate-100 dark:bg-slate-700/50 p-3 rounded-lg mt-2">
                                                 <div className="flex-1 text-center">
-                                                    <p className="font-semibold text-slate-700 dark:text-slate-200">{new Date(c.startTime.seconds * 1000).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
+                                                    {/* --- MUDANÇA AQUI --- */}
+                                                    <p className="font-semibold text-slate-700 dark:text-slate-200">{entryDate.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</p>
                                                     <p className="text-xs text-slate-500 dark:text-slate-400">Início</p>
                                                 </div>
                                                 <div className="flex-1 text-center">

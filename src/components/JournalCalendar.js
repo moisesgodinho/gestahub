@@ -88,7 +88,8 @@ export default function JournalCalendar({ entries, onDateSelect, onEditEntry, lm
             <div
                 key={day}
                 onClick={() => (entry ? onEditEntry(entry) : onDateSelect(dateString))}
-                className="p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700"
+                // --- MUDANÇA AQUI: Adiciona uma borda se for o dia de hoje ---
+                className={`p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 ${isToday ? 'border-2 border-rose-400' : ''}`}
             >
                 <span className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end ${isToday ? 'bg-rose-500 text-white' : 'text-slate-700 dark:text-slate-300'}`}>
                     {day}
@@ -98,17 +99,15 @@ export default function JournalCalendar({ entries, onDateSelect, onEditEntry, lm
                     {mood ? (
                         <span className="text-2xl" title={mood.value}>{mood.label.split(' ')[0]}</span>
                     ) : entry ? (
-                        // --- PONTO INDICADOR AUMENTADO ---
                         <div className="w-2.5 h-2.5 bg-indigo-400 rounded-full" title="Registro de sintoma/nota"></div>
                     ) : (
-                        // Espaço vazio para manter o alinhamento
                         <div></div>
                     )}
                 </div>
             </div>
         );
     }
-
+    
     return (
         <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl mb-6">
             <div className="flex justify-between items-center mb-4">
