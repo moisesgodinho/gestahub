@@ -30,7 +30,7 @@ export default function RootLayout({ children }) {
         <meta name="theme-color" content="#f43f5e" />
       </head>
       <body
-        className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900 pb-16 md:pb-0`}
+        className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900 pb-16 lg:pb-0`}
       >
         <script
           dangerouslySetInnerHTML={{

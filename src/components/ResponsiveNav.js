@@ -14,12 +14,12 @@ export default function ResponsiveNav() {
 
   return (
     <>
-      {/* Menu Lateral para telas maiores (md e acima) */}
-      <div className="hidden md:block">
+      {/* Menu Lateral para telas maiores (lg e acima) */}
+      <div className="hidden lg:block">
         <Sidebar />
       </div>
-      {/* Barra de Navegação Inferior para telas menores (abaixo de md) */}
-      <div className="md:hidden">
+      {/* Barra de Navegação Inferior para telas menores (abaixo de lg) */}
+      <div className="lg:hidden">
         <TabBar />
       </div>
     </>
