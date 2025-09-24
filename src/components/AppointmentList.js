@@ -2,6 +2,9 @@
 "use client";
 
 import { useState } from "react";
+import { db } from "@/lib/firebase";
+import { doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
+import { toast } from "react-toastify";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import AppointmentItem from "./AppointmentItem";
 
@@ -11,22 +14,119 @@ const getUTCDate = (date) => {
   return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 };
 
+// Função para converter "HH:mm" em minutos para uma ordenação confiável
+const timeStringToMinutes = (timeStr) => {
+  if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return -1; // Retorna -1 para itens sem horário
+  const [hours, minutes] = timeStr.split(':').map(Number);
+  return hours * 60 + minutes;
+};
+
 const INITIAL_VISIBLE_COUNT = 5;
 const LOAD_MORE_COUNT = 5;
 
 export default function AppointmentList({
   appointments,
   onEdit,
-  onDelete,
-  onToggleDone,
   user,
   lmpDate,
 }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const [visiblePastCount, setVisiblePastCount] = useState(
     INITIAL_VISIBLE_COUNT
   );
 
-  const getSortDate = (item) => {
+  const handleToggleDone = async (appointment) => {
+    if (!user) return;
+
+    const newDoneStatus = !appointment.done;
+
+    if (newDoneStatus) {
+      if (appointment.type === "ultrasound" && !appointment.isScheduled) {
+        toast.warn(
+          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído."
+        );
+        onEdit(appointment);
+        return;
+      }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const appointmentDate = new Date(appointment.date + "T00:00:00Z");
+
+      if (appointmentDate > today) {
+        toast.warn(
+          "Não é possível marcar como concluída uma consulta agendada para o futuro."
+        );
+        return;
+      }
+    }
+
+    try {
+      if (appointment.type === "manual") {
+        const appointmentRef = doc(
+          db,
+          "users",
+          user.uid,
+          "appointments",
+          appointment.id
+        );
+        await setDoc(appointmentRef, { done: newDoneStatus }, { merge: true });
+      } else if (appointment.type === "ultrasound") {
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const scheduleData =
+            docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
+          const updatedSchedule = {
+            ...scheduleData,
+            [appointment.id]: {
+              ...scheduleData[appointment.id],
+              done: newDoneStatus,
+            },
+          };
+          await setDoc(
+            userDocRef,
+            { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
+            { merge: true }
+          );
+        }
+      }
+      toast.success(
+        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`
+      );
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      toast.error("Não foi possível atualizar o status.");
+    }
+  };
+
+  const openDeleteConfirmation = (appointment) => {
+    setAppointmentToDelete(appointment);
+    setIsModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!user || !appointmentToDelete) return;
+    try {
+      const appointmentRef = doc(
+        db,
+        "users",
+        user.uid,
+        "appointments",
+        appointmentToDelete.id
+      );
+      await deleteDoc(appointmentRef);
+      toast.info("Consulta removida.");
+    } catch (error) {
+      console.error("Erro ao apagar consulta:", error);
+      toast.error("Não foi possível remover a consulta.");
+    } finally {
+      setIsModalOpen(false);
+      setAppointmentToDelete(null);
+    }
+  };
+
+  const getSortableDate = (item) => {
     if (item.date) {
       return new Date(item.date);
     }
@@ -40,16 +140,40 @@ export default function AppointmentList({
 
   const upcomingAppointments = appointments
     .filter((a) => !a.done)
-    .sort((a, b) => getSortDate(a) - getSortDate(b));
+    .sort((a, b) => {
+      const dateA = getSortableDate(a);
+      const dateB = getSortableDate(b);
+      const dateComparison = dateA.getTime() - dateB.getTime();
+      if (dateComparison !== 0) return dateComparison;
+      const timeA = timeStringToMinutes(a.time);
+      const timeB = timeStringToMinutes(b.time);
+      return timeA - timeB;
+    });
 
   const pastAppointments = appointments
     .filter((a) => a.done)
-    .sort((a, b) => new Date(b.date) - new Date(a.date));
+    .sort((a, b) => {
+      const dateB = getSortableDate(b);
+      const dateA = getSortableDate(a);
+      const dateComparison = dateB.getTime() - dateA.getTime();
+      if (dateComparison !== 0) return dateComparison;
+      const timeA = timeStringToMinutes(a.time);
+      const timeB = timeStringToMinutes(b.time);
+      return timeB - timeA; // CORREÇÃO: Ordem descendente para o horário também
+    });
 
   const displayedPastAppointments = pastAppointments.slice(0, visiblePastCount);
 
   return (
     <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mt-6">
+      <ConfirmationModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
+        message="Tem certeza que deseja apagar esta consulta?"
+      />
+
       {upcomingAppointments.length > 0 || pastAppointments.length > 0 ? (
         <>
           {upcomingAppointments.length > 0 && (
@@ -73,21 +197,16 @@ export default function AppointmentList({
                         endDate.getUTCDate() + app.endWeek * 7 + 6
                       );
 
-                      idealWindowText = `Janela ideal: ${startDate.toLocaleDateString(
-                        "pt-BR",
-                        { timeZone: "UTC" }
-                      )} a ${endDate.toLocaleDateString("pt-BR", {
-                        timeZone: "UTC",
-                      })}`;
+                      idealWindowText = `Janela ideal: ${startDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })} a ${endDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`;
                     }
                   }
                   return (
                     <AppointmentItem
                       key={`${app.type}-${app.id}`}
                       item={app}
-                      onToggleDone={onToggleDone}
+                      onToggleDone={handleToggleDone}
                       onEdit={onEdit}
-                      onDelete={onDelete}
+                      onDelete={openDeleteConfirmation}
                       idealWindowText={idealWindowText}
                     />
                   );
@@ -106,9 +225,9 @@ export default function AppointmentList({
                   <AppointmentItem
                     key={`${app.type}-${app.id}`}
                     item={app}
-                    onToggleDone={onToggleDone}
+                    onToggleDone={handleToggleDone}
                     onEdit={onEdit}
-                    onDelete={onDelete}
+                    onDelete={openDeleteConfirmation}
                   />
                 ))}
               </div>

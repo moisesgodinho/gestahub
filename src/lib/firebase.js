@@ -1,8 +1,11 @@
 // src/lib/firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-// 1. Importe 'initializeFirestore' e 'persistentLocalCache' em vez de 'getFirestore'
-import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  getFirestore, // Importe também o getFirestore
+} from "firebase/firestore";
 
 // As suas credenciais do Firebase
 const firebaseConfig = {
@@ -16,16 +19,24 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-// 2. Inicialize o Firestore com a configuração de cache offline
-export const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({
-    // Configura o tamanho do cache em bytes. O padrão é 40MB.
-    // Você pode ajustar se necessário. 100000000 bytes = 100MB
-    cacheSizeBytes: 100000000,
-  }),
-});
+let db;
 
-// 3. O bloco try...catch foi removido, pois o novo método é mais integrado.
+// CORREÇÃO: Envolve a inicialização em um try...catch
+try {
+  // Tenta inicializar o Firestore com as opções de cache offline
+  db = initializeFirestore(app, {
+    localCache: persistentLocalCache({
+      cacheSizeBytes: 100000000, // 100 MB
+    }),
+  });
+} catch (error) {
+  // Se der erro (porque já foi inicializado), apenas pega a instância existente
+  if (error.code === 'failed-precondition') {
+      console.warn("Firebase (Firestore):", error.message);
+  }
+  db = getFirestore(app);
+}
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
+export { db }; // Exporta a instância do db (seja ela nova ou a já existente)

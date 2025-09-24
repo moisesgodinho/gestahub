@@ -52,6 +52,7 @@ export default function AppointmentViewModal({
   onClose,
   onEdit,
   onDelete,
+  onAddNew, // NOVA PROP
   appointment,
 }) {
   if (!isOpen || !appointment) {
@@ -69,7 +70,6 @@ export default function AppointmentViewModal({
         </h3>
 
         <div className="flex-grow overflow-y-auto pr-2">
-          {/* --- ESTRUTURA VISUAL ATUALIZADA --- */}
           <div className="border-b border-slate-200 dark:border-slate-700 pb-4 last:border-b-0">
             <div className="flex justify-between items-start">
               <h4
@@ -135,7 +135,14 @@ export default function AppointmentViewModal({
           </div>
         </div>
 
-        <div className="mt-6 flex justify-end gap-4 border-t border-slate-200 dark:border-slate-700 pt-4 flex-shrink-0">
+        <div className="mt-6 flex justify-between items-center gap-4 border-t border-slate-200 dark:border-slate-700 pt-4 flex-shrink-0">
+          {/* BOTÃO ADICIONADO */}
+          <button
+            onClick={() => onAddNew(appointment.date)}
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+          >
+            Adicionar Novo
+          </button>
           <button
             onClick={onClose}
             className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600"

@@ -52,6 +52,7 @@ export default function AppointmentMultiViewModal({
   onClose,
   onEdit,
   onDelete,
+  onAddNew, // NOVA PROP
   appointments,
 }) {
   if (!isOpen || !appointments || appointments.length === 0) {
@@ -59,6 +60,17 @@ export default function AppointmentMultiViewModal({
   }
 
   const date = appointments[0].date;
+
+  // ORDENA OS COMPROMISSOS POR HORÁRIO
+  const sortedAppointments = [...appointments].sort((a, b) => {
+    if (a.time && b.time) {
+      return a.time.localeCompare(b.time);
+    }
+    if (a.time) return -1; // 'a' tem horário, 'b' não, então 'a' vem primeiro
+    if (b.time) return 1;  // 'b' tem horário, 'a' não, então 'b' vem primeiro
+    return 0; // Nenhum dos dois tem horário
+  });
+
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 animate-fade-in-fast">
@@ -71,7 +83,7 @@ export default function AppointmentMultiViewModal({
         </h3>
 
         <div className="flex-grow overflow-y-auto pr-2 space-y-5">
-          {appointments.map((appointment, index) => (
+          {sortedAppointments.map((appointment, index) => (
             <div
               key={appointment.id || index}
               className="border-b border-slate-200 dark:border-slate-700 pb-4 last:border-b-0"
@@ -142,7 +154,14 @@ export default function AppointmentMultiViewModal({
           ))}
         </div>
 
-        <div className="mt-6 flex justify-end gap-4 border-t border-slate-200 dark:border-slate-700 pt-4 flex-shrink-0">
+        <div className="mt-6 flex justify-between items-center gap-4 border-t border-slate-200 dark:border-slate-700 pt-4 flex-shrink-0">
+          {/* BOTÃO PARA ADICIONAR NOVO COMPROMISSO */}
+          <button
+            onClick={() => onAddNew(date)}
+            className="px-4 py-2 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700"
+          >
+            Adicionar Novo
+          </button>
           <button
             onClick={onClose}
             className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600"
