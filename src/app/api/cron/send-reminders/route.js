@@ -1,11 +1,10 @@
 import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
 import { collection, getDocs, query, where } from "firebase/firestore";
-import { db } from "@/lib/firebase"; // Usamos a nossa config do cliente para query
+import { getFirestore } from "firebase-admin/firestore"; // Importa o getFirestore do admin
 
-// Carregue a chave da conta de serviço de forma segura
-// Nota: O Next.js agrupa o serviceAccountKey.json no build do servidor.
-const serviceAccount = require("../../../../../serviceAccountKey.json");
+// Pega as credenciais da variável de ambiente
+const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS);
 
 // Inicialize o Admin SDK se ainda não tiver sido inicializado
 if (!admin.apps.length) {
@@ -13,6 +12,9 @@ if (!admin.apps.length) {
     credential: admin.credential.cert(serviceAccount),
   });
 }
+
+// Usa o firestore do admin para queries no servidor
+const adminDb = getFirestore();
 
 // Função para formatar a data como YYYY-MM-DD
 const getYYYYMMDD = (date) => {
@@ -25,7 +27,7 @@ const getYYYYMMDD = (date) => {
 
 export async function GET() {
   try {
-    const usersSnapshot = await getDocs(collection(db, "users"));
+    const usersSnapshot = await adminDb.collection("users").get();
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
@@ -38,7 +40,7 @@ export async function GET() {
 
       if (user.fcmToken) {
         // --- Lembrete de Consulta ---
-        const appointmentsRef = collection(db, `users/${userId}/appointments`);
+        const appointmentsRef = adminDb.collection(`users/${userId}/appointments`);
         const q = query(appointmentsRef, where("date", "==", dateTomorrow));
         const appointmentsSnapshot = await getDocs(q);
 
@@ -53,22 +55,10 @@ export async function GET() {
             };
             await admin.messaging().send(message);
         }
-
-        // --- Lembrete de Diário (Exemplo: enviar toda noite) ---
-        // (Esta lógica pode ser ajustada para verificar se já foi preenchido)
-        const dailyReminderMessage = {
-            notification: {
-                title: "Como você está se sentindo? ✨",
-                body: "Não se esqueça de registrar seus sintomas e humor no diário hoje!",
-            },
-            token: user.fcmToken,
-        };
-        // Aqui você adicionaria a lógica para enviar o lembrete do diário
-        // await admin.messaging().send(dailyReminderMessage);
       }
     }
 
-    return NextResponse.json({ success: true, message: "Reminders sent." });
+    return NextResponse.json({ success: true, message: "Reminders checked." });
   } catch (error) {
     console.error("Error sending reminders:", error);
     return NextResponse.json(
