@@ -118,7 +118,10 @@ export default function JournalCalendar({
 
   // Adiciona os dias do mês
   for (let day = 1; day <= totalDays; day++) {
-    const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dateString = `${year}-${String(month + 1).padStart(
+      2,
+      "0"
+    )}-${String(day).padStart(2, "0")}`;
     const entry = entriesMap.get(dateString);
     const mood = entry ? moodOptions.find((m) => m.value === entry.mood) : null;
     const isToday = dateString === todayString;
@@ -127,11 +130,18 @@ export default function JournalCalendar({
       <div
         key={day}
         onClick={() => (entry ? onEditEntry(entry) : onDateSelect(dateString))}
-        // --- MUDANÇA AQUI: Adiciona uma borda se for o dia de hoje ---
-        className={`p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 ${isToday ? "border-2 border-rose-400" : ""}`}
+        // CORREÇÃO: Aplicando 'brightness-90' para o dia atual
+        className={`p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 ${
+          isToday ? "brightness-90" : ""
+        }`}
       >
         <span
-          className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end ${isToday ? "bg-rose-500 text-white" : "text-slate-700 dark:text-slate-300"}`}
+          // CORREÇÃO: Simplificando a estilização do número do dia
+          className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end font-semibold ${
+            isToday
+              ? "text-rose-500 dark:text-rose-400"
+              : "text-slate-700 dark:text-slate-300"
+          }`}
         >
           {day}
         </span>
@@ -150,7 +160,7 @@ export default function JournalCalendar({
             <div></div>
           )}
         </div>
-      </div>,
+      </div>
     );
   }
 

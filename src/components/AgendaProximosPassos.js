@@ -99,7 +99,6 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
       const ultrasoundItems = [];
       if (docSnap.exists()) {
         const userData = docSnap.data();
-        // MODIFICADO: Acessa o ultrasoundSchedule de dentro do gestationalProfile
         const ultrasoundData =
           userData.gestationalProfile?.ultrasoundSchedule || {};
 
@@ -187,7 +186,6 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
               done: newDoneStatus,
             },
           };
-          // MODIFICADO: Salva o ultrasoundSchedule dentro de gestationalProfile
           await setDoc(
             userDocRef,
             { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
@@ -218,20 +216,50 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
   };
 
   const confirmDelete = async () => {
-    if (!user || !appointmentToDelete || appointmentToDelete.type !== "manual")
-      return;
+    if (!user || !appointmentToDelete) return;
+
     try {
-      const appointmentRef = doc(
-        db,
-        "users",
-        user.uid,
-        "appointments",
-        appointmentToDelete.id
-      );
-      await deleteDoc(appointmentRef);
-      toast.info("Consulta removida.");
+      if (appointmentToDelete.type === "manual") {
+        const appointmentRef = doc(
+          db,
+          "users",
+          user.uid,
+          "appointments",
+          appointmentToDelete.id
+        );
+        await deleteDoc(appointmentRef);
+        toast.info("Consulta removida.");
+      } else if (appointmentToDelete.type === "ultrasound") {
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const gestationalProfile = docSnap.data().gestationalProfile || {};
+          const scheduleData = gestationalProfile.ultrasoundSchedule || {};
+          scheduleData[appointmentToDelete.id] = {
+            done: false,
+            isScheduled: false,
+            scheduledDate: null,
+            time: "",
+            professional: "",
+            location: "",
+            notes: "",
+          };
+          await setDoc(
+            userDocRef,
+            {
+              gestationalProfile: {
+                ...gestationalProfile,
+                ultrasoundSchedule: scheduleData,
+              },
+            },
+            { merge: true }
+          );
+          toast.info("Agendamento de ultrassom removido.");
+        }
+      }
     } catch (error) {
-      toast.error("Não foi possível remover a consulta.");
+      console.error("Erro ao remover agendamento:", error);
+      toast.error("Não foi possível remover o agendamento.");
     } finally {
       setIsModalOpen(false);
       setAppointmentToDelete(null);
@@ -320,7 +348,6 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
               notes: editDetails.notes,
             },
           };
-          // MODIFICADO: Salva o ultrasoundSchedule dentro de gestationalProfile
           await setDoc(
             userDocRef,
             { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
@@ -372,8 +399,12 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         onConfirm={confirmDelete}
-        title="Confirmar Exclusão"
-        message="Tem certeza que deseja apagar esta consulta?"
+        title="Confirmar Remoção"
+        message={`Tem certeza que deseja apagar ${
+          appointmentToDelete?.type === "manual"
+            ? "esta consulta"
+            : "este agendamento"
+        }?`}
       />
       <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-4 text-center">
         🗓️ Próximos Passos
@@ -396,13 +427,17 @@ export default function AgendaProximosPassos({ lmpDate, user }) {
                     endDate.getUTCDate() + item.endWeek * 7 + 6
                   );
 
-                  idealWindowText = `Janela ideal: ${startDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })} a ${endDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`;
+                  idealWindowText = `Janela ideal: ${startDate.toLocaleDateString(
+                    "pt-BR",
+                    { timeZone: "UTC" }
+                  )} a ${endDate.toLocaleDateString("pt-BR", {
+                    timeZone: "UTC",
+                  })}`;
                 }
               }
 
               return (
                 <div key={`${item.type}-${item.id}`}>
-                  {/* 2. SUBSTITUA O BLOCO DE RENDERIZAÇÃO PELO NOVO COMPONENTE */}
                   <AppointmentItem
                     item={item}
                     onToggleDone={handleToggleDone}

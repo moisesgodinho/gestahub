@@ -20,7 +20,13 @@ export default function AppointmentItem({
 
   return (
     <div
-      className={`p-4 rounded-lg flex items-center gap-4 transition-colors ${item.done ? "border-l-4 border-green-500" : item.type === "ultrasound" ? "border-l-4 border-rose-500" : "border-l-4 border-indigo-500"} bg-slate-100 dark:bg-slate-700/50`}
+      className={`p-4 rounded-lg flex items-center gap-4 transition-colors ${
+        item.done
+          ? "border-l-4 border-green-500"
+          : item.type === "ultrasound"
+            ? "border-l-4 border-rose-500"
+            : "border-l-4 border-indigo-500"
+      } bg-slate-100 dark:bg-slate-700/50`}
     >
       <div className="flex-shrink-0">
         <label
@@ -34,10 +40,16 @@ export default function AppointmentItem({
             className="sr-only peer"
           />
           <div
-            className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-colors ${item.done ? "bg-green-500 border-green-500" : "border-slate-400 dark:border-slate-500"}`}
+            className={`w-6 h-6 border-2 rounded-md flex items-center justify-center transition-colors ${
+              item.done
+                ? "bg-green-500 border-green-500"
+                : "border-slate-400 dark:border-slate-500"
+            }`}
           >
             <svg
-              className={`w-4 h-4 text-white transform transition-transform ${!!item.done ? "scale-100" : "scale-0"}`}
+              className={`w-4 h-4 text-white transform transition-transform ${
+                !!item.done ? "scale-100" : "scale-0"
+              }`}
               viewBox="0 0 24 24"
               fill="none"
               stroke="currentColor"
@@ -109,10 +121,13 @@ export default function AppointmentItem({
             <path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path>
           </svg>
         </button>
-        {item.type === "manual" && (
+        {(item.type === "manual" ||
+          (item.type === "ultrasound" && item.isScheduled)) && (
           <button
             onClick={() => onDelete(item)}
-            title="Apagar"
+            title={
+              item.type === "manual" ? "Apagar consulta" : "Apagar agendamento"
+            }
             className="p-2 rounded-full text-slate-500 hover:bg-red-100 hover:text-red-500 dark:hover:bg-red-900/50"
           >
             <svg

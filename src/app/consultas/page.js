@@ -12,6 +12,8 @@ import {
   orderBy,
   doc,
   deleteDoc,
+  getDoc,
+  setDoc,
 } from "firebase/firestore";
 import { getEstimatedLmp, getDueDate } from "@/lib/gestationalAge";
 import AppointmentForm from "@/components/AppointmentForm";
@@ -118,7 +120,6 @@ function AppointmentsPageContent() {
             setDueDate(getDueDate(estimatedLmp));
           }
 
-          // MODIFICADO: Acessa o ultrasoundSchedule de dentro do gestationalProfile
           const ultrasoundData =
             userData.gestationalProfile?.ultrasoundSchedule || {};
           const scheduledUltrasounds = ultrasoundSchedule.map((exam) => {
@@ -176,7 +177,7 @@ function AppointmentsPageContent() {
   const handleEdit = (appointment) => {
     setIsSingleViewModalOpen(false);
     setIsMultiViewModalOpen(false);
-    setAppointmentsToView([]); // <-- ADICIONE ESTA LINHA
+    setAppointmentsToView([]);
     setAppointmentToEdit(appointment);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -205,6 +206,7 @@ function AppointmentsPageContent() {
   const confirmAndOpenForm = () => {
     setIsAddModalOpen(false);
     handleAddNew(selectedDateForNew);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCloseForm = () => {
@@ -219,21 +221,114 @@ function AppointmentsPageContent() {
     setIsDeleteModalOpen(true);
   };
 
-  const confirmDelete = async () => {
-    if (!user || !appointmentToDelete || appointmentToDelete.type !== "manual")
-      return;
+  const handleToggleDone = async (appointment) => {
+    if (!user) return;
+    const newDoneStatus = !appointment.done;
+
+    if (newDoneStatus) {
+      if (appointment.type === "ultrasound" && !appointment.isScheduled) {
+        toast.warn(
+          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído."
+        );
+        handleEdit(appointment);
+        return;
+      }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const appointmentDate = new Date(appointment.date + "T00:00:00Z");
+
+      if (appointmentDate > today) {
+        toast.warn(
+          "Não é possível marcar como concluída uma consulta agendada para o futuro."
+        );
+        return;
+      }
+    }
+
     try {
-      const appointmentRef = doc(
-        db,
-        "users",
-        user.uid,
-        "appointments",
-        appointmentToDelete.id
+      if (appointment.type === "manual") {
+        const appointmentRef = doc(
+          db,
+          "users",
+          user.uid,
+          "appointments",
+          appointment.id
+        );
+        await setDoc(appointmentRef, { done: newDoneStatus }, { merge: true });
+      } else if (appointment.type === "ultrasound") {
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const scheduleData =
+            docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
+          const updatedSchedule = {
+            ...scheduleData,
+            [appointment.id]: {
+              ...scheduleData[appointment.id],
+              done: newDoneStatus,
+            },
+          };
+          await setDoc(
+            userDocRef,
+            { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
+            { merge: true }
+          );
+        }
+      }
+      toast.success(
+        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`
       );
-      await deleteDoc(appointmentRef);
-      toast.info("Consulta removida.");
     } catch (error) {
-      toast.error("Não foi possível remover a consulta.");
+      console.error("Erro ao atualizar status:", error);
+      toast.error("Não foi possível atualizar o status.");
+    }
+  };
+
+  const confirmDelete = async () => {
+    if (!user || !appointmentToDelete) return;
+    try {
+      if (appointmentToDelete.type === "manual") {
+        const appointmentRef = doc(
+          db,
+          "users",
+          user.uid,
+          "appointments",
+          appointmentToDelete.id
+        );
+        await deleteDoc(appointmentRef);
+        toast.info("Consulta removida.");
+      } else if (appointmentToDelete.type === "ultrasound") {
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const gestationalProfile = docSnap.data().gestationalProfile || {};
+          const scheduleData = gestationalProfile.ultrasoundSchedule || {};
+          // Reseta apenas os dados do agendamento
+          scheduleData[appointmentToDelete.id] = {
+            done: false,
+            isScheduled: false,
+            scheduledDate: null,
+            time: "",
+            professional: "",
+            location: "",
+            notes: "",
+          };
+          await setDoc(
+            userDocRef,
+            {
+              gestationalProfile: {
+                ...gestationalProfile,
+                ultrasoundSchedule: scheduleData,
+              },
+            },
+            { merge: true }
+          );
+          toast.info("Agendamento de ultrassom removido.");
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao remover agendamento:", error);
+      toast.error("Não foi possível remover o agendamento.");
     } finally {
       setIsDeleteModalOpen(false);
       setAppointmentToDelete(null);
@@ -288,8 +383,12 @@ function AppointmentsPageContent() {
         isOpen={isDeleteModalOpen}
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
-        title="Confirmar Exclusão"
-        message={`Tem certeza que deseja apagar a consulta "${appointmentToDelete?.title || ""}"?`}
+        title="Confirmar Remoção"
+        message={`Tem certeza que deseja apagar ${
+          appointmentToDelete?.type === "manual"
+            ? "a consulta"
+            : "o agendamento de"
+        } "${appointmentToDelete?.title || appointmentToDelete?.name}"?`}
       />
 
       <div className="flex items-center justify-center flex-grow p-4">
@@ -329,6 +428,8 @@ function AppointmentsPageContent() {
           <AppointmentList
             appointments={combinedAppointments}
             onEdit={handleEdit}
+            onDelete={handleDeleteRequest}
+            onToggleDone={handleToggleDone}
             user={user}
             lmpDate={lmpDate}
           />

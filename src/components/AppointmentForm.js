@@ -80,6 +80,14 @@ export default function AppointmentForm({
       return;
     }
 
+    // CORREÇÃO: Impede que uma consulta concluída seja movida para o futuro
+    if (appointmentToEdit?.done && date > getTodayString()) {
+      toast.error(
+        "Uma consulta concluída não pode ser reagendada para o futuro."
+      );
+      return;
+    }
+
     if (lmpDate && dueDate) {
       const selectedDate = new Date(date + "T00:00:00Z");
       const extendedDueDate = new Date(dueDate.getTime());
@@ -87,7 +95,7 @@ export default function AppointmentForm({
 
       if (selectedDate < lmpDate || selectedDate > extendedDueDate) {
         toast.error(
-          "A data da consulta deve estar dentro do período da gestação.",
+          "A data da consulta deve estar dentro do período da gestação."
         );
         return;
       }
@@ -98,11 +106,11 @@ export default function AppointmentForm({
       const selectedDate = new Date(date + "T00:00:00Z");
       const idealStartDate = new Date(lmpUTCDate.getTime());
       idealStartDate.setUTCDate(
-        idealStartDate.getUTCDate() + appointmentToEdit.startWeek * 7,
+        idealStartDate.getUTCDate() + appointmentToEdit.startWeek * 7
       );
       const idealEndDate = new Date(lmpUTCDate.getTime());
       idealEndDate.setUTCDate(
-        idealEndDate.getUTCDate() + appointmentToEdit.endWeek * 7 + 6,
+        idealEndDate.getUTCDate() + appointmentToEdit.endWeek * 7 + 6
       );
       const toleranceStartDate = new Date(idealStartDate.getTime());
       toleranceStartDate.setUTCDate(toleranceStartDate.getUTCDate() - 14);
@@ -114,7 +122,7 @@ export default function AppointmentForm({
         selectedDate > toleranceEndDate
       ) {
         toast.error(
-          "A data está fora do período recomendado (tolerância de 2 semanas).",
+          "A data está fora do período recomendado (tolerância de 2 semanas)."
         );
         return;
       }
@@ -130,7 +138,7 @@ export default function AppointmentForm({
             "users",
             user.uid,
             "appointments",
-            appointmentToEdit.id,
+            appointmentToEdit.id
           );
           await setDoc(appointmentRef, dataToSave, { merge: true });
           toast.success("Consulta atualizada com sucesso!");
@@ -159,7 +167,7 @@ export default function AppointmentForm({
                   ultrasoundSchedule: updatedSchedule,
                 },
               },
-              { merge: true },
+              { merge: true }
             );
             toast.success("Ultrassom atualizado com sucesso!");
           }
@@ -169,7 +177,7 @@ export default function AppointmentForm({
           db,
           "users",
           user.uid,
-          "appointments",
+          "appointments"
         );
         await addDoc(appointmentsRef, { ...dataToSave, done: false });
         toast.success("Consulta adicionada com sucesso!");
