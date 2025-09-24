@@ -33,14 +33,14 @@ export default function MorePage() {
           Mais Ferramentas
         </h1>
         <Card>
-          <nav className="grid grid-cols-3 gap-4 text-center">
+          <nav className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-center">
             {otherLinks.map((link) => {
               const Icon = link.icon;
               return (
                 <Link
                   key={link.href}
                   href={link.href}
-                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors aspect-square"
+                  className="flex flex-col items-center justify-center gap-3 p-6 rounded-2xl bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors"
                 >
                   <Icon className="w-12 h-12 text-rose-500 dark:text-rose-400" />
                   <span className="font-semibold text-sm text-slate-700 dark:text-slate-300">
