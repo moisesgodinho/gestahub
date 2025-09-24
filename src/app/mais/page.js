@@ -4,6 +4,7 @@
 import Link from "next/link";
 import KickCounterIcon from "@/components/icons/KickCounterIcon";
 import ContractionIcon from "@/components/icons/ContractionIcon";
+import BagIcon from "@/components/icons/BagIcon"; // Importar o novo ícone
 import Card from "@/components/Card";
 
 const otherLinks = [
@@ -16,6 +17,11 @@ const otherLinks = [
     href: "/cronometro-de-contracoes",
     label: "Cronômetro de Contrações",
     icon: ContractionIcon,
+  },
+  {
+    href: "/mala-maternidade",
+    label: "Mala da Maternidade",
+    icon: BagIcon,
   },
 ];
 

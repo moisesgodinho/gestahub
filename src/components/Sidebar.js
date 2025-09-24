@@ -6,15 +6,16 @@ import { usePathname } from "next/navigation";
 import HomeIcon from "./icons/HomeIcon";
 import CalendarIcon from "./icons/CalendarIcon";
 import JournalIcon from "./icons/JournalIcon";
-import ScaleIcon from "./icons/ScaleIcon"; // Importar o novo ícone
+import ScaleIcon from "./icons/ScaleIcon";
 import KickCounterIcon from "./icons/KickCounterIcon";
 import ContractionIcon from "./icons/ContractionIcon";
+import BagIcon from "./icons/BagIcon"; // Importar o novo ícone
 
 const navLinks = [
   { href: "/", label: "Início", icon: HomeIcon },
   { href: "/consultas", label: "Consultas", icon: CalendarIcon },
   { href: "/diario-de-sintomas", label: "Diário", icon: JournalIcon },
-  { href: "/acompanhamento-de-peso", label: "Peso", icon: ScaleIcon }, // Usar o novo ícone
+  { href: "/acompanhamento-de-peso", label: "Peso", icon: ScaleIcon },
   {
     href: "/contador-de-movimentos",
     label: "Movimentos",
@@ -24,6 +25,11 @@ const navLinks = [
     href: "/cronometro-de-contracoes",
     label: "Contrações",
     icon: ContractionIcon,
+  },
+  {
+    href: "/mala-maternidade",
+    label: "Mala Maternidade",
+    icon: BagIcon,
   },
 ];
 
