@@ -10,28 +10,16 @@ import { toast } from "react-toastify";
 
 // Ícone de sino
 const BellIcon = (props) => (
-  <svg
-    {...props}
-    xmlns="http://www.w3.org/2000/svg"
-    width="24"
-    height="24"
-    viewBox="0 0 24 24"
-    fill="none"
-    stroke="currentColor"
-    strokeWidth="2"
-    strokeLinecap="round"
-    strokeLinejoin="round"
-  >
+  <svg {...props} xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
     <path d="M13.73 21a2 2 0 0 1-3.46 0" />
   </svg>
 );
 
+
 export default function NotificationButton() {
   const { user } = useUser();
-  const [notificationPermission, setNotificationPermission] = useState(
-    Notification?.permission,
-  );
+  const [notificationPermission, setNotificationPermission] = useState(Notification?.permission);
 
   const handleRequestPermission = async () => {
     if (!user || !messaging) return;
@@ -45,13 +33,14 @@ export default function NotificationButton() {
         const currentToken = await getToken(messaging, { vapidKey });
 
         if (currentToken) {
+          console.log('Seu token de notificação (FCM Token) é:', currentToken);
+          toast.info("Token de notificação copiado para o console.");
+          
           const userDocRef = doc(db, "users", user.uid);
           await setDoc(userDocRef, { fcmToken: currentToken }, { merge: true });
           toast.success("Notificações ativadas com sucesso!");
         } else {
-          toast.warn(
-            "Não foi possível obter o token de notificação. Tente novamente.",
-          );
+          toast.warn("Não foi possível obter o token de notificação. Tente novamente.");
         }
       } else {
         toast.error("Permissão para notificações foi negada.");
