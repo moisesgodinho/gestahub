@@ -90,17 +90,9 @@ export default function MaternityBagPage() {
       />
       <div className="flex items-start justify-center flex-grow p-4">
         <div className="w-full max-w-3xl">
-          <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-              <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 text-center sm:text-left">
-                Mala da Maternidade
-              </h1>
-              <button
-                onClick={restoreDefaults}
-                className="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors text-sm font-semibold"
-              >
-                Restaurar Itens Padrão
-              </button>
-          </div>
+          <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
+            Mala da Maternidade
+          </h1>
 
           <div className="space-y-6">
             {listData && categoryOrder.map((categoryId) => {
@@ -141,6 +133,15 @@ export default function MaternityBagPage() {
                 </Card>
               );
             })}
+          </div>
+
+          <div className="mt-8 text-center">
+            <button
+              onClick={restoreDefaults}
+              className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors font-semibold"
+            >
+              Restaurar Itens Padrão
+            </button>
           </div>
         </div>
       </div>
