@@ -130,13 +130,11 @@ export default function JournalCalendar({
       <div
         key={day}
         onClick={() => (entry ? onEditEntry(entry) : onDateSelect(dateString))}
-        // CORREÇÃO: Aplicando 'brightness-90' para o dia atual
-        className={`p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 ${
-          isToday ? "brightness-90" : ""
+        className={`p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 border-2 ${
+          isToday ? "border-rose-400" : "border-transparent"
         }`}
       >
         <span
-          // CORREÇÃO: Simplificando a estilização do número do dia
           className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end font-semibold ${
             isToday
               ? "text-rose-500 dark:text-rose-400"
