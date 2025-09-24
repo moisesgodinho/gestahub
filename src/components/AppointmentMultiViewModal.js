@@ -67,10 +67,9 @@ export default function AppointmentMultiViewModal({
       return a.time.localeCompare(b.time);
     }
     if (a.time) return -1; // 'a' tem horário, 'b' não, então 'a' vem primeiro
-    if (b.time) return 1;  // 'b' tem horário, 'a' não, então 'b' vem primeiro
+    if (b.time) return 1; // 'b' tem horário, 'a' não, então 'b' vem primeiro
     return 0; // Nenhum dos dois tem horário
   });
-
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50 animate-fade-in-fast">

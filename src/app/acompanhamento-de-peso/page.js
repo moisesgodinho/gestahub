@@ -64,7 +64,7 @@ export default function WeightTrackerPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
   const [visibleHistoryCount, setVisibleHistoryCount] = useState(
-    INITIAL_VISIBLE_COUNT
+    INITIAL_VISIBLE_COUNT,
   );
 
   useEffect(() => {
@@ -146,7 +146,7 @@ export default function WeightTrackerPage() {
       toast.success(
         weightHistory.some((e) => e.id === entryDate)
           ? "Registro de peso atualizado!"
-          : "Peso adicionado ao histórico!"
+          : "Peso adicionado ao histórico!",
       );
     } catch (error) {
       console.error("Erro ao adicionar/atualizar peso:", error);
@@ -179,7 +179,7 @@ export default function WeightTrackerPage() {
     }
     if (estimatedLmp && selectedDate < estimatedLmp) {
       toast.warn(
-        "A data do registro não pode ser anterior ao início da gestação."
+        "A data do registro não pode ser anterior ao início da gestação.",
       );
       return;
     }
@@ -203,7 +203,7 @@ export default function WeightTrackerPage() {
         "users",
         user.uid,
         "weightHistory",
-        entryToDelete.id
+        entryToDelete.id,
       );
       await deleteDoc(entryRef);
       toast.info("Registro de peso removido.");
@@ -467,14 +467,14 @@ export default function WeightTrackerPage() {
                         <div className="flex-grow">
                           <p className="font-semibold text-slate-700 dark:text-slate-200">
                             {new Date(
-                              entry.date + "T00:00:00Z"
+                              entry.date + "T00:00:00Z",
                             ).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
                           </p>
                           {estimatedLmp && (
                             <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">
                               {calculateGestationalAgeOnDate(
                                 estimatedLmp,
-                                entry.date
+                                entry.date,
                               )}
                             </p>
                           )}
@@ -515,7 +515,7 @@ export default function WeightTrackerPage() {
                       <button
                         onClick={() =>
                           setVisibleHistoryCount(
-                            (prev) => prev + LOAD_MORE_COUNT
+                            (prev) => prev + LOAD_MORE_COUNT,
                           )
                         }
                         className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"

@@ -16,8 +16,9 @@ const getUTCDate = (date) => {
 
 // Função para converter "HH:mm" em minutos para uma ordenação confiável
 const timeStringToMinutes = (timeStr) => {
-  if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return -1; // Retorna -1 para itens sem horário
-  const [hours, minutes] = timeStr.split(':').map(Number);
+  if (!timeStr || typeof timeStr !== "string" || !timeStr.includes(":"))
+    return -1; // Retorna -1 para itens sem horário
+  const [hours, minutes] = timeStr.split(":").map(Number);
   return hours * 60 + minutes;
 };
 
@@ -33,7 +34,7 @@ export default function AppointmentList({
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const [visiblePastCount, setVisiblePastCount] = useState(
-    INITIAL_VISIBLE_COUNT
+    INITIAL_VISIBLE_COUNT,
   );
 
   const handleToggleDone = async (appointment) => {
@@ -44,7 +45,7 @@ export default function AppointmentList({
     if (newDoneStatus) {
       if (appointment.type === "ultrasound" && !appointment.isScheduled) {
         toast.warn(
-          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído."
+          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.",
         );
         onEdit(appointment);
         return;
@@ -55,7 +56,7 @@ export default function AppointmentList({
 
       if (appointmentDate > today) {
         toast.warn(
-          "Não é possível marcar como concluída uma consulta agendada para o futuro."
+          "Não é possível marcar como concluída uma consulta agendada para o futuro.",
         );
         return;
       }
@@ -68,7 +69,7 @@ export default function AppointmentList({
           "users",
           user.uid,
           "appointments",
-          appointment.id
+          appointment.id,
         );
         await setDoc(appointmentRef, { done: newDoneStatus }, { merge: true });
       } else if (appointment.type === "ultrasound") {
@@ -87,12 +88,12 @@ export default function AppointmentList({
           await setDoc(
             userDocRef,
             { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
-            { merge: true }
+            { merge: true },
           );
         }
       }
       toast.success(
-        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`
+        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`,
       );
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
@@ -113,7 +114,7 @@ export default function AppointmentList({
         "users",
         user.uid,
         "appointments",
-        appointmentToDelete.id
+        appointmentToDelete.id,
       );
       await deleteDoc(appointmentRef);
       toast.info("Consulta removida.");
@@ -189,12 +190,12 @@ export default function AppointmentList({
                     if (lmpUTCDate) {
                       const startDate = new Date(lmpUTCDate.getTime());
                       startDate.setUTCDate(
-                        startDate.getUTCDate() + app.startWeek * 7
+                        startDate.getUTCDate() + app.startWeek * 7,
                       );
 
                       const endDate = new Date(lmpUTCDate.getTime());
                       endDate.setUTCDate(
-                        endDate.getUTCDate() + app.endWeek * 7 + 6
+                        endDate.getUTCDate() + app.endWeek * 7 + 6,
                       );
 
                       idealWindowText = `Janela ideal: ${startDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })} a ${endDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`;

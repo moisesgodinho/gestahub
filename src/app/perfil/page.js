@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation";
 import { toast } from "react-toastify";
 import { useUser } from "@/context/UserContext";
 import Card from "@/components/Card"; // Supondo que Card.js foi criado
+import NotificationButton from "@/components/NotificationButton"; // Importe o novo componente
 
 // Função para calcular a idade a partir da data de nascimento
 const calculateAge = (birthDateString) => {
@@ -219,6 +220,13 @@ export default function ProfilePage() {
             >
               Sair
             </button>
+          </div>
+
+          <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
+            <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-2">
+              Notificações
+            </h3>
+            <NotificationButton />
           </div>
         </Card>
       </div>

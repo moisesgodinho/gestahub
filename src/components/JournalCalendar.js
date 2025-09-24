@@ -120,7 +120,7 @@ export default function JournalCalendar({
   for (let day = 1; day <= totalDays; day++) {
     const dateString = `${year}-${String(month + 1).padStart(
       2,
-      "0"
+      "0",
     )}-${String(day).padStart(2, "0")}`;
     const entry = entriesMap.get(dateString);
     const mood = entry ? moodOptions.find((m) => m.value === entry.mood) : null;
@@ -158,7 +158,7 @@ export default function JournalCalendar({
             <div></div>
           )}
         </div>
-      </div>
+      </div>,
     );
   }
 

@@ -82,7 +82,7 @@ export default function JournalPage() {
         "users",
         user.uid,
         "symptomEntries",
-        entryToDelete.id
+        entryToDelete.id,
       );
       await deleteDoc(entryRef);
       toast.info("Entrada do diário removida.");

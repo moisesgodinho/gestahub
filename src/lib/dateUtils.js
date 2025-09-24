@@ -85,7 +85,7 @@ export const formatTime = (seconds) => {
     const secs = seconds % 60;
     return `${String(hours).padStart(2, "0")}:${String(mins).padStart(
       2,
-      "0"
+      "0",
     )}:${String(secs).padStart(2, "0")}`;
   }
   const mins = Math.floor(seconds / 60);

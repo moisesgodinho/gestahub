@@ -53,7 +53,7 @@ export default function JournalHistory({ entries, onEdit, user }) {
 
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const [visibleEntriesCount, setVisibleEntriesCount] = useState(
-    INITIAL_VISIBLE_COUNT
+    INITIAL_VISIBLE_COUNT,
   );
 
   const filteredEntries = useMemo(() => {
@@ -92,17 +92,17 @@ export default function JournalHistory({ entries, onEdit, user }) {
 
   const availableMonths = useMemo(
     () => Object.keys(entriesGroupedByMonth),
-    [entriesGroupedByMonth]
+    [entriesGroupedByMonth],
   );
 
   const currentMonthEntries = useMemo(
     () => entriesGroupedByMonth[availableMonths[currentMonthIndex]] || [],
-    [entriesGroupedByMonth, availableMonths, currentMonthIndex]
+    [entriesGroupedByMonth, availableMonths, currentMonthIndex],
   );
 
   const displayedEntries = useMemo(
     () => currentMonthEntries.slice(0, visibleEntriesCount),
-    [currentMonthEntries, visibleEntriesCount]
+    [currentMonthEntries, visibleEntriesCount],
   );
 
   useEffect(() => {
@@ -121,7 +121,7 @@ export default function JournalHistory({ entries, onEdit, user }) {
 
   const handleNextMonth = () => {
     setCurrentMonthIndex((prev) =>
-      Math.min(availableMonths.length - 1, prev + 1)
+      Math.min(availableMonths.length - 1, prev + 1),
     );
   };
 
@@ -138,7 +138,7 @@ export default function JournalHistory({ entries, onEdit, user }) {
         "users",
         user.uid,
         "symptomEntries",
-        entryToDelete.id
+        entryToDelete.id,
       );
       await deleteDoc(entryRef);
       toast.info("Entrada do diário removida.");

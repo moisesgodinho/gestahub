@@ -51,7 +51,7 @@ export default function ContractionTimerPage() {
       setIsTiming(false);
       const endTime = new Date();
       const duration = Math.round(
-        (endTime.getTime() - startTime.getTime()) / 1000
+        (endTime.getTime() - startTime.getTime()) / 1000,
       );
       const lastContraction = contractions[0];
       // Garante que lastContraction.startTime é um objeto de data para o cálculo
@@ -59,7 +59,7 @@ export default function ContractionTimerPage() {
         ? Math.round(
             (startTime.getTime() -
               lastContraction.startTime.toDate().getTime()) /
-              1000
+              1000,
           )
         : 0;
 
@@ -69,7 +69,7 @@ export default function ContractionTimerPage() {
             db,
             "users",
             user.uid,
-            "contractions"
+            "contractions",
           );
           await addDoc(contractionsRef, { startTime, duration, frequency });
           toast.success("Contração registrada!");
@@ -95,7 +95,7 @@ export default function ContractionTimerPage() {
         "users",
         user.uid,
         "contractions",
-        contractionToDelete.id
+        contractionToDelete.id,
       );
       await deleteDoc(docRef);
       toast.info("Registro de contração removido.");
@@ -181,9 +181,8 @@ export default function ContractionTimerPage() {
               Contrações de Treinamento vs. Trabalho de Parto
             </h3>
             <p className="text-sm text-slate-600 dark:text-slate-400">
-              É comum sentir{" "}
-              <strong>Contrações de Braxton Hicks</strong> (de treinamento) a
-              partir do segundo trimestre. Elas são tipicamente{" "}
+              É comum sentir <strong>Contrações de Braxton Hicks</strong> (de
+              treinamento) a partir do segundo trimestre. Elas são tipicamente{" "}
               <strong>irregulares, indolores</strong> e não aumentam de
               intensidade.
             </p>
@@ -193,8 +192,8 @@ export default function ContractionTimerPage() {
               <strong>
                 regulares, mais longas, mais fortes e mais frequentes
               </strong>{" "}
-              com o tempo.
-              Se tiver dúvidas, entre sempre em contato com seu médico.
+              com o tempo. Se tiver dúvidas, entre sempre em contato com seu
+              médico.
             </p>
           </div>
 

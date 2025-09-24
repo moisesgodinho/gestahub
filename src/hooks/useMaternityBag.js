@@ -34,7 +34,7 @@ export function useMaternityBag(user) {
       await setDoc(
         userDocRef,
         { gestationalProfile: { maternityBag: newCheckedItems } },
-        { merge: true }
+        { merge: true },
       );
     } catch (error) {
       console.error("Erro ao salvar itens da mala:", error);

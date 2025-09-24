@@ -53,7 +53,11 @@ function ChecklistItem({ item, isChecked, onToggle }) {
 
 export default function MaternityBagPage() {
   const { user, loading: userLoading } = useUser();
-  const { checkedItems, loading: bagLoading, updateCheckedItems } = useMaternityBag(user);
+  const {
+    checkedItems,
+    loading: bagLoading,
+    updateCheckedItems,
+  } = useMaternityBag(user);
 
   const handleToggle = (itemId) => {
     const newCheckedItems = checkedItems.includes(itemId)
