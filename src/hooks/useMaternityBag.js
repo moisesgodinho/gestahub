@@ -23,7 +23,6 @@ export function useMaternityBag(user) {
         if (userData.maternityBagList) {
           setListData(userData.maternityBagList);
         } else {
-          // Se o usuário não tem lista, cria uma a partir do padrão
           setListData(defaultData);
           await setDoc(
             userDocRef,
@@ -39,7 +38,6 @@ export function useMaternityBag(user) {
     return () => unsubscribe();
   }, [user]);
 
-  // Função genérica para salvar as atualizações no Firestore
   const updateFirestore = async (newData) => {
     if (!user) return;
     try {
@@ -62,11 +60,11 @@ export function useMaternityBag(user) {
     const newListData = { ...listData };
     newListData[categoryId].items.push(newItem);
     
-    setListData(newListData); // Atualiza o estado local imediatamente
+    setListData(newListData);
     await updateFirestore({ maternityBagList: newListData });
   };
 
-  const removeItem = async (categoryId, itemId) => {
+  const removeItem = async (categoryId, itemId, onComplete) => {
     if (!listData) return;
 
     const newListData = { ...listData };
@@ -79,6 +77,9 @@ export function useMaternityBag(user) {
     setListData(newListData);
     setCheckedItems(newCheckedItems);
     await updateFirestore({ maternityBagList: newListData, maternityBagChecked: newCheckedItems });
+    
+    toast.info("Item removido da lista.");
+    if (onComplete) onComplete();
   };
 
   const toggleItem = async (itemId) => {
@@ -93,7 +94,7 @@ export function useMaternityBag(user) {
   const restoreDefaults = async () => {
     if (!listData) return;
     let itemsRestored = 0;
-    const newListData = JSON.parse(JSON.stringify(listData)); // Deep copy
+    const newListData = JSON.parse(JSON.stringify(listData));
 
     Object.keys(defaultData).forEach((categoryId) => {
       defaultData[categoryId].items.forEach((defaultItem) => {
@@ -115,7 +116,6 @@ export function useMaternityBag(user) {
       toast.info("Nenhum item padrão para restaurar.");
     }
   };
-
 
   return { listData, checkedItems, loading, addItem, removeItem, toggleItem, restoreDefaults };
 }
