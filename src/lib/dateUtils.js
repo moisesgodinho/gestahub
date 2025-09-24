@@ -74,11 +74,20 @@ export const parseDateString = (dateStr) => {
 };
 
 /**
- * Formata segundos para uma string "MM:SS".
+ * Formata segundos para uma string "HH:MM:SS" ou "MM:SS".
  * @param {number} seconds - O total de segundos.
  * @returns {string}
  */
 export const formatTime = (seconds) => {
+  if (seconds >= 3600) {
+    const hours = Math.floor(seconds / 3600);
+    const mins = Math.floor((seconds % 3600) / 60);
+    const secs = seconds % 60;
+    return `${String(hours).padStart(2, "0")}:${String(mins).padStart(
+      2,
+      "0"
+    )}:${String(secs).padStart(2, "0")}`;
+  }
   const mins = Math.floor(seconds / 60);
   const secs = seconds % 60;
   return `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;

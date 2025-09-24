@@ -18,7 +18,7 @@ const calculateAge = (birthDateString) => {
   let age = today.getFullYear() - birthDate.getFullYear();
   const m = today.getMonth() - birthDate.getMonth();
   // Ajusta a idade se o aniversário ainda não ocorreu no ano corrente
-  if (m < 0 || (m === 0 && today.getDate() < birthDate.getUTCDate())) {
+  if (m < 0 || (m === 0 && today.getDate() < birthDate.getDate())) {
     age--;
   }
   return age;

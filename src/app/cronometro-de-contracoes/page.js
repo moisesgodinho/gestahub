@@ -19,6 +19,7 @@ import { formatTime } from "@/lib/dateUtils";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import { useUser } from "@/context/UserContext";
 import { useContractions } from "@/hooks/useContractions";
+import InfoTooltip from "@/components/InfoTooltip";
 
 export default function ContractionTimerPage() {
   const { user, loading: userLoading } = useUser();
@@ -161,15 +162,40 @@ export default function ContractionTimerPage() {
                   </p>
                 </div>
                 <div className="bg-slate-100 dark:bg-slate-700 p-3 rounded-lg">
-                  <p className="text-xs text-slate-500 dark:text-slate-400">
-                    Última Frequência
-                  </p>
+                  <div className="flex items-center justify-center gap-2">
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      Última Frequência
+                    </p>
+                    <InfoTooltip text="A frequência é o tempo contado do início de uma contração até o início da próxima." />
+                  </div>
                   <p className="font-bold text-lg text-slate-800 dark:text-slate-100">
                     {formatTime(lastContraction.frequency)}
                   </p>
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="mt-8 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl space-y-2 border-l-4 border-amber-500">
+            <h3 className="font-bold text-lg text-slate-800 dark:text-slate-200">
+              Contrações de Treinamento vs. Trabalho de Parto
+            </h3>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              É comum sentir{" "}
+              <strong>Contrações de Braxton Hicks</strong> (de treinamento) a
+              partir do segundo trimestre. Elas são tipicamente{" "}
+              <strong>irregulares, indolores</strong> e não aumentam de
+              intensidade.
+            </p>
+            <p className="text-sm text-slate-600 dark:text-slate-400">
+              As contrações de <strong>trabalho de parto</strong>, por outro
+              lado, tornam-se{" "}
+              <strong>
+                regulares, mais longas, mais fortes e mais frequentes
+              </strong>{" "}
+              com o tempo.
+              Se tiver dúvidas, entre sempre em contato com seu médico.
+            </p>
           </div>
 
           <div className="mt-8 bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl space-y-2 border-l-4 border-blue-500">
