@@ -248,7 +248,9 @@ export default function KickCounterPage() {
                     >
                       <div className="flex-grow">
                         <p className="font-semibold text-slate-700 dark:text-slate-200">
-                          {sessionDate.toLocaleDateString("pt-BR")}{" "}
+                          {sessionDate.toLocaleDateString("pt-BR")}
+                        </p>
+                        <p className="text-sm text-slate-500 dark:text-slate-400">
                           {sessionDate.toLocaleTimeString("pt-BR", {
                             hour: "2-digit",
                             minute: "2-digit",
