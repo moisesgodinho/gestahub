@@ -1,7 +1,7 @@
 // src/components/BirthPlanForm.js
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react"; // CORREÇÃO AQUI
 import { birthPlanData as defaultPlanData } from "@/data/birthPlanData";
 import Card from "@/components/Card";
 import InfoTooltip from "@/components/InfoTooltip";
@@ -120,16 +120,41 @@ function Section({ section, answers, onAnswerChange, onAddOption, onRemoveOption
   );
 }
 
+
 export default function BirthPlanForm({ answers: initialAnswers, planStructure, onSave, onAddOption, onRemoveOption }) {
-  const [answers, setAnswers] = useState(initialAnswers || {});
+  const [answers, setAnswers] = useState({});
+  const isInitialLoad = useRef(true);
 
   useEffect(() => {
-    setAnswers(initialAnswers || {});
+    if (isInitialLoad.current) {
+        setAnswers(initialAnswers || {});
+        isInitialLoad.current = false;
+    }
   }, [initialAnswers]);
 
   const handleAnswerChange = (questionId, value) => {
-    const newAnswers = { ...answers, [questionId]: value };
-    setAnswers(newAnswers);
+    setAnswers(prevAnswers => ({ ...prevAnswers, [questionId]: value }));
+  };
+
+  const handleAddOption = (sectionId, questionId, newOption) => {
+    onAddOption(sectionId, questionId, newOption);
+  };
+
+  const handleRemoveOption = (sectionId, questionId, optionToRemove) => {
+    onRemoveOption(sectionId, questionId, optionToRemove);
+    
+    setAnswers(prevAnswers => {
+      const newAnswers = { ...prevAnswers };
+      const currentSelection = newAnswers[questionId];
+
+      if (Array.isArray(currentSelection)) {
+        newAnswers[questionId] = currentSelection.filter(ans => ans !== optionToRemove);
+      } else if (currentSelection === optionToRemove) {
+        delete newAnswers[questionId];
+      }
+      
+      return newAnswers;
+    });
   };
 
   const handleSave = () => {
@@ -146,8 +171,8 @@ export default function BirthPlanForm({ answers: initialAnswers, planStructure, 
               section={section}
               answers={answers}
               onAnswerChange={handleAnswerChange}
-              onAddOption={onAddOption}
-              onRemoveOption={onRemoveOption}
+              onAddOption={handleAddOption}
+              onRemoveOption={handleRemoveOption}
             />
           ))}
         </div>

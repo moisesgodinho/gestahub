@@ -23,7 +23,6 @@ export function useBirthPlan(user) {
         setAnswers(userData.birthPlanAnswers || {});
         setPlanStructure(userData.birthPlanStructure || defaultPlan);
       } else {
-        // Se for um usuário novo sem dados, inicializa com o padrão
         setPlanStructure(defaultPlan);
         setAnswers({});
       }
@@ -49,7 +48,6 @@ export function useBirthPlan(user) {
   };
 
   const saveAnswers = async (newAnswers) => {
-    setAnswers(newAnswers);
     await updateFirestore({ birthPlanAnswers: newAnswers });
     toast.success("Plano de Parto salvo com sucesso!");
   };
@@ -61,6 +59,7 @@ export function useBirthPlan(user) {
           ...section,
           questions: section.questions.map(q => {
             if (q.id === questionId) {
+              if (q.options.includes(newOption)) return q; // Evita duplicados
               return { ...q, options: [...q.options, newOption] };
             }
             return q;
@@ -88,20 +87,9 @@ export function useBirthPlan(user) {
       }
       return section;
     });
-
-    // Remove a resposta se a opção removida estava selecionada
-    const newAnswers = { ...answers };
-    if (newAnswers[questionId]) {
-      if (Array.isArray(newAnswers[questionId])) {
-        newAnswers[questionId] = newAnswers[questionId].filter(ans => ans !== optionToRemove);
-      } else if (newAnswers[questionId] === optionToRemove) {
-        newAnswers[questionId] = null;
-      }
-    }
-
+    
     setPlanStructure(newStructure);
-    setAnswers(newAnswers);
-    await updateFirestore({ birthPlanStructure: newStructure, birthPlanAnswers: newAnswers });
+    await updateFirestore({ birthPlanStructure: newStructure });
     toast.info("Opção removida!");
   };
 

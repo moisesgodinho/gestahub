@@ -8,32 +8,34 @@ import BirthPlanForm from "@/components/BirthPlanForm";
 import BirthPlanView from "@/components/BirthPlanView";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import PrintIcon from "@/components/icons/PrintIcon";
-import Card from "@/components/Card"; // Importar o Card
+import Card from "@/components/Card";
 
 export default function BirthPlanPage() {
   const { user, loading: userLoading } = useUser();
-  const { 
-    answers, 
-    planStructure, 
-    loading: planLoading, 
-    saveAnswers, 
-    addCustomOption, 
-    removeCustomOption 
+  const {
+    answers,
+    planStructure,
+    loading: planLoading,
+    saveAnswers,
+    addCustomOption,
+    removeCustomOption
   } = useBirthPlan(user);
 
   const [isEditing, setIsEditing] = useState(false);
+  const [initialLoad, setInitialLoad] = useState(true);
 
   const loading = userLoading || planLoading;
 
-  // Inicia no modo de edição se não houver respostas salvas
+  // Roda apenas uma vez para decidir o estado inicial
   useEffect(() => {
-    if (!planLoading) {
-      const hasAnswers = Object.values(answers).some(answer => 
+    if (!planLoading && initialLoad) {
+      const hasAnswers = Object.values(answers).some(answer =>
         (Array.isArray(answer) ? answer.length > 0 : !!answer)
       );
       setIsEditing(!hasAnswers);
+      setInitialLoad(false); // Impede que rode novamente
     }
-  }, [planLoading, answers]);
+  }, [planLoading, answers, initialLoad]);
 
   const handleSave = async (newAnswers) => {
     await saveAnswers(newAnswers);
