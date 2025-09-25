@@ -125,14 +125,15 @@ export default function JournalCalendar({
     const entry = entriesMap.get(dateString);
     const mood = entry ? moodOptions.find((m) => m.value === entry.mood) : null;
     const isToday = dateString === todayString;
+    const isFutureDate = dateString > todayString;
 
     calendarDays.push(
       <div
         key={day}
-        onClick={() => (entry ? onEditEntry(entry) : onDateSelect(dateString))}
-        className={`p-1 text-center rounded-lg transition-colors cursor-pointer flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 hover:bg-slate-200 dark:hover:bg-slate-700 border-2 ${
+        onClick={!isFutureDate ? () => (entry ? onEditEntry(entry) : onDateSelect(dateString)) : undefined}
+        className={`p-1 text-center rounded-lg transition-colors flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 border-2 ${
           isToday ? "border-rose-400" : "border-transparent"
-        }`}
+        } ${isFutureDate ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700"}`}
       >
         <span
           className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end font-semibold ${
