@@ -10,7 +10,8 @@ import ScaleIcon from "./icons/ScaleIcon";
 import KickCounterIcon from "./icons/KickCounterIcon";
 import ContractionIcon from "./icons/ContractionIcon";
 import BagIcon from "./icons/BagIcon";
-import BirthPlanIcon from "./icons/BirthPlanIcon"; // Importar o novo ícone
+import BirthPlanIcon from "./icons/BirthPlanIcon";
+import TimelineIcon from "./icons/TimelineIcon"; // Importar o novo ícone
 
 const navLinks = [
   { href: "/", label: "Início", icon: HomeIcon },
@@ -36,6 +37,11 @@ const navLinks = [
     href: "/plano-de-parto",
     label: "Plano de Parto",
     icon: BirthPlanIcon,
+  },
+  {
+    href: "/linha-do-tempo",
+    label: "Linha do Tempo",
+    icon: TimelineIcon,
   },
 ];
 

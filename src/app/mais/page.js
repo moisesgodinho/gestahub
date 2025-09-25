@@ -5,7 +5,8 @@ import Link from "next/link";
 import KickCounterIcon from "@/components/icons/KickCounterIcon";
 import ContractionIcon from "@/components/icons/ContractionIcon";
 import BagIcon from "@/components/icons/BagIcon";
-import BirthPlanIcon from "@/components/icons/BirthPlanIcon"; // Importar novo ícone
+import BirthPlanIcon from "@/components/icons/BirthPlanIcon";
+import TimelineIcon from "@/components/icons/TimelineIcon"; // Importar o ícone da Timeline
 import Card from "@/components/Card";
 
 const otherLinks = [
@@ -28,6 +29,11 @@ const otherLinks = [
     href: "/plano-de-parto",
     label: "Plano de Parto",
     icon: BirthPlanIcon,
+  },
+  {
+    href: "/linha-do-tempo", // Adicionar o novo link
+    label: "Linha do Tempo",
+    icon: TimelineIcon,
   },
 ];
 

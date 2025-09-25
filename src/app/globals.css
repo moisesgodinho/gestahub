@@ -91,3 +91,12 @@ select {
     margin: 2cm;
   }
 }
+/* Estilo para esconder a barra de rolagem */
+.custom-scrollbar-hidden::-webkit-scrollbar {
+  display: none; /* Chrome, Safari e Opera */
+}
+
+.custom-scrollbar-hidden {
+  -ms-overflow-style: none; /* IE e Edge */
+  scrollbar-width: none; /* Firefox */
+}
