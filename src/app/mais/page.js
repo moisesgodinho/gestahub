@@ -5,6 +5,7 @@ import Link from "next/link";
 import KickCounterIcon from "@/components/icons/KickCounterIcon";
 import ContractionIcon from "@/components/icons/ContractionIcon";
 import BagIcon from "@/components/icons/BagIcon";
+import BirthPlanIcon from "@/components/icons/BirthPlanIcon"; // Importar novo ícone
 import Card from "@/components/Card";
 
 const otherLinks = [
@@ -22,6 +23,11 @@ const otherLinks = [
     href: "/mala-maternidade",
     label: "Mala da Maternidade",
     icon: BagIcon,
+  },
+  {
+    href: "/plano-de-parto",
+    label: "Plano de Parto",
+    icon: BirthPlanIcon,
   },
 ];
 
