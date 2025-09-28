@@ -24,7 +24,6 @@ const getYYYYMMDD = (date) => {
   return `${year}-${month}-${day}`;
 };
 
-
 export async function GET() {
   try {
     const usersSnapshot = await adminDb.collection("users").get();
@@ -40,20 +39,23 @@ export async function GET() {
 
       if (user.fcmToken) {
         // --- Lembrete de Consulta ---
-        const appointmentsRef = adminDb.collection(`users/${userId}/appointments`);
+        const appointmentsRef = adminDb.collection(
+          `users/${userId}/appointments`
+        );
         const q = query(appointmentsRef, where("date", "==", dateTomorrow));
         const appointmentsSnapshot = await getDocs(q);
 
         if (!appointmentsSnapshot.empty) {
-            const appointment = appointmentsSnapshot.docs[0].data();
-            const message = {
-                notification: {
-                    title: "Lembrete de Consulta 🗓️",
-                    body: `Não se esqueça da sua consulta "${appointment.title}" amanhã!`,
-                },
-                token: user.fcmToken,
-            };
-            await admin.messaging().send(message);
+          const appointment = appointmentsSnapshot.docs[0].data();
+          const time = appointment.time ? ` às ${appointment.time}` : "";
+          const message = {
+            notification: {
+              title: "Lembrete de Consulta 🗓️",
+              body: `Não se esqueça da sua consulta "${appointment.title}" amanhã${time}!`,
+            },
+            token: user.fcmToken,
+          };
+          await admin.messaging().send(message);
         }
       }
     }
