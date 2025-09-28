@@ -28,7 +28,7 @@ export default function KickCounterPage() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [sessionToDelete, setSessionToDelete] = useState(null);
   const [visibleSessionsCount, setVisibleSessionsCount] = useState(
-    INITIAL_VISIBLE_COUNT,
+    INITIAL_VISIBLE_COUNT
   );
 
   useEffect(() => {
@@ -90,7 +90,7 @@ export default function KickCounterPage() {
         "users",
         user.uid,
         "kickSessions",
-        sessionToDelete.id,
+        sessionToDelete.id
       );
       await deleteDoc(sessionRef);
       toast.info("Sessão removida do histórico.");
@@ -248,7 +248,7 @@ export default function KickCounterPage() {
                     >
                       <div className="flex-grow">
                         <p className="font-semibold text-slate-700 dark:text-slate-200">
-                          {sessionDate.toLocaleDateString("pt-BR")}
+                          {`${String(sessionDate.getDate()).padStart(2, "0")}/${String(sessionDate.getMonth() + 1).padStart(2, "0")}/${sessionDate.getFullYear()}`}
                         </p>
                         <p className="text-sm text-slate-500 dark:text-slate-400">
                           {sessionDate.toLocaleTimeString("pt-BR", {
@@ -264,7 +264,7 @@ export default function KickCounterPage() {
                         <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">
                           {calculateGestationalAgeOnDate(
                             estimatedLmp,
-                            dateStringForAge,
+                            dateStringForAge
                           )}
                         </p>
                       </div>
