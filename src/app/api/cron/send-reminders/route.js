@@ -2,10 +2,8 @@ import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 
-// Pega as credenciais da variável de ambiente
 const serviceAccountString = process.env.FIREBASE_ADMIN_CREDENTIALS;
 
-// Inicialize o Admin SDK se ainda não tiver sido inicializado
 if (!admin.apps.length) {
   if (!serviceAccountString) {
     throw new Error(
@@ -25,7 +23,6 @@ if (!admin.apps.length) {
 
 const adminDb = getFirestore();
 
-// Função para formatar a data como YYYY-MM-DD
 const getYYYYMMDD = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -40,42 +37,56 @@ export async function GET() {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
     const dateTomorrow = getYYYYMMDD(tomorrow);
-
-    const sentMessages = [];
+    let totalSent = 0;
 
     for (const userDoc of usersSnapshot.docs) {
-      const user = userDoc.data();
       const userId = userDoc.id;
 
-      if (user.fcmToken) {
+      // 1. Buscar todos os tokens da subcoleção
+      const tokensSnapshot = await adminDb
+        .collection(`users/${userId}/fcmTokens`)
+        .get();
+      const tokens = tokensSnapshot.docs.map((doc) => doc.id);
+
+      if (tokens.length > 0) {
+        // 2. Buscar as consultas do usuário para amanhã
         const appointmentsRef = adminDb.collection(
           `users/${userId}/appointments`
         );
-        const q = adminDb
-          .collection(`users/${userId}/appointments`)
-          .where("date", "==", dateTomorrow);
+        const q = appointmentsRef.where("date", "==", dateTomorrow);
         const appointmentsSnapshot = await q.get();
 
         if (!appointmentsSnapshot.empty) {
           const appointment = appointmentsSnapshot.docs[0].data();
           const time = appointment.time ? ` às ${appointment.time}` : "";
+
+          // 3. Montar a mensagem
           const message = {
             notification: {
               title: "Lembrete de Consulta 🗓️",
               body: `Não se esqueça da sua consulta "${appointment.title}" amanhã${time}!`,
             },
-            token: user.fcmToken,
+            tokens: tokens, // 4. Usar a lista de tokens aqui
           };
 
-          try {
-            await admin.messaging().send(message);
-            sentMessages.push({ userId, token: user.fcmToken });
-          } catch (error) {
-            console.error(
-              `Falha ao enviar notificação para ${userId}:`,
-              error.message
+          // 5. Enviar para todos os dispositivos de uma vez
+          const response = await admin.messaging().sendMulticast(message);
+          totalSent += response.successCount;
+
+          // (Opcional, mas recomendado) Limpar tokens inválidos
+          if (response.failureCount > 0) {
+            const failedTokens = [];
+            response.responses.forEach((resp, idx) => {
+              if (!resp.success) {
+                failedTokens.push(tokens[idx]);
+              }
+            });
+            console.log(
+              `Limpando ${failedTokens.length} tokens inválidos para o usuário ${userId}`
             );
-            // Continua para o próximo usuário mesmo se um falhar
+            for (const token of failedTokens) {
+              await adminDb.doc(`users/${userId}/fcmTokens/${token}`).delete();
+            }
           }
         }
       }
@@ -83,11 +94,10 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: `Verificação concluída. ${sentMessages.length} lembretes enviados.`,
+      message: `Verificação concluída. ${totalSent} lembretes enviados.`,
     });
   } catch (error) {
     console.error("Erro crítico ao enviar lembretes:", error);
-    // Retorna a mensagem de erro específica
     return NextResponse.json(
       {
         success: false,
