@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useMemo } from "react";
+import dynamic from 'next/dynamic'; // 1. Importar o dynamic
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
@@ -104,6 +105,11 @@ export default function JournalPage() {
       year: "numeric",
     });
   }, [selectedDateForNew]);
+
+  const SymptomChart = dynamic(() => import('@/components/SymptomChart'), {
+  loading: () => <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl h-80 animate-pulse"></div>,
+  ssr: false
+});
 
   const loading = userLoading || entriesLoading || gestationalLoading;
 

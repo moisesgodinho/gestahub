@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import dynamic from 'next/dynamic'; // 1. Importar o dynamic
 import { doc, setDoc, deleteDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -66,6 +67,11 @@ export default function WeightTrackerPage() {
   const [visibleHistoryCount, setVisibleHistoryCount] = useState(
     INITIAL_VISIBLE_COUNT,
   );
+
+  const WeightChart = dynamic(() => import('@/components/WeightChart'), {
+  loading: () => <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl h-80 animate-pulse"></div>,
+  ssr: false // O gráfico não precisa ser renderizado no servidor
+});
 
   useEffect(() => {
     if (weightProfile) {
