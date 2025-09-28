@@ -1,19 +1,28 @@
 import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { getFirestore } from "firebase-admin/firestore"; // Importa o getFirestore do admin
+import { getFirestore } from "firebase-admin/firestore";
 
 // Pega as credenciais da variável de ambiente
-const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS);
+const serviceAccountString = process.env.FIREBASE_ADMIN_CREDENTIALS;
 
 // Inicialize o Admin SDK se ainda não tiver sido inicializado
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+  if (!serviceAccountString) {
+    throw new Error(
+      "A variável de ambiente FIREBASE_ADMIN_CREDENTIALS não está definida."
+    );
+  }
+  try {
+    const serviceAccount = JSON.parse(serviceAccountString);
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  } catch (e) {
+    console.error("Falha ao fazer parse das credenciais do Firebase Admin:", e);
+    throw new Error("As credenciais do Firebase Admin não são um JSON válido.");
+  }
 }
 
-// Usa o firestore do admin para queries no servidor
 const adminDb = getFirestore();
 
 // Função para formatar a data como YYYY-MM-DD
@@ -30,20 +39,22 @@ export async function GET() {
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-
     const dateTomorrow = getYYYYMMDD(tomorrow);
+
+    const sentMessages = [];
 
     for (const userDoc of usersSnapshot.docs) {
       const user = userDoc.data();
       const userId = userDoc.id;
 
       if (user.fcmToken) {
-        // --- Lembrete de Consulta ---
         const appointmentsRef = adminDb.collection(
           `users/${userId}/appointments`
         );
-        const q = query(appointmentsRef, where("date", "==", dateTomorrow));
-        const appointmentsSnapshot = await getDocs(q);
+        const q = adminDb
+          .collection(`users/${userId}/appointments`)
+          .where("date", "==", dateTomorrow);
+        const appointmentsSnapshot = await q.get();
 
         if (!appointmentsSnapshot.empty) {
           const appointment = appointmentsSnapshot.docs[0].data();
@@ -55,16 +66,34 @@ export async function GET() {
             },
             token: user.fcmToken,
           };
-          await admin.messaging().send(message);
+
+          try {
+            await admin.messaging().send(message);
+            sentMessages.push({ userId, token: user.fcmToken });
+          } catch (error) {
+            console.error(
+              `Falha ao enviar notificação para ${userId}:`,
+              error.message
+            );
+            // Continua para o próximo usuário mesmo se um falhar
+          }
         }
       }
     }
 
-    return NextResponse.json({ success: true, message: "Reminders checked." });
+    return NextResponse.json({
+      success: true,
+      message: `Verificação concluída. ${sentMessages.length} lembretes enviados.`,
+    });
   } catch (error) {
-    console.error("Error sending reminders:", error);
+    console.error("Erro crítico ao enviar lembretes:", error);
+    // Retorna a mensagem de erro específica
     return NextResponse.json(
-      { success: false, error: "Failed to send reminders." },
+      {
+        success: false,
+        error: "Falha ao enviar lembretes.",
+        details: error.message,
+      },
       { status: 500 }
     );
   }
