@@ -1,5 +1,3 @@
-// src/app/api/cron/send-reminders/route.js
-
 import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
