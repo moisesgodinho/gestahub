@@ -49,14 +49,13 @@ const BellOffIcon = (props) => (
 export default function NotificationButton() {
   const { user } = useUser();
   const [permission, setPermission] = useState("default");
-  const [isTokenActive, setIsTokenActive] = useState(false); // Novo estado para a verificação real
+  const [isTokenActive, setIsTokenActive] = useState(false);
 
   useEffect(() => {
     const checkNotificationState = async () => {
       if ("Notification" in window && user && messaging) {
         setPermission(Notification.permission);
 
-        // Se a permissão foi concedida, verificar se o token existe no banco de dados
         if (Notification.permission === "granted") {
           try {
             const currentToken = await getToken(messaging, {
@@ -131,7 +130,7 @@ export default function NotificationButton() {
         const tokenRef = doc(db, "users", user.uid, "fcmTokens", currentToken);
         await deleteDoc(tokenRef);
         setIsTokenActive(false);
-        setPermission("default"); // Força a reavaliação da permissão na próxima vez
+        setPermission("default");
         toast.info("Notificações desativadas neste dispositivo.");
       }
     } catch (error) {

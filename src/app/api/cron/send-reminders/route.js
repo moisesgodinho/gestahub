@@ -1,6 +1,9 @@
+// src/app/api/cron/send-reminders/route.js
+
 import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging"; // 1. Importar o serviço de messaging
 
 const serviceAccountString = process.env.FIREBASE_ADMIN_CREDENTIALS;
 
@@ -22,6 +25,7 @@ if (!admin.apps.length) {
 }
 
 const adminDb = getFirestore();
+const messaging = getMessaging(); // 2. Inicializar o serviço
 
 const getYYYYMMDD = (date) => {
   const year = date.getFullYear();
@@ -42,14 +46,12 @@ export async function GET() {
     for (const userDoc of usersSnapshot.docs) {
       const userId = userDoc.id;
 
-      // 1. Buscar todos os tokens da subcoleção
       const tokensSnapshot = await adminDb
         .collection(`users/${userId}/fcmTokens`)
         .get();
       const tokens = tokensSnapshot.docs.map((doc) => doc.id);
 
       if (tokens.length > 0) {
-        // 2. Buscar as consultas do usuário para amanhã
         const appointmentsRef = adminDb.collection(
           `users/${userId}/appointments`
         );
@@ -60,20 +62,18 @@ export async function GET() {
           const appointment = appointmentsSnapshot.docs[0].data();
           const time = appointment.time ? ` às ${appointment.time}` : "";
 
-          // 3. Montar a mensagem
           const message = {
             notification: {
               title: "Lembrete de Consulta 🗓️",
               body: `Não se esqueça da sua consulta "${appointment.title}" amanhã${time}!`,
             },
-            tokens: tokens, // 4. Usar a lista de tokens aqui
+            tokens: tokens,
           };
 
-          // 5. Enviar para todos os dispositivos de uma vez
-          const response = await admin.messaging().sendMulticast(message);
+          // 3. Chamar a função a partir da instância correta
+          const response = await messaging.sendMulticast(message);
           totalSent += response.successCount;
 
-          // (Opcional, mas recomendado) Limpar tokens inválidos
           if (response.failureCount > 0) {
             const failedTokens = [];
             response.responses.forEach((resp, idx) => {
