@@ -3,12 +3,11 @@
 
 import { useState, useEffect } from "react";
 import { getToken, deleteToken } from "firebase/messaging";
-import { doc, setDoc, deleteDoc } from "firebase/firestore"; // Importar deleteDoc
+import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore"; // Importar getDoc
 import { messaging, db } from "@/lib/firebase";
 import { useUser } from "@/context/UserContext";
 import { toast } from "react-toastify";
 
-// (Os componentes de ícone BellIcon e BellOffIcon permanecem os mesmos)
 const BellIcon = (props) => (
   <svg
     {...props}
@@ -49,43 +48,56 @@ const BellOffIcon = (props) => (
 
 export default function NotificationButton() {
   const { user } = useUser();
-  const [notificationPermission, setNotificationPermission] =
-    useState("default");
-  const [isTokenSaved, setIsTokenSaved] = useState(false); // Estado para controlar se o token está salvo
+  const [permission, setPermission] = useState("default");
+  const [isTokenActive, setIsTokenActive] = useState(false); // Novo estado para a verificação real
 
   useEffect(() => {
-    if ("Notification" in window) {
-      setNotificationPermission(Notification.permission);
-    }
-    // Verifica se já existe um token salvo para este dispositivo
-    const checkToken = async () => {
-      if (user && messaging) {
-        const currentToken = await getToken(messaging, {
-          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-        });
-        if (currentToken) {
-          // Aqui você pode verificar se o token existe no DB, mas para simplificar a UI,
-          // vamos assumir que se a permissão é 'granted', o token PODE estar salvo.
-          // O estado isTokenSaved será mais útil para a UI.
+    const checkNotificationState = async () => {
+      if ("Notification" in window && user && messaging) {
+        setPermission(Notification.permission);
+
+        // Se a permissão foi concedida, verificar se o token existe no banco de dados
+        if (Notification.permission === "granted") {
+          try {
+            const currentToken = await getToken(messaging, {
+              vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+            });
+            if (currentToken) {
+              const tokenRef = doc(
+                db,
+                "users",
+                user.uid,
+                "fcmTokens",
+                currentToken
+              );
+              const docSnap = await getDoc(tokenRef);
+              setIsTokenActive(docSnap.exists());
+            } else {
+              setIsTokenActive(false);
+            }
+          } catch (error) {
+            console.error("Erro ao verificar token:", error);
+            setIsTokenActive(false);
+          }
+        } else {
+          setIsTokenActive(false);
         }
       }
     };
-    checkToken();
+    checkNotificationState();
   }, [user]);
 
   const handleRequestPermission = async () => {
     if (!user || !messaging) return;
-
     try {
-      const permission = await Notification.requestPermission();
-      setNotificationPermission(permission);
+      const currentPermission = await Notification.requestPermission();
+      setPermission(currentPermission);
 
-      if (permission === "granted") {
+      if (currentPermission === "granted") {
         const vapidKey = process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY;
         const currentToken = await getToken(messaging, { vapidKey });
 
         if (currentToken) {
-          // Salva o token em uma subcoleção
           const tokenRef = doc(
             db,
             "users",
@@ -94,7 +106,7 @@ export default function NotificationButton() {
             currentToken
           );
           await setDoc(tokenRef, { createdAt: new Date() });
-          setIsTokenSaved(true); // Confirma que o token foi salvo
+          setIsTokenActive(true);
           toast.success("Notificações ativadas neste dispositivo!");
         } else {
           toast.warn("Não foi possível obter o token de notificação.");
@@ -110,17 +122,16 @@ export default function NotificationButton() {
 
   const handleDisableNotifications = async () => {
     if (!user || !messaging) return;
-
     try {
       const currentToken = await getToken(messaging, {
         vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
       });
       if (currentToken) {
-        await deleteToken(messaging); // Remove o token do navegador
+        await deleteToken(messaging);
         const tokenRef = doc(db, "users", user.uid, "fcmTokens", currentToken);
-        await deleteDoc(tokenRef); // Remove o token do Firestore
-        setIsTokenSaved(false);
-        setNotificationPermission("default");
+        await deleteDoc(tokenRef);
+        setIsTokenActive(false);
+        setPermission("default"); // Força a reavaliação da permissão na próxima vez
         toast.info("Notificações desativadas neste dispositivo.");
       }
     } catch (error) {
@@ -129,7 +140,7 @@ export default function NotificationButton() {
     }
   };
 
-  if (notificationPermission === "granted") {
+  if (permission === "granted" && isTokenActive) {
     return (
       <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
         <div className="flex items-center gap-2 text-green-600 dark:text-green-400">
@@ -151,9 +162,9 @@ export default function NotificationButton() {
     <button
       onClick={handleRequestPermission}
       className="px-6 py-2 rounded-lg bg-green-600 text-white font-semibold hover:bg-green-700 transition-colors"
-      disabled={notificationPermission === "denied"}
+      disabled={permission === "denied"}
     >
-      {notificationPermission === "denied"
+      {permission === "denied"
         ? "Notificações Bloqueadas"
         : "Ativar Notificações"}
     </button>
