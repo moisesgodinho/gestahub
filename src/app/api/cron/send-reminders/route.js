@@ -6,7 +6,6 @@ import { getMessaging } from "firebase-admin/messaging";
 const serviceAccountString = process.env.FIREBASE_ADMIN_CREDENTIALS;
 let initError = null;
 
-// Tenta inicializar o Firebase Admin no escopo do módulo
 if (!admin.apps.length) {
   if (!serviceAccountString) {
     initError = "A variável de ambiente FIREBASE_ADMIN_CREDENTIALS não está definida.";
