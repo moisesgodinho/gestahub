@@ -1,29 +1,31 @@
 import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
-import { getMessaging } from "firebase-admin/messaging"; // 1. Importar o serviço de messaging
+import { getMessaging } from "firebase-admin/messaging";
 
 const serviceAccountString = process.env.FIREBASE_ADMIN_CREDENTIALS;
+let initError = null;
 
+// Tenta inicializar o Firebase Admin no escopo do módulo
 if (!admin.apps.length) {
   if (!serviceAccountString) {
-    throw new Error(
-      "A variável de ambiente FIREBASE_ADMIN_CREDENTIALS não está definida."
-    );
-  }
-  try {
-    const serviceAccount = JSON.parse(serviceAccountString);
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  } catch (e) {
-    console.error("Falha ao fazer parse das credenciais do Firebase Admin:", e);
-    throw new Error("As credenciais do Firebase Admin não são um JSON válido.");
+    initError = "A variável de ambiente FIREBASE_ADMIN_CREDENTIALS não está definida.";
+    console.error(initError);
+  } else {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountString);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    } catch (e) {
+      initError = "As credenciais do Firebase Admin não são um JSON válido.";
+      console.error(initError, e);
+    }
   }
 }
 
-const adminDb = getFirestore();
-const messaging = getMessaging(); // 2. Inicializar o serviço
+const adminDb = !initError ? getFirestore() : null;
+const messaging = !initError ? getMessaging() : null;
 
 const getYYYYMMDD = (date) => {
   const year = date.getFullYear();
@@ -33,6 +35,13 @@ const getYYYYMMDD = (date) => {
 };
 
 export async function GET() {
+  if (initError || !adminDb || !messaging) {
+    return NextResponse.json(
+      { success: false, error: "Erro na inicialização do Firebase Admin.", details: initError },
+      { status: 500 }
+    );
+  }
+
   try {
     const usersSnapshot = await adminDb.collection("users").get();
     const today = new Date();
@@ -43,23 +52,18 @@ export async function GET() {
 
     for (const userDoc of usersSnapshot.docs) {
       const userId = userDoc.id;
-
-      const tokensSnapshot = await adminDb
-        .collection(`users/${userId}/fcmTokens`)
-        .get();
-      const tokens = tokensSnapshot.docs.map((doc) => doc.id);
+      const tokensSnapshot = await adminDb.collection(`users/${userId}/fcmTokens`).get();
+      const tokens = tokensSnapshot.docs.map(doc => doc.id);
 
       if (tokens.length > 0) {
-        const appointmentsRef = adminDb.collection(
-          `users/${userId}/appointments`
-        );
+        const appointmentsRef = adminDb.collection(`users/${userId}/appointments`);
         const q = appointmentsRef.where("date", "==", dateTomorrow);
         const appointmentsSnapshot = await q.get();
 
         if (!appointmentsSnapshot.empty) {
           const appointment = appointmentsSnapshot.docs[0].data();
-          const time = appointment.time ? ` às ${appointment.time}` : "";
-
+          const time = appointment.time ? ` às ${appointment.time}` : '';
+          
           const message = {
             notification: {
               title: "Lembrete de Consulta 🗓️",
@@ -68,10 +72,10 @@ export async function GET() {
             tokens: tokens,
           };
 
-          // 3. Chamar a função a partir da instância correta
-          const response = await messaging.sendMulticast(message);
+          // --- ESTA É A LINHA CORRIGIDA ---
+          const response = await messaging.sendEachForMulticast(message);
           totalSent += response.successCount;
-
+          
           if (response.failureCount > 0) {
             const failedTokens = [];
             response.responses.forEach((resp, idx) => {
@@ -79,29 +83,21 @@ export async function GET() {
                 failedTokens.push(tokens[idx]);
               }
             });
-            console.log(
-              `Limpando ${failedTokens.length} tokens inválidos para o usuário ${userId}`
-            );
+            console.log(`Limpando ${failedTokens.length} tokens inválidos para o usuário ${userId}`);
             for (const token of failedTokens) {
-              await adminDb.doc(`users/${userId}/fcmTokens/${token}`).delete();
+                await adminDb.doc(`users/${userId}/fcmTokens/${token}`).delete();
             }
           }
         }
       }
     }
 
-    return NextResponse.json({
-      success: true,
-      message: `Verificação concluída. ${totalSent} lembretes enviados.`,
-    });
+    return NextResponse.json({ success: true, message: `Verificação concluída. ${totalSent} lembretes enviados.` });
+
   } catch (error) {
     console.error("Erro crítico ao enviar lembretes:", error);
     return NextResponse.json(
-      {
-        success: false,
-        error: "Falha ao enviar lembretes.",
-        details: error.message,
-      },
+      { success: false, error: "Falha ao enviar lembretes.", details: error.message },
       { status: 500 }
     );
   }

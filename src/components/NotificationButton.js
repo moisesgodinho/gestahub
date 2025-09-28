@@ -3,11 +3,12 @@
 
 import { useState, useEffect } from "react";
 import { getToken, deleteToken } from "firebase/messaging";
-import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore"; // Importar getDoc
+import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { messaging, db } from "@/lib/firebase";
 import { useUser } from "@/context/UserContext";
 import { toast } from "react-toastify";
 
+// (Os componentes de ícone BellIcon e BellOffIcon permanecem os mesmos)
 const BellIcon = (props) => (
   <svg
     {...props}
@@ -50,9 +51,11 @@ export default function NotificationButton() {
   const { user } = useUser();
   const [permission, setPermission] = useState("default");
   const [isTokenActive, setIsTokenActive] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const checkNotificationState = async () => {
+      setLoading(true);
       if ("Notification" in window && user && messaging) {
         setPermission(Notification.permission);
 
@@ -82,11 +85,13 @@ export default function NotificationButton() {
           setIsTokenActive(false);
         }
       }
+      setLoading(false);
     };
     checkNotificationState();
   }, [user]);
 
   const handleRequestPermission = async () => {
+    // ... (função permanece a mesma)
     if (!user || !messaging) return;
     try {
       const currentPermission = await Notification.requestPermission();
@@ -120,6 +125,7 @@ export default function NotificationButton() {
   };
 
   const handleDisableNotifications = async () => {
+    // ... (função permanece a mesma)
     if (!user || !messaging) return;
     try {
       const currentToken = await getToken(messaging, {
@@ -138,6 +144,10 @@ export default function NotificationButton() {
       toast.error("Não foi possível desativar as notificações.");
     }
   };
+
+  if (loading) {
+    return <p className="text-sm text-slate-500">Verificando status...</p>;
+  }
 
   if (permission === "granted" && isTokenActive) {
     return (
