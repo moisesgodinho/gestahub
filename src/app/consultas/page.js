@@ -1,7 +1,7 @@
 // src/app/consultas/page.js
 "use client";
 
-import { useState, useEffect, useMemo, Suspense, useRef } from "react"; // 1. Adicionar useRef
+import { useState, useEffect, useMemo, Suspense, useRef } from "react";
 import { useSearchParams } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -21,11 +21,12 @@ import AppointmentList from "@/components/AppointmentList";
 import AppointmentCalendar from "@/components/AppointmentCalendar";
 import AppointmentViewModal from "@/components/AppointmentViewModal";
 import AppointmentMultiViewModal from "@/components/AppointmentMultiViewModal";
-import SkeletonLoader from "@/components/SkeletonLoader";
+import SkeletonLoader from "@/components/SkeletonLoader"; // Importado aqui
 import ConfirmationModal from "@/components/ConfirmationModal";
 import CompletionCelebration from "@/components/CompletionCelebration";
 import { toast } from "react-toastify";
 
+// ... (o resto do seu código, como a const ultrasoundSchedule, permanece o mesmo)
 const ultrasoundSchedule = [
   {
     id: "transvaginal",
@@ -65,6 +66,7 @@ const ultrasoundSchedule = [
 ];
 
 function AppointmentsPageContent() {
+  // ... (todo o conteúdo desta função permanece exatamente o mesmo)
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [manualAppointments, setManualAppointments] = useState([]);
@@ -83,8 +85,6 @@ function AppointmentsPageContent() {
   const [showCelebration, setShowCelebration] = useState(false);
 
   const searchParams = useSearchParams();
-
-  // 2. Usar useRef para rastrear o estado anterior
   const previousUltrasoundAppointments = useRef([]);
 
   useEffect(() => {
@@ -147,9 +147,7 @@ function AppointmentsPageContent() {
     return () => unsubscribeAuth();
   }, []);
 
-  // 3. Efeito para detectar a conclusão dos ultrassons
   useEffect(() => {
-    // Garante que temos dados e que eles mudaram
     if (
       ultrasoundAppointments.length > 0 &&
       previousUltrasoundAppointments.current.length > 0
@@ -158,12 +156,10 @@ function AppointmentsPageContent() {
         previousUltrasoundAppointments.current.every((exam) => exam.done);
       const isNowComplete = ultrasoundAppointments.every((exam) => exam.done);
 
-      // Dispara a animação somente na transição de "incompleto" para "completo"
       if (!wasPreviouslyComplete && isNowComplete) {
         setShowCelebration(true);
       }
     }
-    // Atualiza o valor anterior para a próxima renderização
     previousUltrasoundAppointments.current = ultrasoundAppointments;
   }, [ultrasoundAppointments]);
 
@@ -264,7 +260,6 @@ function AppointmentsPageContent() {
     }
   };
 
-  // 4. Simplificar a função handleToggleDone (remover a lógica da animação daqui)
   const handleToggleDone = async (appointment) => {
     if (!user) return;
     const newDoneStatus = !appointment.done;
@@ -433,10 +428,9 @@ export default function AppointmentsPage() {
   return (
     <Suspense
       fallback={
-        <div className="flex items-center justify-center flex-grow">
-          <p className="text-lg text-rose-500 dark:text-rose-400">
-            Carregando página...
-          </p>
+        // --- MUDANÇA AQUI ---
+        <div className="flex items-center justify-center flex-grow p-4">
+          <SkeletonLoader type="fullPage" />
         </div>
       }
     >
