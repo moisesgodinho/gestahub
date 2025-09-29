@@ -1,7 +1,7 @@
 // src/app/consultas/page.js
 "use client";
 
-import { useState, useEffect, useMemo, Suspense } from "react";
+import { useState, useEffect, useMemo, Suspense, useRef } from "react"; // 1. Adicionar useRef
 import { useSearchParams } from "next/navigation";
 import { onAuthStateChanged } from "firebase/auth";
 import { auth, db } from "@/lib/firebase";
@@ -12,6 +12,8 @@ import {
   orderBy,
   doc,
   deleteDoc,
+  setDoc,
+  getDoc,
 } from "firebase/firestore";
 import { getEstimatedLmp, getDueDate } from "@/lib/gestationalAge";
 import AppointmentForm from "@/components/AppointmentForm";
@@ -21,6 +23,7 @@ import AppointmentViewModal from "@/components/AppointmentViewModal";
 import AppointmentMultiViewModal from "@/components/AppointmentMultiViewModal";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import CompletionCelebration from "@/components/CompletionCelebration";
 import { toast } from "react-toastify";
 
 const ultrasoundSchedule = [
@@ -72,15 +75,17 @@ function AppointmentsPageContent() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedDateForNew, setSelectedDateForNew] = useState(null);
-
   const [appointmentsToView, setAppointmentsToView] = useState([]);
   const [isSingleViewModalOpen, setIsSingleViewModalOpen] = useState(false);
   const [isMultiViewModalOpen, setIsMultiViewModalOpen] = useState(false);
-
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
+  const [showCelebration, setShowCelebration] = useState(false);
 
   const searchParams = useSearchParams();
+
+  // 2. Usar useRef para rastrear o estado anterior
+  const previousUltrasoundAppointments = useRef([]);
 
   useEffect(() => {
     if (searchParams.get("new") === "true") {
@@ -96,7 +101,7 @@ function AppointmentsPageContent() {
           db,
           "users",
           currentUser.uid,
-          "appointments",
+          "appointments"
         );
         const q = query(appointmentsRef, orderBy("date", "desc"));
         const unsubscribeAppointments = onSnapshot(q, (snapshot) => {
@@ -113,12 +118,8 @@ function AppointmentsPageContent() {
           const userData = docSnap.exists() ? docSnap.data() : {};
           const estimatedLmp = getEstimatedLmp(userData);
           setLmpDate(estimatedLmp);
+          if (estimatedLmp) setDueDate(getDueDate(estimatedLmp));
 
-          if (estimatedLmp) {
-            setDueDate(getDueDate(estimatedLmp));
-          }
-
-          // MODIFICADO: Acessa o ultrasoundSchedule de dentro do gestationalProfile
           const ultrasoundData =
             userData.gestationalProfile?.ultrasoundSchedule || {};
           const scheduledUltrasounds = ultrasoundSchedule.map((exam) => {
@@ -146,6 +147,26 @@ function AppointmentsPageContent() {
     return () => unsubscribeAuth();
   }, []);
 
+  // 3. Efeito para detectar a conclusão dos ultrassons
+  useEffect(() => {
+    // Garante que temos dados e que eles mudaram
+    if (
+      ultrasoundAppointments.length > 0 &&
+      previousUltrasoundAppointments.current.length > 0
+    ) {
+      const wasPreviouslyComplete =
+        previousUltrasoundAppointments.current.every((exam) => exam.done);
+      const isNowComplete = ultrasoundAppointments.every((exam) => exam.done);
+
+      // Dispara a animação somente na transição de "incompleto" para "completo"
+      if (!wasPreviouslyComplete && isNowComplete) {
+        setShowCelebration(true);
+      }
+    }
+    // Atualiza o valor anterior para a próxima renderização
+    previousUltrasoundAppointments.current = ultrasoundAppointments;
+  }, [ultrasoundAppointments]);
+
   useEffect(() => {
     if (appointmentsToView.length === 1) {
       setIsSingleViewModalOpen(true);
@@ -156,7 +177,7 @@ function AppointmentsPageContent() {
 
   const combinedAppointments = useMemo(
     () => [...manualAppointments, ...ultrasoundAppointments],
-    [manualAppointments, ultrasoundAppointments],
+    [manualAppointments, ultrasoundAppointments]
   );
 
   const professionalSuggestions = useMemo(() => {
@@ -176,16 +197,13 @@ function AppointmentsPageContent() {
   const handleEdit = (appointment) => {
     setIsSingleViewModalOpen(false);
     setIsMultiViewModalOpen(false);
-    setAppointmentsToView([]); // <-- ADICIONE ESTA LINHA
+    setAppointmentsToView([]);
     setAppointmentToEdit(appointment);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const handleView = (appointments) => {
-    setAppointmentsToView(appointments);
-  };
-
+  const handleView = (appointments) => setAppointmentsToView(appointments);
   const handleCloseViewModals = () => {
     setIsSingleViewModalOpen(false);
     setIsMultiViewModalOpen(false);
@@ -197,7 +215,6 @@ function AppointmentsPageContent() {
     setIsFormOpen(true);
   };
 
-  // NOVA FUNÇÃO para ser passada para o modal
   const handleAddNewFromModal = (dateString) => {
     handleCloseViewModals();
     handleAddNew(dateString);
@@ -235,7 +252,7 @@ function AppointmentsPageContent() {
         "users",
         user.uid,
         "appointments",
-        appointmentToDelete.id,
+        appointmentToDelete.id
       );
       await deleteDoc(appointmentRef);
       toast.info("Consulta removida.");
@@ -244,6 +261,69 @@ function AppointmentsPageContent() {
     } finally {
       setIsDeleteModalOpen(false);
       setAppointmentToDelete(null);
+    }
+  };
+
+  // 4. Simplificar a função handleToggleDone (remover a lógica da animação daqui)
+  const handleToggleDone = async (appointment) => {
+    if (!user) return;
+    const newDoneStatus = !appointment.done;
+
+    if (newDoneStatus) {
+      if (appointment.type === "ultrasound" && !appointment.isScheduled) {
+        toast.warn(
+          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído."
+        );
+        handleEdit(appointment);
+        return;
+      }
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const appointmentDate = new Date(appointment.date + "T00:00:00Z");
+      if (appointmentDate > today) {
+        toast.warn(
+          "Não é possível marcar como concluída uma consulta agendada para o futuro."
+        );
+        return;
+      }
+    }
+
+    try {
+      if (appointment.type === "manual") {
+        const appointmentRef = doc(
+          db,
+          "users",
+          user.uid,
+          "appointments",
+          appointment.id
+        );
+        await setDoc(appointmentRef, { done: newDoneStatus }, { merge: true });
+      } else if (appointment.type === "ultrasound") {
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+          const scheduleData =
+            docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
+          const updatedSchedule = {
+            ...scheduleData,
+            [appointment.id]: {
+              ...scheduleData[appointment.id],
+              done: newDoneStatus,
+            },
+          };
+          await setDoc(
+            userDocRef,
+            { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
+            { merge: true }
+          );
+        }
+      }
+      toast.success(
+        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`
+      );
+    } catch (error) {
+      console.error("Erro ao atualizar status:", error);
+      toast.error("Não foi possível atualizar o status.");
     }
   };
 
@@ -268,13 +348,16 @@ function AppointmentsPageContent() {
 
   return (
     <>
+      {showCelebration && (
+        <CompletionCelebration onClose={() => setShowCelebration(false)} />
+      )}
       <AppointmentViewModal
         isOpen={isSingleViewModalOpen}
         onClose={handleCloseViewModals}
         appointment={appointmentsToView[0]}
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
-        onAddNew={handleAddNewFromModal} // PROP ADICIONADA AQUI
+        onAddNew={handleAddNewFromModal}
       />
       <AppointmentMultiViewModal
         isOpen={isMultiViewModalOpen}
@@ -282,7 +365,7 @@ function AppointmentsPageContent() {
         appointments={appointmentsToView}
         onEdit={handleEdit}
         onDelete={handleDeleteRequest}
-        onAddNew={handleAddNewFromModal} // Passando a nova função
+        onAddNew={handleAddNewFromModal}
       />
       <ConfirmationModal
         isOpen={isAddModalOpen}
@@ -306,7 +389,6 @@ function AppointmentsPageContent() {
           <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
             Registro de Consultas e Exames
           </h1>
-
           {isFormOpen ? (
             <AppointmentForm
               user={user}
@@ -327,19 +409,19 @@ function AppointmentsPageContent() {
               </button>
             </div>
           )}
-
           <AppointmentCalendar
             appointments={combinedAppointments}
             lmpDate={lmpDate}
             onDateSelect={handleDateSelect}
             onViewAppointment={handleView}
           />
-
           <AppointmentList
             appointments={combinedAppointments}
             onEdit={handleEdit}
             user={user}
             lmpDate={lmpDate}
+            onToggleDone={handleToggleDone}
+            onDelete={handleDeleteRequest}
           />
         </div>
       </div>
