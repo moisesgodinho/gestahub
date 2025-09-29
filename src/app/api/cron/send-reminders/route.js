@@ -1,22 +1,31 @@
 import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
-import { collection, getDocs, query, where } from "firebase/firestore";
-import { getFirestore } from "firebase-admin/firestore"; // Importa o getFirestore do admin
+import { getFirestore } from "firebase-admin/firestore";
+import { getMessaging } from "firebase-admin/messaging";
 
-// Pega as credenciais da variável de ambiente
-const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS);
+const serviceAccountString = process.env.FIREBASE_ADMIN_CREDENTIALS;
+let initError = null;
 
-// Inicialize o Admin SDK se ainda não tiver sido inicializado
 if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+  if (!serviceAccountString) {
+    initError = "A variável de ambiente FIREBASE_ADMIN_CREDENTIALS não está definida.";
+    console.error(initError);
+  } else {
+    try {
+      const serviceAccount = JSON.parse(serviceAccountString);
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    } catch (e) {
+      initError = "As credenciais do Firebase Admin não são um JSON válido.";
+      console.error(initError, e);
+    }
+  }
 }
 
-// Usa o firestore do admin para queries no servidor
-const adminDb = getFirestore();
+const adminDb = !initError ? getFirestore() : null;
+const messaging = !initError ? getMessaging() : null;
 
-// Função para formatar a data como YYYY-MM-DD
 const getYYYYMMDD = (date) => {
   const year = date.getFullYear();
   const month = String(date.getMonth() + 1).padStart(2, "0");
@@ -24,45 +33,107 @@ const getYYYYMMDD = (date) => {
   return `${year}-${month}-${day}`;
 };
 
+async function cleanUpFailedTokens(userId, tokens, responses) {
+  const failedTokens = [];
+  responses.forEach((resp, idx) => {
+    if (!resp.success) {
+      failedTokens.push(tokens[idx]);
+    }
+  });
+
+  if (failedTokens.length > 0) {
+    console.log(`Limpando ${failedTokens.length} tokens inválidos para o usuário ${userId}`);
+    for (const token of failedTokens) {
+      await adminDb.doc(`users/${userId}/fcmTokens/${token}`).delete();
+    }
+  }
+}
+
 
 export async function GET() {
+  if (initError || !adminDb || !messaging) {
+    return NextResponse.json(
+      { success: false, error: "Erro na inicialização do Firebase Admin.", details: initError },
+      { status: 500 }
+    );
+  }
+
   try {
     const usersSnapshot = await adminDb.collection("users").get();
     const today = new Date();
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
-
+    
+    const dateToday = getYYYYMMDD(today);
     const dateTomorrow = getYYYYMMDD(tomorrow);
+    
+    let totalSent = 0;
 
     for (const userDoc of usersSnapshot.docs) {
-      const user = userDoc.data();
       const userId = userDoc.id;
+      const tokensSnapshot = await adminDb.collection(`users/${userId}/fcmTokens`).get();
+      const tokens = tokensSnapshot.docs.map(doc => doc.id);
 
-      if (user.fcmToken) {
-        // --- Lembrete de Consulta ---
-        const appointmentsRef = adminDb.collection(`users/${userId}/appointments`);
-        const q = query(appointmentsRef, where("date", "==", dateTomorrow));
-        const appointmentsSnapshot = await getDocs(q);
+      if (tokens.length === 0) {
+        continue;
+      }
 
-        if (!appointmentsSnapshot.empty) {
-            const appointment = appointmentsSnapshot.docs[0].data();
-            const message = {
-                notification: {
-                    title: "Lembrete de Consulta 🗓️",
-                    body: `Não se esqueça da sua consulta "${appointment.title}" amanhã!`,
-                },
-                token: user.fcmToken,
-            };
-            await admin.messaging().send(message);
-        }
+      // Lógica de lembrete de consulta
+      const appointmentsRef = adminDb.collection(`users/${userId}/appointments`);
+      const qAppointments = appointmentsRef.where("date", "==", dateTomorrow);
+      const appointmentsSnapshot = await qAppointments.get();
+
+      if (!appointmentsSnapshot.empty) {
+        const appointment = appointmentsSnapshot.docs[0].data();
+        const time = appointment.time ? ` às ${appointment.time}` : '';
+        const message = {
+          notification: {
+            title: "Lembrete de Consulta 🗓️",
+            body: `Não se esqueça da sua consulta "${appointment.title}" amanhã${time}!`,
+          },
+          // --- ADICIONADO AQUI ---
+          webpush: {
+            fcmOptions: {
+              link: '/consultas'
+            }
+          },
+          tokens: tokens,
+        };
+        const response = await messaging.sendEachForMulticast(message);
+        totalSent += response.successCount;
+        await cleanUpFailedTokens(userId, tokens, response.responses);
+      }
+
+      // Lógica de lembrete do diário
+      const journalEntryRef = adminDb.doc(`users/${userId}/symptomEntries/${dateToday}`);
+      const journalEntrySnap = await journalEntryRef.get();
+
+      if (!journalEntrySnap.exists) {
+        const message = {
+          notification: {
+            title: "Como você está hoje? 📝",
+            body: "Não se esqueça de registrar seu humor e sintomas no diário de hoje!",
+          },
+          // --- ADICIONADO AQUI ---
+          webpush: {
+            fcmOptions: {
+              link: '/diario-de-sintomas'
+            }
+          },
+          tokens: tokens,
+        };
+        const response = await messaging.sendEachForMulticast(message);
+        totalSent += response.successCount;
+        await cleanUpFailedTokens(userId, tokens, response.responses);
       }
     }
 
-    return NextResponse.json({ success: true, message: "Reminders checked." });
+    return NextResponse.json({ success: true, message: `Verificação concluída. ${totalSent} lembretes enviados.` });
+
   } catch (error) {
-    console.error("Error sending reminders:", error);
+    console.error("Erro crítico ao enviar lembretes:", error);
     return NextResponse.json(
-      { success: false, error: "Failed to send reminders." },
+      { success: false, error: "Falha ao enviar lembretes.", details: error.message },
       { status: 500 }
     );
   }
