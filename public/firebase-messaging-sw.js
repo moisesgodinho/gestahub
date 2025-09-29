@@ -24,14 +24,14 @@ messaging.onBackgroundMessage((payload) => {
     payload
   );
 
-  // A carga agora vem de payload.data quando usamos a estrutura webpush.notification
   const notificationData = payload.data;
 
   const notificationTitle = notificationData.title;
   const notificationOptions = {
     body: notificationData.body,
     icon: notificationData.icon,
-    badge: notificationData.badge, // <-- ADICIONADO AQUI
+    badge: notificationData.badge,
+    color: "#f43f5e", // <-- ADICIONADO AQUI
     data: {
       url: notificationData.link,
     },
@@ -41,7 +41,6 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener("notificationclick", (event) => {
-  // ... (esta parte permanece a mesma)
   event.notification.close();
 
   const urlToOpen = event.notification.data.url;

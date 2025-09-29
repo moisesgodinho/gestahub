@@ -1,9 +1,10 @@
+// src/app/api/cron/send-journal-reminder/route.js
+
 import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
-// ... (toda a parte de inicialização do Firebase Admin permanece a mesma)
 const serviceAccountString = process.env.FIREBASE_ADMIN_CREDENTIALS;
 let initError = null;
 
@@ -67,9 +68,8 @@ export async function GET() {
 
   try {
     const usersSnapshot = await adminDb.collection("users").get();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateTomorrow = getYYYYMMDD(tomorrow);
+    const today = new Date();
+    const dateToday = getYYYYMMDD(today);
     let totalSent = 0;
 
     for (const userDoc of usersSnapshot.docs) {
@@ -81,25 +81,23 @@ export async function GET() {
 
       if (tokens.length === 0) continue;
 
-      const appointmentsRef = adminDb.collection(
-        `users/${userId}/appointments`
+      // Lógica de lembrete do diário
+      const journalEntryRef = adminDb.doc(
+        `users/${userId}/symptomEntries/${dateToday}`
       );
-      const qAppointments = appointmentsRef.where("date", "==", dateTomorrow);
-      const appointmentsSnapshot = await qAppointments.get();
+      const journalEntrySnap = await journalEntryRef.get();
 
-      if (!appointmentsSnapshot.empty) {
-        const appointment = appointmentsSnapshot.docs[0].data();
-        const time = appointment.time ? ` às ${appointment.time}` : "";
+      if (!journalEntrySnap.exists) {
         const message = {
           webpush: {
             notification: {
-              title: "Lembrete de Consulta 🗓️",
-              body: `Não se esqueça da sua consulta "${appointment.title}" amanhã${time}!`,
+              title: "Como você está hoje? 📝",
+              body: "Não se esqueça de registrar seu humor e sintomas no diário de hoje!",
               icon: "/login.png",
               badge: "/notification-badge.png",
             },
             fcmOptions: {
-              link: "/consultas",
+              link: "/diario-de-sintomas",
             },
           },
           tokens: tokens,
@@ -112,14 +110,14 @@ export async function GET() {
 
     return NextResponse.json({
       success: true,
-      message: `Verificação de consultas concluída. ${totalSent} lembretes enviados.`,
+      message: `Verificação do diário concluída. ${totalSent} lembretes enviados.`,
     });
   } catch (error) {
-    console.error("Erro crítico ao enviar lembretes de consulta:", error);
+    console.error("Erro crítico ao enviar lembretes do diário:", error);
     return NextResponse.json(
       {
         success: false,
-        error: "Falha ao enviar lembretes de consulta.",
+        error: "Falha ao enviar lembretes do diário.",
         details: error.message,
       },
       { status: 500 }
