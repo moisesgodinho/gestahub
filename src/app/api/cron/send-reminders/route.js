@@ -3,7 +3,6 @@ import * as admin from "firebase-admin";
 import { getFirestore } from "firebase-admin/firestore";
 import { getMessaging } from "firebase-admin/messaging";
 
-// ... (código de inicialização do Firebase Admin permanece o mesmo)
 const serviceAccountString = process.env.FIREBASE_ADMIN_CREDENTIALS;
 let initError = null;
 
@@ -36,7 +35,6 @@ const getYYYYMMDD = (date) => {
 };
 
 async function cleanUpFailedTokens(userId, tokens, responses) {
-  // ... (esta função permanece a mesma)
   const failedTokens = [];
   responses.forEach((resp, idx) => {
     if (!resp.success) {
@@ -67,7 +65,6 @@ export async function GET() {
   }
 
   try {
-    // ... (lógica inicial de busca de usuários e datas permanece a mesma)
     const usersSnapshot = await adminDb.collection("users").get();
     const today = new Date();
     const tomorrow = new Date(today);
@@ -98,11 +95,16 @@ export async function GET() {
         const appointment = appointmentsSnapshot.docs[0].data();
         const time = appointment.time ? ` às ${appointment.time}` : "";
         const message = {
-          // --- ALTERAÇÃO AQUI ---
-          data: {
-            title: "Lembrete de Consulta 🗓️",
-            body: `Não se esqueça da sua consulta "${appointment.title}" amanhã${time}!`,
-            link: "/consultas",
+          webpush: {
+            notification: {
+              title: "Lembrete de Consulta 🗓️",
+              body: `Não se esqueça da sua consulta "${appointment.title}" amanhã${time}!`,
+              icon: "/login.png",
+              badge: "/notification-badge.png", // <-- CORRIGIDO AQUI
+            },
+            fcmOptions: {
+              link: "/consultas",
+            },
           },
           tokens: tokens,
         };
@@ -119,11 +121,16 @@ export async function GET() {
 
       if (!journalEntrySnap.exists) {
         const message = {
-          // --- ALTERAÇÃO AQUI ---
-          data: {
-            title: "Como você está hoje? 📝",
-            body: "Não se esqueça de registrar seu humor e sintomas no diário de hoje!",
-            link: "/diario-de-sintomas",
+          webpush: {
+            notification: {
+              title: "Como você está hoje? 📝",
+              body: "Não se esqueça de registrar seu humor e sintomas no diário de hoje!",
+              icon: "/login.png",
+              badge: "/notification-badge.png", // <-- CORRIGIDO AQUI
+            },
+            fcmOptions: {
+              link: "/diario-de-sintomas",
+            },
           },
           tokens: tokens,
         };

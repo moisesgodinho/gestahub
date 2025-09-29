@@ -24,15 +24,16 @@ messaging.onBackgroundMessage((payload) => {
     payload
   );
 
-  // --- ALTERAÇÃO AQUI ---
-  // Lendo o título e o corpo do objeto 'data'
-  const notificationTitle = payload.data.title;
+  // A carga agora vem de payload.data quando usamos a estrutura webpush.notification
+  const notificationData = payload.data;
+
+  const notificationTitle = notificationData.title;
   const notificationOptions = {
-    body: payload.data.body,
-    icon: "/login.png",
-    // Lendo o link do objeto 'data'
+    body: notificationData.body,
+    icon: notificationData.icon,
+    badge: notificationData.badge, // <-- ADICIONADO AQUI
     data: {
-      url: payload.data.link,
+      url: notificationData.link,
     },
   };
 
@@ -40,6 +41,7 @@ messaging.onBackgroundMessage((payload) => {
 });
 
 self.addEventListener("notificationclick", (event) => {
+  // ... (esta parte permanece a mesma)
   event.notification.close();
 
   const urlToOpen = event.notification.data.url;
@@ -52,7 +54,6 @@ self.addEventListener("notificationclick", (event) => {
       })
       .then((clientList) => {
         for (const client of clientList) {
-          // Se a URL já estiver aberta, foca nela
           if (
             client.url === self.location.origin + urlToOpen &&
             "focus" in client
@@ -60,7 +61,6 @@ self.addEventListener("notificationclick", (event) => {
             return client.focus();
           }
         }
-        // Se não, abre uma nova janela
         if (clients.openWindow) {
           return clients.openWindow(urlToOpen);
         }
