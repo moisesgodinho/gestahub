@@ -1,9 +1,7 @@
 // src/components/AppointmentItem.js
 "use client";
 
-// --- INÍCIO DA MUDANÇA 1 ---
 import { useState, memo } from "react";
-// --- FIM DA MUDANÇA 1 ---
 
 const formatDateDisplay = (dateString) => {
   if (!dateString) return "";
@@ -27,8 +25,8 @@ const AppointmentItemComponent = ({
         item.done
           ? "border-l-4 border-green-500"
           : item.type === "ultrasound"
-            ? "border-l-4 border-rose-500"
-            : "border-l-4 border-indigo-500"
+          ? "border-l-4 border-rose-500"
+          : "border-l-4 border-indigo-500"
       } bg-slate-100 dark:bg-slate-700/50`}
     >
       <div className="flex-shrink-0">
@@ -154,8 +152,6 @@ const AppointmentItemComponent = ({
   );
 };
 
-// --- INÍCIO DA MUDANÇA 2 ---
 // Envolve o componente com React.memo e exporta a versão memoizada
 const AppointmentItem = memo(AppointmentItemComponent);
 export default AppointmentItem;
-// --- FIM DA MUDANÇA 2 ---

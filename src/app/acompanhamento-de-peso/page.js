@@ -68,9 +68,9 @@ export default function WeightTrackerPage() {
   );
 
   const WeightChart = dynamic(() => import('@/components/WeightChart'), {
-  loading: () => <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl h-80 animate-pulse"></div>,
-  ssr: false
-});
+    loading: () => <SkeletonLoader type="card" />,
+    ssr: false
+  });
 
   useEffect(() => {
     if (weightProfile) {

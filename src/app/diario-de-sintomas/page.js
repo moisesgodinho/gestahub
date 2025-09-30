@@ -1,9 +1,7 @@
 // src/app/diario-de-sintomas/page.js
 "use client";
 
-// --- INÍCIO DA MUDANÇA 1 ---
 import { useState, useMemo, useCallback } from "react";
-// --- FIM DA MUDANÇA 1 ---
 import dynamic from 'next/dynamic';
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -35,8 +33,6 @@ export default function JournalPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
 
-  // --- INÍCIO DA MUDANÇA 2 ---
-  // Memoriza as funções de callback para evitar re-renderizações desnecessárias dos filhos
   const handleEdit = useCallback((entry) => {
     setEntryToEdit(entry);
     setIsFormOpen(true);
@@ -84,7 +80,6 @@ export default function JournalPage() {
       setEntryToDelete(null);
     }
   }, [user, entryToDelete]);
-  // --- FIM DA MUDANÇA 2 ---
 
   const formattedDateForModal = useMemo(() => {
     if (!selectedDateForNew) return "";
@@ -98,9 +93,9 @@ export default function JournalPage() {
   }, [selectedDateForNew]);
 
   const SymptomChart = dynamic(() => import('@/components/SymptomChart'), {
-  loading: () => <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl h-80 animate-pulse"></div>,
-  ssr: false
-});
+    loading: () => <SkeletonLoader type="card" />,
+    ssr: false
+  });
 
   const loading = userLoading || entriesLoading || gestationalLoading;
 
