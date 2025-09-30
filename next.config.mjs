@@ -10,61 +10,36 @@ const withPWA = withPWAInit({
   register: true,
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
-  importScripts: ["/firebase-messaging-sw.js"], // Unifica o service worker do Firebase
+  importScripts: ["/firebase-messaging-sw.js"],
   runtimeCaching: [
-    // Regra para Background Sync (Ações Offline)
+    // --- NOVA REGRA CORRIGIDA PARA O FIREBASE ---
     {
-      urlPattern: ({ request }) => request.method === 'POST',
-      handler: 'NetworkOnly',
-      options: {
-        backgroundSync: {
-          name: 'gestahub-sync-queue',
-          options: {
-            maxRetentionTime: 24 * 60, // Tentar reenviar por até 24 horas
-          },
-        },
-      },
-    },
-    // Regra para cache de dados da API (Visualização Offline)
-    {
-      urlPattern: /^https?:\/\/.*\.(?:api|vercel\.app)\/api\/.*/i,
+      // Captura requisições para os serviços do Google APIs (Firestore, Auth, etc.)
+      urlPattern: /^https?:\/\/firestore\.googleapis\.com\/.*/i,
       handler: "NetworkFirst",
       options: {
-        cacheName: "api-cache",
+        cacheName: "firebase-firestore-cache",
         expiration: {
           maxEntries: 100,
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 dias
         },
         cacheableResponse: {
-          statuses: [0, 200],
+          statuses: [0, 200], // Cacheia respostas bem-sucedidas
         },
       },
     },
-    // Regra para fontes do Google
+    // --- REGRAS PARA FONTES E IMAGENS (permanecem as mesmas) ---
     {
       urlPattern: /^https?:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
       handler: "CacheFirst",
       options: {
         cacheName: "google-fonts",
         expiration: {
-          maxEntries: 4,
+          maxEntries: 10,
           maxAgeSeconds: 365 * 24 * 60 * 60, // 365 dias
         },
       },
     },
-    // Regra para outros arquivos de fontes
-    {
-      urlPattern: /\.(?:eot|otf|ttc|ttf|woff|woff2|font.css)$/i,
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "static-font-assets",
-        expiration: {
-          maxEntries: 4,
-          maxAgeSeconds: 7 * 24 * 60 * 60, // 7 dias
-        },
-      },
-    },
-    // Regra para imagens
     {
       urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
       handler: "StaleWhileRevalidate",
