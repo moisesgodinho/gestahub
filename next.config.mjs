@@ -10,9 +10,7 @@ const withPWA = withPWAInit({
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
   importScripts: ["/firebase-messaging-sw.js"],
-  // --- INÍCIO DAS MUDANÇAS ---
   runtimeCaching: [
-    // Regra para as páginas da aplicação (App Shell)
     {
       urlPattern: ({ request }) => request.mode === "navigate",
       handler: "StaleWhileRevalidate",
@@ -24,7 +22,6 @@ const withPWA = withPWAInit({
         },
       },
     },
-    // Regra para arquivos estáticos (JS, CSS, etc.) do Next.js
     {
       urlPattern: /^https?:\/\/.+\/_next\/(static|image)\/.+/i,
       handler: "CacheFirst",
@@ -36,21 +33,51 @@ const withPWA = withPWAInit({
         },
       },
     },
-    // --- NÍVEL 3: Background Sync para Ações Offline ---
-    // Esta regra deve vir primeiro para capturar as mutações de dados.
+    
+    // --- INÍCIO DA CORREÇÃO ---
+    // Regra específica para a API com Background Sync
     {
-      urlPattern: ({ request }) => ['POST', 'DELETE', 'PATCH'].includes(request.method),
-      handler: 'NetworkOnly',
+      urlPattern: /\/api\/.*/i, // Captura qualquer chamada para /api/
+      handler: "NetworkOnly",
+      method: "POST", // Aplica-se a requisições POST
       options: {
         backgroundSync: {
-          name: 'gestahub-mutations-queue', // Uma única fila para todas as ações
+          name: "gestahub-mutations-queue",
           options: {
             maxRetentionTime: 24 * 60, // Tentar reenviar por até 24 horas
           },
         },
       },
     },
-    // --- NÍVEL 2: Cache de Dados do Firebase para Visualização Offline ---
+    // (Opcional, mas recomendado) Adicione regras separadas se usar outros métodos
+    {
+      urlPattern: /\/api\/.*/i,
+      handler: "NetworkOnly",
+      method: "PATCH",
+      options: {
+        backgroundSync: {
+          name: "gestahub-mutations-queue",
+          options: {
+            maxRetentionTime: 24 * 60,
+          },
+        },
+      },
+    },
+    {
+      urlPattern: /\/api\/.*/i,
+      handler: "NetworkOnly",
+      method: "DELETE",
+      options: {
+        backgroundSync: {
+          name: "gestahub-mutations-queue",
+          options: {
+            maxRetentionTime: 24 * 60,
+          },
+        },
+      },
+    },
+    // --- FIM DA CORREÇÃO ---
+
     {
       urlPattern: /^https?:\/\/firestore\.googleapis\.com\/.*/i,
       handler: "NetworkFirst",
@@ -61,11 +88,10 @@ const withPWA = withPWAInit({
           maxAgeSeconds: 30 * 24 * 60 * 60, // 30 dias
         },
         cacheableResponse: {
-          statuses: [0, 200], // Armazena respostas bem-sucedidas em cache
+          statuses: [0, 200],
         },
       },
     },
-    // --- Regras de Cache para Recursos Estáticos ---
     {
       urlPattern: /^https?:\/\/fonts\.(?:googleapis|gstatic)\.com\/.*/i,
       handler: "CacheFirst",
@@ -89,7 +115,6 @@ const withPWA = withPWAInit({
       },
     },
   ],
-  // --- FIM DAS MUDANÇAS ---
 });
 
 export default withPWA(nextConfig);
