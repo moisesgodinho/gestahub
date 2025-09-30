@@ -21,23 +21,26 @@ export default function Home() {
     hasData,
   } = useGestationalData(user);
 
-  const [isEditing, setIsEditing] = useState(false);
+  // Estado para controlar a edição manual pelo usuário
+  const [isManualEditing, setIsManualEditing] = useState(false);
   const [activeCalculator, setActiveCalculator] = useState("dum");
 
   useEffect(() => {
-    if (!userLoading && !dataLoading) {
-      setIsEditing(!hasData);
-    }
+    // Define a calculadora ativa com base na fonte de dados quando os dados são carregados
     if (hasData) {
       setActiveCalculator(dataSource);
     }
-  }, [userLoading, dataLoading, hasData, dataSource]);
+  }, [hasData, dataSource]);
 
   const handleSaveSuccess = () => {
-    setIsEditing(false);
+    setIsManualEditing(false);
   };
 
   const loading = userLoading || dataLoading;
+
+  // Lógica de renderização mais clara:
+  // Mostra as calculadoras se (1) os dados não existem ou (2) o usuário clicou para editar.
+  const showCalculators = !loading && (!hasData || isManualEditing);
 
   if (loading) {
     return (
@@ -48,19 +51,18 @@ export default function Home() {
   }
 
   return (
-    // CORREÇÃO: Garante que o container ocupe todo o espaço disponível
     <div className="flex-grow flex flex-col items-center justify-center p-4">
       {!user ? (
         <Login />
       ) : (
         <div className="w-full max-w-3xl">
-          {isEditing ? (
+          {showCalculators ? (
             <CalculatorPanel
               user={user}
               activeCalculator={activeCalculator}
               onSwitch={setActiveCalculator}
               onSaveSuccess={handleSaveSuccess}
-              onCancel={() => hasData && setIsEditing(false)}
+              onCancel={() => hasData && setIsManualEditing(false)}
             />
           ) : (
             <>
@@ -70,9 +72,9 @@ export default function Home() {
                 dataSource={dataSource}
                 onSwitchToUltrasound={() => {
                   setActiveCalculator("ultrassom");
-                  setIsEditing(true);
+                  setIsManualEditing(true);
                 }}
-                onEdit={() => setIsEditing(true)}
+                onEdit={() => setIsManualEditing(true)}
               />
               <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
             </>
