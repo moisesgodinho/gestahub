@@ -23,13 +23,12 @@ export default function RootLayout({ children }) {
   return (
     <html lang="pt-BR" className="h-full" suppressHydrationWarning>
       <head>
-        {/* --- MUDANÇAS AQUI --- */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="GestaHub" />
-        {/* Cor para o modo claro */}
+        {/* Cor para o modo claro (branco/cinza claro) */}
         <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
-        {/* Cor para o modo escuro (slate-900) */}
+        {/* Cor para o modo escuro (cinza escuro) */}
         <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
       </head>
       <body

@@ -6,13 +6,21 @@
   "scope": "/",
   "id": "/",
   "display": "standalone",
-  "display_override": ["window-controls-overlay", "tabbed"],
+  "display_override": [
+    "window-controls-overlay",
+    "tabbed"
+  ],
   "background_color": "#f9fafb",
   "theme_color": "#f9fafb",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
   "dir": "ltr",
-  "categories": ["medical", "health", "lifestyle", "personalization"],
+  "categories": [
+    "medical",
+    "health",
+    "lifestyle",
+    "personalization"
+  ],
   "iarc_rating_id": "SEU_IARC_ID_AQUI",
   "related_applications": [
     {
@@ -22,6 +30,12 @@
     }
   ],
   "prefer_related_applications": false,
+  "launch_handler": {
+    "client_mode": "focus-existing"
+  },
+  "edge_side_panel": {
+    "preferred_width": 480
+  },
   "icons": [
     {
       "src": "/login.png",
@@ -99,11 +113,5 @@
       "text": "text",
       "url": "url"
     }
-  },
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  },
-  "edge_side_panel": {
-    "preferred_width": 480
   }
 }
