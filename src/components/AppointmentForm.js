@@ -1,3 +1,4 @@
+// src/components/AppointmentForm.js
 "use client";
 
 import { useState, useEffect, useRef } from "react";
@@ -63,6 +64,7 @@ export default function AppointmentForm({
     textarea.style.height = `${textarea.scrollHeight}px`;
   };
 
+  // --- INÍCIO DA MUDANÇA ---
   const handleSave = async (e) => {
     e.preventDefault();
     if (!user) return;
@@ -111,7 +113,7 @@ export default function AppointmentForm({
       });
 
       if (!response.ok) {
-        throw new Error('Falha na rede ou erro do servidor');
+        throw new Error(`Server error: ${response.statusText}`);
       }
 
       const result = await response.json();
@@ -122,11 +124,16 @@ export default function AppointmentForm({
         throw new Error(result.error || 'Erro desconhecido ao salvar.');
       }
     } catch (error) {
-      console.error("Erro ao salvar consulta (pode ser offline):", error.message);
-      toast.info("Sua consulta será salva assim que a conexão for restaurada.");
-      if (onFinish) onFinish();
+      console.error("Erro ao salvar consulta:", error);
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        toast.info("Você está offline. Sua consulta será salva assim que a conexão for restaurada.");
+        if (onFinish) onFinish();
+      } else {
+        toast.error("Não foi possível salvar a consulta. Por favor, tente novamente.");
+      }
     }
   };
+  // --- FIM DA MUDANÇA ---
 
   return (
     <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">

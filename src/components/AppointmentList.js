@@ -33,11 +33,11 @@ export default function AppointmentList({
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
   const [visiblePastCount, setVisiblePastCount] = useState(INITIAL_VISIBLE_COUNT);
 
+  // --- INÍCIO DA MUDANÇA 1 ---
   const handleToggleDone = async (appointment) => {
     if (!user) return;
     const newDoneStatus = !appointment.done;
 
-    // Validações do lado do cliente permanecem as mesmas
     if (newDoneStatus) {
       if (appointment.type === "ultrasound" && !appointment.isScheduled) {
         toast.warn("Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.");
@@ -62,7 +62,7 @@ export default function AppointmentList({
         body: JSON.stringify({ token, appointment, newDoneStatus }),
       });
 
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
 
       const result = await response.json();
       if (result.success) {
@@ -71,16 +71,22 @@ export default function AppointmentList({
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error("Erro ao atualizar status (pode ser offline):", error);
-      toast.info("O status será atualizado assim que a conexão for restaurada.");
+      console.error("Erro ao atualizar status:", error);
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        toast.info("Você está offline. O status será atualizado assim que a conexão for restaurada.");
+      } else {
+        toast.error("Não foi possível atualizar o status. Tente novamente mais tarde.");
+      }
     }
   };
+  // --- FIM DA MUDANÇA 1 ---
 
   const openDeleteConfirmation = (appointment) => {
     setAppointmentToDelete(appointment);
     setIsModalOpen(true);
   };
 
+  // --- INÍCIO DA MUDANÇA 2 ---
   const confirmDelete = async () => {
     if (!user || !appointmentToDelete) return;
     try {
@@ -91,7 +97,7 @@ export default function AppointmentList({
         body: JSON.stringify({ token, appointmentId: appointmentToDelete.id }),
       });
 
-      if (!response.ok) throw new Error('Network response was not ok');
+      if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
 
       const result = await response.json();
       if (result.success) {
@@ -100,15 +106,19 @@ export default function AppointmentList({
         throw new Error(result.error);
       }
     } catch (error) {
-      console.error("Erro ao apagar consulta (pode ser offline):", error);
-      toast.info("A consulta será removida assim que a conexão for restaurada.");
+      console.error("Erro ao apagar consulta:", error);
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        toast.info("Você está offline. A consulta será removida assim que a conexão for restaurada.");
+      } else {
+        toast.error("Não foi possível apagar a consulta. Tente novamente mais tarde.");
+      }
     } finally {
       setIsModalOpen(false);
       setAppointmentToDelete(null);
     }
   };
+  // --- FIM DA MUDANÇA 2 ---
 
-  // O resto do componente (lógica de ordenação e JSX) permanece o mesmo
   const getSortableDate = (item) => {
     if (item.date) {
       return new Date(item.date);

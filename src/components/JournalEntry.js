@@ -24,7 +24,6 @@ export default function JournalEntry({
   const [isFutureDate, setIsFutureDate] = useState(false);
   const notesTextareaRef = useRef(null);
 
-  // ... (os useEffects e outras funções handle permanecem os mesmos)
   useEffect(() => {
     if (entry) {
       setDate(entry.id);
@@ -73,7 +72,7 @@ export default function JournalEntry({
     textarea.style.height = `${textarea.scrollHeight}px`;
   };
 
-  // --- A MÁGICA ACONTECE AQUI ---
+  // --- INÍCIO DA MUDANÇA ---
   const proceedWithSave = async () => {
     if (!user || !date) return;
     try {
@@ -87,9 +86,9 @@ export default function JournalEntry({
       });
 
       if (!response.ok) {
-        // Se a resposta falhar (ex: offline), o service worker irá interceptar.
-        // Lançamos um erro para acionar o feedback de "será salvo depois".
-        throw new Error('Falha na rede ou erro do servidor');
+        // Lança um erro se a resposta não for bem-sucedida (ex: erro 500)
+        // Isso será pego pelo bloco catch, mas não será tratado como um erro de rede.
+        throw new Error(`Server error: ${response.statusText}`);
       }
       
       const result = await response.json();
@@ -102,16 +101,21 @@ export default function JournalEntry({
       }
       
     } catch (error) {
-      console.error("Erro ao salvar (pode ser offline):", error.message);
-      // Damos um feedback otimista para o usuário.
-      toast.info("Sua entrada será salva assim que a conexão for restaurada.");
-      // Fechamos o formulário para uma melhor experiência do usuário.
-      if (onSave) onSave();
+      console.error("Erro ao salvar:", error);
+      // A TypeError "Failed to fetch" é o indicador mais comum de um erro de rede/offline.
+      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
+        toast.info("Você está offline. Sua entrada será salva assim que a conexão for restaurada.");
+        if (onSave) onSave(); // Mantém a UI otimista para o modo offline
+      } else {
+        // Para outros erros (como erros de servidor 5xx ou 4xx que lançamos manualmente)
+        toast.error("Não foi possível salvar a entrada. Por favor, tente novamente mais tarde.");
+        // Aqui, não chamamos onSave() para que o formulário permaneça aberto e o usuário possa tentar novamente.
+      }
     }
   };
+  // --- FIM DA MUDANÇA ---
 
   const handleSave = async () => {
-    // ... (esta função permanece a mesma, apenas chama proceedWithSave)
     if (!user) {
       toast.error("Você precisa estar logado para salvar.");
       return;
@@ -149,7 +153,6 @@ export default function JournalEntry({
         title="Substituir Entrada?"
         message="Já existe um registro para esta data. Deseja substituí-lo com as novas informações?"
       />
-      {/* O resto do seu JSX permanece o mesmo */}
       <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
         <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
           {!!entry
