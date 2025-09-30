@@ -7,7 +7,7 @@
   "id": "/",
   "display": "standalone",
   "display_override": ["window-controls-overlay", "tabbed"],
-  "background_color": "#0f172a",
+  "background_color": "#f9fafb",
   "theme_color": "#f9fafb",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
