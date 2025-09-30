@@ -24,16 +24,15 @@ messaging.onBackgroundMessage((payload) => {
     payload
   );
 
-  const notificationData = payload.data;
-
-  const notificationTitle = notificationData.title;
+  // --- CORREÇÃO AQUI ---
+  // Pegamos os dados diretamente de payload.notification
+  const notificationTitle = payload.notification.title;
   const notificationOptions = {
-    body: notificationData.body,
-    icon: notificationData.icon,
-    badge: notificationData.badge,
-    color: "#f43f5e", // <-- ADICIONADO AQUI
+    body: payload.notification.body,
+    icon: payload.notification.icon || "/login.png", // Usamos o ícone do payload, com um fallback
+    badge: payload.notification.badge || "/notification-badge.png", // Usamos o badge do payload, com fallback
     data: {
-      url: notificationData.link,
+      url: payload.fcmOptions.link, // O link fica em fcmOptions
     },
   };
 
