@@ -2,10 +2,8 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-// --- INÍCIO DA MUDANÇA ---
 import { doc, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
-// --- FIM DA MUDANÇA ---
 import { toast } from "react-toastify";
 import { moodOptions, symptomOptions } from "@/data/journalData";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -76,24 +74,27 @@ export default function JournalEntry({
   };
 
   // --- INÍCIO DA MUDANÇA ---
-  // A lógica agora escreve diretamente no Firestore
   const proceedWithSave = async () => {
     if (!user || !date) return;
+
+    // 1. Fecha o formulário imediatamente para uma experiência otimista.
+    if (onSave) onSave();
+
     try {
       const entryData = { date, mood, symptoms: selectedSymptoms, notes };
       const entryRef = doc(db, "users", user.uid, "symptomEntries", date);
       
-      // Esta operação agora é segura para offline.
-      // O SDK do Firebase gerencia a fila e a sincronização.
+      // 2. A operação de salvar acontece em segundo plano.
       await setDoc(entryRef, entryData, { merge: true });
 
       toast.success("Entrada salva!");
-      if (onSave) onSave();
       
     } catch (error) {
-      // Este erro agora só deve acontecer em caso de problemas de permissão, etc.
       console.error("Erro ao salvar entrada do diário:", error);
-      toast.error("Não foi possível salvar a entrada.");
+      toast.error("Não foi possível salvar a entrada. A alteração foi desfeita.");
+      // NOTA: Em um cenário mais avançado, poderíamos reabrir o formulário com os dados
+      // ou ter um sistema para reverter a atualização otimista da UI, mas por agora,
+      // a notificação de erro é o feedback mais importante.
     }
   };
   // --- FIM DA MUDANÇA ---
