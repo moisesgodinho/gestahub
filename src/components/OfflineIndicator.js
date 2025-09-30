@@ -17,17 +17,10 @@ const WifiOffIcon = (props) => (
       strokeLinecap="round"
       strokeLinejoin="round"
     >
-      {/* Linha de "sem conexão" */}
-      <line x1="1" y1="1" x2="23" y2="23" />
-
-      {/* Arcos do WiFi */}
-      <path d="M16.72 11.06A10.94 10.94 0 0 1 19 12.28" />
-      <path d="M5 12.28c.89-1.42 2.1-2.58 3.5-3.5" />
-      <path d="M12 18.28c.99 0 1.93-.24 2.76-.67" />
-      <path d="M8.53 15.11a6.01 6.01 0 0 1 2.2-1.1" />
-
-      {/* Ajuste do círculo central (ponto do WiFi) */}
-      <circle cx="12" cy="20" r="1" />
+      {/* Círculo de status */}
+      <circle cx="12" cy="12" r="10" />
+      {/* Linha de corte indicando offline */}
+      <line x1="4" y1="4" x2="20" y2="20" />
     </svg>
 );
 
