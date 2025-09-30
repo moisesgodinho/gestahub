@@ -33,51 +33,10 @@ const withPWA = withPWAInit({
         },
       },
     },
-    
-    // --- INÍCIO DA CORREÇÃO ---
-    // Regra específica para a API com Background Sync
-    {
-      urlPattern: /\/api\/.*/i, // Captura qualquer chamada para /api/
-      handler: "NetworkOnly",
-      method: "POST", // Aplica-se a requisições POST
-      options: {
-        backgroundSync: {
-          name: "gestahub-mutations-queue",
-          options: {
-            maxRetentionTime: 24 * 60, // Tentar reenviar por até 24 horas
-          },
-        },
-      },
-    },
-    // (Opcional, mas recomendado) Adicione regras separadas se usar outros métodos
-    {
-      urlPattern: /\/api\/.*/i,
-      handler: "NetworkOnly",
-      method: "PATCH",
-      options: {
-        backgroundSync: {
-          name: "gestahub-mutations-queue",
-          options: {
-            maxRetentionTime: 24 * 60,
-          },
-        },
-      },
-    },
-    {
-      urlPattern: /\/api\/.*/i,
-      handler: "NetworkOnly",
-      method: "DELETE",
-      options: {
-        backgroundSync: {
-          name: "gestahub-mutations-queue",
-          options: {
-            maxRetentionTime: 24 * 60,
-          },
-        },
-      },
-    },
-    // --- FIM DA CORREÇÃO ---
-
+    // --- INÍCIO DA MUDANÇA ---
+    // As regras de Background Sync foram removidas pois não são mais necessárias.
+    // O SDK do Firebase agora gerencia o comportamento offline.
+    // --- FIM DA MUDANÇA ---
     {
       urlPattern: /^https?:\/\/firestore\.googleapis\.com\/.*/i,
       handler: "NetworkFirst",

@@ -84,6 +84,10 @@ export default function KickCounterPage() {
 
   const confirmDeleteSession = async () => {
     if (!user || !sessionToDelete) return;
+    
+    // UI Otimista
+    setIsModalOpen(false);
+
     try {
       const sessionRef = doc(
         db,
@@ -98,7 +102,6 @@ export default function KickCounterPage() {
       console.error("Erro ao apagar sessão: ", error);
       toast.error("Não foi possível apagar a sessão.");
     } finally {
-      setIsModalOpen(false);
       setSessionToDelete(null);
     }
   };
