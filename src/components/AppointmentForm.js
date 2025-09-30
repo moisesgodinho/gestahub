@@ -1,8 +1,10 @@
-// src/components/AppointmentForm.js
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { auth } from "@/lib/firebase"; // Apenas para pegar o token
+// --- INÍCIO DA MUDANÇA ---
+import { doc, setDoc, getDoc, collection, addDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+// --- FIM DA MUDANÇA ---
 import { toast } from "react-toastify";
 import { appointmentTypes } from "@/data/appointmentData";
 
@@ -92,45 +94,43 @@ export default function AppointmentForm({
       }
     }
 
-    const dataToSave = {
-      id: appointmentToEdit?.id,
-      type: appointmentToEdit?.type || 'manual',
-      title,
-      date,
-      time,
-      professional,
-      location,
-      notes,
-      done: appointmentToEdit?.done || false,
-    };
+    // Fecha o formulário para uma experiência otimista
+    if (onFinish) onFinish();
 
     try {
-      const token = await auth.currentUser.getIdToken();
-      const response = await fetch('/api/appointments', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, appointmentData: dataToSave }),
-      });
+      if (appointmentToEdit?.type === "ultrasound") {
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        const scheduleData = docSnap.data()?.gestationalProfile?.ultrasoundSchedule || {};
+        const updatedSchedule = {
+          ...scheduleData,
+          [appointmentToEdit.id]: {
+            ...scheduleData[appointmentToEdit.id],
+            scheduledDate: date,
+            time,
+            professional,
+            location,
+            notes,
+          },
+        };
+        await setDoc(userDocRef, { gestationalProfile: { ultrasoundSchedule: updatedSchedule } }, { merge: true });
+        toast.success("Agendamento de ultrassom salvo!");
 
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      if (result.success) {
+      } else { // Para consultas manuais (novas ou existentes)
+        const dataToSave = { title, date, time, professional, location, notes, done: appointmentToEdit?.done || false };
+        let docRef;
+        if (appointmentToEdit?.id) { // Editando uma consulta existente
+          docRef = doc(db, "users", user.uid, "appointments", appointmentToEdit.id);
+          await setDoc(docRef, dataToSave, { merge: true });
+        } else { // Criando uma nova consulta
+          docRef = collection(db, "users", user.uid, "appointments");
+          await addDoc(docRef, dataToSave);
+        }
         toast.success("Consulta salva com sucesso!");
-        if (onFinish) onFinish();
-      } else {
-        throw new Error(result.error || 'Erro desconhecido ao salvar.');
       }
     } catch (error) {
-      console.error("Erro ao salvar consulta:", error);
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        toast.info("Você está offline. Sua consulta será salva assim que a conexão for restaurada.");
-        if (onFinish) onFinish();
-      } else {
-        toast.error("Não foi possível salvar a consulta. Por favor, tente novamente.");
-      }
+      console.error("Erro ao salvar consulta:", error.message);
+      toast.error("Não foi possível salvar a consulta. A alteração foi desfeita.");
     }
   };
   // --- FIM DA MUDANÇA ---

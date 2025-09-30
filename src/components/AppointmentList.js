@@ -2,7 +2,10 @@
 "use client";
 
 import { useState } from "react";
-import { auth } from "@/lib/firebase"; // Import auth para pegar o token
+// --- INÍCIO DA MUDANÇA ---
+import { doc, setDoc, getDoc, deleteDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+// --- FIM DA MUDANÇA ---
 import { toast } from "react-toastify";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import AppointmentItem from "./AppointmentItem";
@@ -55,28 +58,28 @@ export default function AppointmentList({
     }
 
     try {
-      const token = await auth.currentUser.getIdToken();
-      const response = await fetch('/api/appointments', {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, appointment, newDoneStatus }),
-      });
-
-      if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
-
-      const result = await response.json();
-      if (result.success) {
-        toast.success(`Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`);
-      } else {
-        throw new Error(result.error);
+      if (appointment.type === 'manual') {
+        const appointmentRef = doc(db, "users", user.uid, "appointments", appointment.id);
+        await setDoc(appointmentRef, { done: newDoneStatus }, { merge: true });
+      } else if (appointment.type === 'ultrasound') {
+        const userDocRef = doc(db, "users", user.uid);
+        const docSnap = await getDoc(userDocRef);
+        if (docSnap.exists()) {
+            const scheduleData = docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
+            const updatedSchedule = {
+                ...scheduleData,
+                [appointment.id]: {
+                    ...(scheduleData[appointment.id] || {}),
+                    done: newDoneStatus,
+                },
+            };
+            await setDoc(userDocRef, { gestationalProfile: { ultrasoundSchedule: updatedSchedule } }, { merge: true });
+        }
       }
+      toast.success(`Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`);
     } catch (error) {
       console.error("Erro ao atualizar status:", error);
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        toast.info("Você está offline. O status será atualizado assim que a conexão for restaurada.");
-      } else {
-        toast.error("Não foi possível atualizar o status. Tente novamente mais tarde.");
-      }
+      toast.error("Não foi possível atualizar o status.");
     }
   };
   // --- FIM DA MUDANÇA 1 ---
@@ -89,31 +92,22 @@ export default function AppointmentList({
   // --- INÍCIO DA MUDANÇA 2 ---
   const confirmDelete = async () => {
     if (!user || !appointmentToDelete) return;
+    
+    // UI otimista: fecha o modal imediatamente
+    setIsModalOpen(false);
+
     try {
-      const token = await auth.currentUser.getIdToken();
-      const response = await fetch('/api/appointments', {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, appointmentId: appointmentToDelete.id }),
-      });
-
-      if (!response.ok) throw new Error(`Server error: ${response.statusText}`);
-
-      const result = await response.json();
-      if (result.success) {
+      // Apenas consultas manuais podem ser deletadas diretamente.
+      // A exclusão de agendamentos de ultrassom é tratada como "limpar os dados" no formulário.
+      if (appointmentToDelete.type === 'manual') {
+        const appointmentRef = doc(db, "users", user.uid, "appointments", appointmentToDelete.id);
+        await deleteDoc(appointmentRef);
         toast.info("Consulta removida.");
-      } else {
-        throw new Error(result.error);
       }
     } catch (error) {
       console.error("Erro ao apagar consulta:", error);
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        toast.info("Você está offline. A consulta será removida assim que a conexão for restaurada.");
-      } else {
-        toast.error("Não foi possível apagar a consulta. Tente novamente mais tarde.");
-      }
+      toast.error("Não foi possível apagar a consulta.");
     } finally {
-      setIsModalOpen(false);
       setAppointmentToDelete(null);
     }
   };
