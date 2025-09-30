@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "br.com.gestahub.app",
+      "sha256_cert_fingerprints": [
+        "35:6D:2C:11:75:C5:AF:E4:F2:83:74:58:86:57:B2:3C:5D:89:BF:DA:70:8F:B0:0D:E3:A8:74:35:17:BC:76:63"
+      ]
+    }
+  }
+]
