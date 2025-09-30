@@ -2,7 +2,10 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { auth } from "@/lib/firebase"; // Usado para pegar o token de autenticação
+// --- INÍCIO DA MUDANÇA ---
+import { doc, setDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase";
+// --- FIM DA MUDANÇA ---
 import { toast } from "react-toastify";
 import { moodOptions, symptomOptions } from "@/data/journalData";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -73,44 +76,24 @@ export default function JournalEntry({
   };
 
   // --- INÍCIO DA MUDANÇA ---
+  // A lógica agora escreve diretamente no Firestore
   const proceedWithSave = async () => {
     if (!user || !date) return;
     try {
-      const token = await auth.currentUser.getIdToken();
       const entryData = { date, mood, symptoms: selectedSymptoms, notes };
-
-      const response = await fetch('/api/journal', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ token, entryData }),
-      });
-
-      if (!response.ok) {
-        // Lança um erro se a resposta não for bem-sucedida (ex: erro 500)
-        // Isso será pego pelo bloco catch, mas não será tratado como um erro de rede.
-        throw new Error(`Server error: ${response.statusText}`);
-      }
+      const entryRef = doc(db, "users", user.uid, "symptomEntries", date);
       
-      const result = await response.json();
+      // Esta operação agora é segura para offline.
+      // O SDK do Firebase gerencia a fila e a sincronização.
+      await setDoc(entryRef, entryData, { merge: true });
 
-      if (result.success) {
-        toast.success("Entrada salva com sucesso!");
-        if (onSave) onSave();
-      } else {
-        throw new Error(result.error || 'Erro desconhecido ao salvar.');
-      }
+      toast.success("Entrada salva!");
+      if (onSave) onSave();
       
     } catch (error) {
-      console.error("Erro ao salvar:", error);
-      // A TypeError "Failed to fetch" é o indicador mais comum de um erro de rede/offline.
-      if (error instanceof TypeError && error.message.includes('Failed to fetch')) {
-        toast.info("Você está offline. Sua entrada será salva assim que a conexão for restaurada.");
-        if (onSave) onSave(); // Mantém a UI otimista para o modo offline
-      } else {
-        // Para outros erros (como erros de servidor 5xx ou 4xx que lançamos manualmente)
-        toast.error("Não foi possível salvar a entrada. Por favor, tente novamente mais tarde.");
-        // Aqui, não chamamos onSave() para que o formulário permaneça aberto e o usuário possa tentar novamente.
-      }
+      // Este erro agora só deve acontecer em caso de problemas de permissão, etc.
+      console.error("Erro ao salvar entrada do diário:", error);
+      toast.error("Não foi possível salvar a entrada.");
     }
   };
   // --- FIM DA MUDANÇA ---
