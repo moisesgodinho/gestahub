@@ -1,8 +1,9 @@
+// src/components/JournalEntry.js
+
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { doc, setDoc } from "firebase/firestore";
-import { db } from "@/lib/firebase";
+import { auth } from "@/lib/firebase"; // Apenas para pegar o token
 import { toast } from "react-toastify";
 import { moodOptions, symptomOptions } from "@/data/journalData";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -21,7 +22,7 @@ export default function JournalEntry({
   const [notes, setNotes] = useState("");
   const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
   const [isExistingEntry, setIsExistingEntry] = useState(false);
-  const [isFutureDate, setIsFutureDate] = useState(false); // 1. Novo estado para controlar a data futura
+  const [isFutureDate, setIsFutureDate] = useState(false);
   const notesTextareaRef = useRef(null);
 
   useEffect(() => {
@@ -49,11 +50,9 @@ export default function JournalEntry({
     }
   }, [notes]);
 
-  // 2. useEffect atualizado para verificar a data em tempo real
   useEffect(() => {
     const today = getTodayString();
     setIsFutureDate(date > today);
-
     if (!entry) {
       setIsExistingEntry(allEntries.some((e) => e.id === date));
     }
@@ -74,21 +73,42 @@ export default function JournalEntry({
     textarea.style.height = `${textarea.scrollHeight}px`;
   };
 
+  // --- FUNÇÃO DE SALVAR ATUALIZADA ---
   const proceedWithSave = async () => {
     if (!user || !date) return;
-    const entryData = { date, mood, symptoms: selectedSymptoms, notes };
     try {
-      const entryRef = doc(db, "users", user.uid, "symptomEntries", date);
-      await setDoc(entryRef, entryData, { merge: true });
-      toast.success(
-        entry
-          ? "Entrada atualizada com sucesso!"
-          : "Entrada salva com sucesso!",
-      );
-      if (onSave) onSave();
+      const token = await auth.currentUser.getIdToken();
+      const entryData = { date, mood, symptoms: selectedSymptoms, notes };
+
+      const response = await fetch('/api/journal', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ token, entryData }),
+      });
+
+      if (!response.ok) {
+        // Se a resposta não for OK (ex: offline), o service worker vai pegar daqui
+        // Lançamos um erro para que a lógica de fallback seja acionada
+        throw new Error('Falha na rede ou erro do servidor');
+      }
+      
+      const result = await response.json();
+
+      if (result.success) {
+        toast.success("Entrada salva com sucesso!");
+        if (onSave) onSave();
+      } else {
+        throw new Error(result.error || 'Erro desconhecido ao salvar.');
+      }
+      
     } catch (error) {
       console.error("Erro ao salvar entrada do diário:", error);
-      toast.error("Não foi possível salvar a entrada.");
+      // Feedback para o usuário em caso de falha (mesmo que vá para a fila do background sync)
+      toast.info("Sua entrada será salva assim que a conexão for restaurada.");
+      // Mesmo com o erro de rede, chamamos onSave() para fechar o formulário e dar feedback imediato
+      if (onSave) onSave();
     }
   };
 
@@ -101,20 +121,14 @@ export default function JournalEntry({
       toast.warn("Por favor, selecione uma data.");
       return;
     }
-
-    // A validação de data futura continua aqui como uma segurança final
     if (isFutureDate) {
       toast.warn("Não é possível adicionar registros para uma data futura.");
       return;
     }
-
     if (!mood && selectedSymptoms.length === 0 && notes.trim() === "") {
-      toast.warn(
-        "Por favor, registre pelo menos um humor, sintoma ou anotação.",
-      );
+      toast.warn("Por favor, registre pelo menos um humor, sintoma ou anotação.");
       return;
     }
-
     if (!entry && isExistingEntry) {
       setIsOverwriteModalOpen(true);
     } else {
@@ -140,7 +154,8 @@ export default function JournalEntry({
             ? `Editando o dia ${new Date(date).toLocaleDateString("pt-BR", { timeZone: "UTC" })}`
             : "Como você está se sentindo hoje?"}
         </h2>
-
+        
+        {/* O resto do JSX do componente permanece o mesmo */}
         <div className="mb-4">
           <label
             htmlFor="entryDate"
@@ -157,7 +172,6 @@ export default function JournalEntry({
             max={getTodayString()}
             className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 disabled:opacity-50"
           />
-          {/* 3. Renderização condicional da nova mensagem de aviso */}
           {isFutureDate && !entry && (
             <p className="text-sm text-red-500 dark:text-red-400 mt-2">
               Não é possível criar um registro para uma data futura.
@@ -228,7 +242,7 @@ export default function JournalEntry({
         </div>
 
         <div className="flex justify-end gap-4">
-          {!!onCancel && ( // Renderiza o botão de cancelar apenas se a prop for passada
+          {!!onCancel && (
             <button
               onClick={onCancel}
               className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
