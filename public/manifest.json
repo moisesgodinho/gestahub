@@ -6,21 +6,13 @@
   "scope": "/",
   "id": "/",
   "display": "standalone",
-  "display_override": [
-    "window-controls-overlay",
-    "tabbed"
-  ],
-  "background_color": "#f9fafb",
+  "display_override": ["window-controls-overlay", "tabbed"],
+  "background_color": "#0f172a",
   "theme_color": "#f9fafb",
   "orientation": "portrait-primary",
   "lang": "pt-BR",
   "dir": "ltr",
-  "categories": [
-    "medical",
-    "health",
-    "lifestyle",
-    "personalization"
-  ],
+  "categories": ["medical", "health", "lifestyle", "personalization"],
   "iarc_rating_id": "SEU_IARC_ID_AQUI",
   "related_applications": [
     {
