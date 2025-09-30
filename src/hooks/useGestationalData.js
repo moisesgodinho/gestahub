@@ -16,73 +16,84 @@ export function useGestationalData(user) {
   useEffect(() => {
     if (!user) {
       setLoading(false);
-      // Reseta os estados quando o usuário faz logout
       setHasData(false);
       setGestationalInfo(null);
       setEstimatedLmp(null);
       return;
     }
 
+    // Garante que o estado de carregamento esteja ativo ao trocar de usuário
+    setLoading(true);
+
     const userDocRef = doc(db, "users", user.uid);
-    const unsubscribe = onSnapshot(userDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const userData = docSnap.data();
-        const lmpDate = getEstimatedLmp(userData); // A lógica já está centralizada aqui
+    const unsubscribe = onSnapshot(
+      userDocRef,
+      (docSnap) => {
+        // Alteração crucial: Só prossiga se o documento existir E tiver dados.
+        if (docSnap.exists() && docSnap.data()) {
+          const userData = docSnap.data();
+          const lmpDate = getEstimatedLmp(userData);
 
-        if (lmpDate) {
-          setEstimatedLmp(lmpDate);
-          // MODIFICADO: Verifica a fonte dos dados dentro de gestationalProfile
-          setDataSource(
-            userData.gestationalProfile?.ultrasound?.examDate
-              ? "ultrassom"
-              : "dum",
-          );
-          setHasData(true);
+          if (lmpDate) {
+            setEstimatedLmp(lmpDate);
+            setDataSource(
+              userData.gestationalProfile?.ultrasound?.examDate
+                ? "ultrassom"
+                : "dum"
+            );
+            setHasData(true);
 
-          // Calcula as informações gestacionais
-          const lmpDateTime = lmpDate.getTime();
-          // src/hooks/useGestationalData.js
+            const lmpDateTime = lmpDate.getTime();
+            const today = new Date();
+            const todayTime = Date.UTC(
+              today.getUTCFullYear(),
+              today.getUTCMonth(),
+              today.getUTCDate()
+            );
 
-          const today = new Date();
-          // Use as partes da data local para criar uma data UTC consistente
-          const todayTime = Date.UTC(
-            today.getFullYear(),
-            today.getMonth(),
-            today.getDate(),
-          );
+            const gestationalAgeInMs = todayTime - lmpDateTime;
+            const gestationalAgeInDays = Math.floor(
+              gestationalAgeInMs / (1000 * 60 * 60 * 24)
+            );
+            const weeks = Math.floor(gestationalAgeInDays / 7);
+            const days = gestationalAgeInDays % 7;
 
-          const gestationalAgeInMs = todayTime - lmpDateTime;
-          const gestationalAgeInDays = Math.floor(
-            gestationalAgeInMs / (1000 * 60 * 60 * 24),
-          );
-          const weeks = Math.floor(gestationalAgeInDays / 7);
-          const days = gestationalAgeInDays % 7;
+            const dueDate = getDueDate(lmpDate);
+            const totalPregnancyDays = 280;
+            const remainingDaysTotal =
+              totalPregnancyDays - gestationalAgeInDays;
 
-          const dueDate = getDueDate(lmpDate);
+            setCountdown({
+              weeks: Math.floor(remainingDaysTotal / 7),
+              days: remainingDaysTotal % 7,
+            });
 
-          const totalPregnancyDays = 280;
-          const remainingDaysTotal = totalPregnancyDays - gestationalAgeInDays;
-          setCountdown({
-            weeks: Math.floor(remainingDaysTotal / 7),
-            days: remainingDaysTotal % 7,
-          });
-
-          setGestationalInfo({
-            weeks,
-            days,
-            dueDate: dueDate.toLocaleDateString("pt-BR", { timeZone: "UTC" }),
-            currentWeekInfo: weeklyInfo[weeks] || weeklyInfo[42],
-          });
+            setGestationalInfo({
+              weeks,
+              days,
+              dueDate: dueDate.toLocaleDateString("pt-BR", { timeZone: "UTC" }),
+              currentWeekInfo: weeklyInfo[weeks] || weeklyInfo[42],
+            });
+          } else {
+            // Se não encontrou data de gestação, define como sem dados.
+            setHasData(false);
+            setGestationalInfo(null);
+          }
         } else {
+          // Se o documento não existe, também define como sem dados.
           setHasData(false);
           setGestationalInfo(null);
         }
-      } else {
-        setHasData(false);
-        setGestationalInfo(null);
+
+        // A tela de carregamento só termina depois de toda a verificação.
+        setLoading(false);
+      },
+      (error) => {
+        // Adicionado para robustez: se der erro, para de carregar.
+        console.error("Erro ao buscar dados de gestação:", error);
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    );
 
     return () => unsubscribe();
   }, [user]);
