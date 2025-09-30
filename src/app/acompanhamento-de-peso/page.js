@@ -2,12 +2,11 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import dynamic from 'next/dynamic'; // 1. Importar o dynamic
+import dynamic from 'next/dynamic';
 import { doc, setDoc, deleteDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { toast } from "react-toastify";
-import WeightChart from "@/components/WeightChart";
 import { useUser } from "@/context/UserContext";
 import { useWeightData } from "@/hooks/useWeightData";
 import { getTodayString, calculateGestationalAgeOnDate } from "@/lib/dateUtils";
@@ -70,7 +69,7 @@ export default function WeightTrackerPage() {
 
   const WeightChart = dynamic(() => import('@/components/WeightChart'), {
   loading: () => <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl h-80 animate-pulse"></div>,
-  ssr: false // O gráfico não precisa ser renderizado no servidor
+  ssr: false
 });
 
   useEffect(() => {
@@ -115,6 +114,8 @@ export default function WeightTrackerPage() {
       toast.warn("Por favor, insira um peso realista (entre 30 e 300 kg).");
       return;
     }
+    
+    setIsEditing(false);
 
     try {
       const userDocRef = doc(db, "users", user.uid);
@@ -128,10 +129,10 @@ export default function WeightTrackerPage() {
       };
       await setDoc(userDocRef, dataToSave, { merge: true });
       toast.success("Dados iniciais salvos com sucesso!");
-      setIsEditing(false);
     } catch (error) {
       console.error("Erro ao salvar dados iniciais:", error);
       toast.error("Erro ao salvar dados.");
+      setIsEditing(true); 
     }
   };
 
@@ -143,12 +144,13 @@ export default function WeightTrackerPage() {
       bmi: calculateBMI(parsedCurrentWeight, height),
     };
 
+    setCurrentWeight("");
+    setEntryDate(getTodayString());
+
     try {
       const entryRef = doc(db, "users", user.uid, "weightHistory", entryDate);
       await setDoc(entryRef, newEntry);
 
-      setCurrentWeight("");
-      setEntryDate(getTodayString());
       toast.success(
         weightHistory.some((e) => e.id === entryDate)
           ? "Registro de peso atualizado!"
@@ -203,6 +205,9 @@ export default function WeightTrackerPage() {
 
   const confirmDeleteEntry = async () => {
     if (!user || !entryToDelete) return;
+
+    setIsModalOpen(false);
+
     try {
       const entryRef = doc(
         db,
@@ -217,7 +222,6 @@ export default function WeightTrackerPage() {
       console.error("Erro ao apagar registro:", error);
       toast.error("Não foi possível apagar o registro.");
     } finally {
-      setIsModalOpen(false);
       setEntryToDelete(null);
     }
   };
