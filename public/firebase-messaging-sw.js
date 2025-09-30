@@ -24,15 +24,15 @@ messaging.onBackgroundMessage((payload) => {
     payload
   );
 
-  // --- CORREÇÃO AQUI ---
-  // Pegamos os dados diretamente de payload.notification
+  // --- CORREÇÃO APLICADA AQUI ---
+  // Os detalhes visuais da notificação vêm de `payload.notification`
   const notificationTitle = payload.notification.title;
   const notificationOptions = {
     body: payload.notification.body,
-    icon: payload.notification.icon || "/login.png", // Usamos o ícone do payload, com um fallback
-    badge: payload.notification.badge || "/notification-badge.png", // Usamos o badge do payload, com fallback
+    icon: payload.notification.icon || '/login.png', // Pega o ícone do payload
+    badge: payload.notification.badge || '/notification-badge.png', // Pega o ícone de badge
     data: {
-      url: payload.fcmOptions.link, // O link fica em fcmOptions
+      url: payload.fcmOptions.link, // O link para abrir fica em fcmOptions
     },
   };
 
