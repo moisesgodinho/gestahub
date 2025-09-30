@@ -6,7 +6,7 @@ import "./globals.css";
 import Header from "@/components/Header";
 import { UserProvider } from "@/context/UserContext";
 import ResponsiveNav from "@/components/ResponsiveNav";
-import OfflineIndicator from "@/components/OfflineIndicator"; // 1. IMPORTAR O NOVO COMPONENTE
+import OfflineIndicator from "@/components/OfflineIndicator";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -27,10 +27,8 @@ export default function RootLayout({ children }) {
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-mobile-web-app-title" content="GestaHub" />
-        {/* Cor para o modo claro (branco/cinza claro) */}
-        <meta name="theme-color" content="#f9fafb" media="(prefers-color-scheme: light)" />
-        {/* Cor para o modo escuro (cinza escuro) */}
-        <meta name="theme-color" content="#0f172a" media="(prefers-color-scheme: dark)" />
+        {/* Alteração: Apenas uma meta tag, que será atualizada pelo script */}
+        <meta name="theme-color" content="#f9fafb" />
       </head>
       <body
         className={`${poppins.variable} font-sans antialiased flex flex-col min-h-screen bg-gray-50 dark:bg-slate-900 pb-16 lg:pb-0`}
@@ -48,6 +46,8 @@ export default function RootLayout({ children }) {
                   } catch (e) { return 'light'; }
                 }
                 const theme = getInitialTheme();
+                const themeColor = theme === 'dark' ? '#0f172a' : '#f9fafb';
+                document.querySelector('meta[name="theme-color"]').setAttribute('content', themeColor);
                 if (theme === 'dark') {
                   document.documentElement.classList.add('dark');
                 }
@@ -75,7 +75,7 @@ export default function RootLayout({ children }) {
             <main className="flex-grow flex flex-col">{children}</main>
           </div>
           <ResponsiveNav />
-          <OfflineIndicator /> {/* 2. ADICIONAR O COMPONENTE AQUI */}
+          <OfflineIndicator />
         </UserProvider>
       </body>
     </html>

@@ -66,22 +66,28 @@ const UserIcon = (props) => (
 
 export default function Header() {
   const { user, userProfile } = useUser();
-  // 1. Inicialize o estado como nulo para evitar dessincronização
   const [theme, setTheme] = useState(null);
 
-  // Lógica para inicializar o tema no lado do cliente
   useEffect(() => {
     const isDarkMode = document.documentElement.classList.contains("dark");
     setTheme(isDarkMode ? "dark" : "light");
   }, []);
 
   const toggleTheme = () => {
-    if (!theme) return; // Não faz nada se o tema ainda não foi determinado
+    if (!theme) return;
 
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
+
+    // Atualiza a classe no HTML para o CSS
     document.documentElement.classList.toggle("dark", newTheme === "dark");
     localStorage.setItem("theme", newTheme);
+
+    // Alteração: Atualiza a cor da meta tag
+    const newColor = newTheme === "dark" ? "#0f172a" : "#f9fafb";
+    document
+      .querySelector('meta[name="theme-color"]')
+      .setAttribute("content", newColor);
   };
 
   const getDisplayName = () => {
@@ -115,7 +121,6 @@ export default function Header() {
             </span>
           )}
 
-          {/* 2. Só renderize o botão quando o tema for determinado */}
           {theme && (
             <button
               onClick={toggleTheme}
