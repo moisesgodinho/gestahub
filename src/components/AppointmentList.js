@@ -2,8 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { db } from "@/lib/firebase";
-import { doc, deleteDoc, setDoc, getDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase"; // Import auth para pegar o token
 import { toast } from "react-toastify";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import AppointmentItem from "./AppointmentItem";
@@ -14,10 +13,9 @@ const getUTCDate = (date) => {
   return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 };
 
-// Função para converter "HH:mm" em minutos para uma ordenação confiável
 const timeStringToMinutes = (timeStr) => {
   if (!timeStr || typeof timeStr !== "string" || !timeStr.includes(":"))
-    return -1; // Retorna -1 para itens sem horário
+    return -1;
   const [hours, minutes] = timeStr.split(":").map(Number);
   return hours * 60 + minutes;
 };
@@ -33,20 +31,16 @@ export default function AppointmentList({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [appointmentToDelete, setAppointmentToDelete] = useState(null);
-  const [visiblePastCount, setVisiblePastCount] = useState(
-    INITIAL_VISIBLE_COUNT,
-  );
+  const [visiblePastCount, setVisiblePastCount] = useState(INITIAL_VISIBLE_COUNT);
 
   const handleToggleDone = async (appointment) => {
     if (!user) return;
-
     const newDoneStatus = !appointment.done;
 
+    // Validações do lado do cliente permanecem as mesmas
     if (newDoneStatus) {
       if (appointment.type === "ultrasound" && !appointment.isScheduled) {
-        toast.warn(
-          "Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.",
-        );
+        toast.warn("Por favor, adicione uma data ao ultrassom antes de marcá-lo como concluído.");
         onEdit(appointment);
         return;
       }
@@ -55,49 +49,30 @@ export default function AppointmentList({
       const appointmentDate = new Date(appointment.date + "T00:00:00Z");
 
       if (appointmentDate > today) {
-        toast.warn(
-          "Não é possível marcar como concluída uma consulta agendada para o futuro.",
-        );
+        toast.warn("Não é possível marcar como concluída uma consulta agendada para o futuro.");
         return;
       }
     }
 
     try {
-      if (appointment.type === "manual") {
-        const appointmentRef = doc(
-          db,
-          "users",
-          user.uid,
-          "appointments",
-          appointment.id,
-        );
-        await setDoc(appointmentRef, { done: newDoneStatus }, { merge: true });
-      } else if (appointment.type === "ultrasound") {
-        const userDocRef = doc(db, "users", user.uid);
-        const docSnap = await getDoc(userDocRef);
-        if (docSnap.exists()) {
-          const scheduleData =
-            docSnap.data().gestationalProfile?.ultrasoundSchedule || {};
-          const updatedSchedule = {
-            ...scheduleData,
-            [appointment.id]: {
-              ...scheduleData[appointment.id],
-              done: newDoneStatus,
-            },
-          };
-          await setDoc(
-            userDocRef,
-            { gestationalProfile: { ultrasoundSchedule: updatedSchedule } },
-            { merge: true },
-          );
-        }
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/appointments', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, appointment, newDoneStatus }),
+      });
+
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success(`Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`);
+      } else {
+        throw new Error(result.error);
       }
-      toast.success(
-        `Marcado como ${newDoneStatus ? "concluído" : "pendente"}!`,
-      );
     } catch (error) {
-      console.error("Erro ao atualizar status:", error);
-      toast.error("Não foi possível atualizar o status.");
+      console.error("Erro ao atualizar status (pode ser offline):", error);
+      toast.info("O status será atualizado assim que a conexão for restaurada.");
     }
   };
 
@@ -109,24 +84,31 @@ export default function AppointmentList({
   const confirmDelete = async () => {
     if (!user || !appointmentToDelete) return;
     try {
-      const appointmentRef = doc(
-        db,
-        "users",
-        user.uid,
-        "appointments",
-        appointmentToDelete.id,
-      );
-      await deleteDoc(appointmentRef);
-      toast.info("Consulta removida.");
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/appointments', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, appointmentId: appointmentToDelete.id }),
+      });
+
+      if (!response.ok) throw new Error('Network response was not ok');
+
+      const result = await response.json();
+      if (result.success) {
+        toast.info("Consulta removida.");
+      } else {
+        throw new Error(result.error);
+      }
     } catch (error) {
-      console.error("Erro ao apagar consulta:", error);
-      toast.error("Não foi possível remover a consulta.");
+      console.error("Erro ao apagar consulta (pode ser offline):", error);
+      toast.info("A consulta será removida assim que a conexão for restaurada.");
     } finally {
       setIsModalOpen(false);
       setAppointmentToDelete(null);
     }
   };
 
+  // O resto do componente (lógica de ordenação e JSX) permanece o mesmo
   const getSortableDate = (item) => {
     if (item.date) {
       return new Date(item.date);
@@ -160,7 +142,7 @@ export default function AppointmentList({
       if (dateComparison !== 0) return dateComparison;
       const timeA = timeStringToMinutes(a.time);
       const timeB = timeStringToMinutes(b.time);
-      return timeB - timeA; // CORREÇÃO: Ordem descendente para o horário também
+      return timeB - timeA;
     });
 
   const displayedPastAppointments = pastAppointments.slice(0, visiblePastCount);

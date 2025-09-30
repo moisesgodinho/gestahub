@@ -1,9 +1,7 @@
-// src/components/AppointmentForm.js
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { db } from "@/lib/firebase";
-import { collection, addDoc, doc, setDoc, getDoc } from "firebase/firestore";
+import { auth } from "@/lib/firebase"; // Apenas para pegar o token
 import { toast } from "react-toastify";
 import { appointmentTypes } from "@/data/appointmentData";
 
@@ -13,12 +11,6 @@ const getTodayString = () => {
   const month = String(today.getMonth() + 1).padStart(2, "0");
   const day = String(today.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
-};
-
-const getUTCDate = (date) => {
-  if (!date) return null;
-  const d = new Date(date);
-  return new Date(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate());
 };
 
 export default function AppointmentForm({
@@ -47,7 +39,6 @@ export default function AppointmentForm({
       setLocation(appointmentToEdit.location || "");
       setNotes(appointmentToEdit.notes || "");
     } else {
-      // Reset fields for a completely new appointment (e.g., clicking the main button)
       setTitle("");
       setDate(getTodayString());
       setTime("");
@@ -64,7 +55,7 @@ export default function AppointmentForm({
       textarea.style.height = `${textarea.scrollHeight}px`;
     }
   }, [notes]);
-
+  
   const handleNotesChange = (e) => {
     const textarea = e.target;
     setNotes(textarea.value);
@@ -79,15 +70,13 @@ export default function AppointmentForm({
       toast.warn("Por favor, preencha o título e a data da consulta.");
       return;
     }
-
-    // CORREÇÃO: Impede que uma consulta concluída seja movida para o futuro
+    
     if (appointmentToEdit?.done && date > getTodayString()) {
       toast.error(
         "Uma consulta concluída não pode ser reagendada para o futuro.",
       );
       return;
     }
-
     if (lmpDate && dueDate) {
       const selectedDate = new Date(date + "T00:00:00Z");
       const extendedDueDate = new Date(dueDate.getTime());
@@ -101,91 +90,41 @@ export default function AppointmentForm({
       }
     }
 
-    if (appointmentToEdit?.type === "ultrasound" && lmpDate) {
-      const lmpUTCDate = getUTCDate(lmpDate);
-      const selectedDate = new Date(date + "T00:00:00Z");
-      const idealStartDate = new Date(lmpUTCDate.getTime());
-      idealStartDate.setUTCDate(
-        idealStartDate.getUTCDate() + appointmentToEdit.startWeek * 7,
-      );
-      const idealEndDate = new Date(lmpUTCDate.getTime());
-      idealEndDate.setUTCDate(
-        idealEndDate.getUTCDate() + appointmentToEdit.endWeek * 7 + 6,
-      );
-      const toleranceStartDate = new Date(idealStartDate.getTime());
-      toleranceStartDate.setUTCDate(toleranceStartDate.getUTCDate() - 14);
-      const toleranceEndDate = new Date(idealEndDate.getTime());
-      toleranceEndDate.setUTCDate(toleranceEndDate.getUTCDate() + 14);
-
-      if (
-        selectedDate < toleranceStartDate ||
-        selectedDate > toleranceEndDate
-      ) {
-        toast.error(
-          "A data está fora do período recomendado (tolerância de 2 semanas).",
-        );
-        return;
-      }
-    }
-
-    const dataToSave = { title, date, time, professional, location, notes };
+    const dataToSave = {
+      id: appointmentToEdit?.id,
+      type: appointmentToEdit?.type || 'manual',
+      title,
+      date,
+      time,
+      professional,
+      location,
+      notes,
+      done: appointmentToEdit?.done || false,
+    };
 
     try {
-      if (appointmentToEdit && appointmentToEdit.id) {
-        if (appointmentToEdit.type === "manual") {
-          const appointmentRef = doc(
-            db,
-            "users",
-            user.uid,
-            "appointments",
-            appointmentToEdit.id,
-          );
-          await setDoc(appointmentRef, dataToSave, { merge: true });
-          toast.success("Consulta atualizada com sucesso!");
-        } else if (appointmentToEdit.type === "ultrasound") {
-          const userDocRef = doc(db, "users", user.uid);
-          const docSnap = await getDoc(userDocRef);
-          if (docSnap.exists()) {
-            const gestationalProfile = docSnap.data().gestationalProfile || {};
-            const scheduleData = gestationalProfile.ultrasoundSchedule || {};
-            const updatedSchedule = {
-              ...scheduleData,
-              [appointmentToEdit.id]: {
-                ...scheduleData[appointmentToEdit.id],
-                scheduledDate: date,
-                time,
-                professional,
-                location,
-                notes,
-              },
-            };
-            await setDoc(
-              userDocRef,
-              {
-                gestationalProfile: {
-                  ...gestationalProfile,
-                  ultrasoundSchedule: updatedSchedule,
-                },
-              },
-              { merge: true },
-            );
-            toast.success("Ultrassom atualizado com sucesso!");
-          }
-        }
-      } else {
-        const appointmentsRef = collection(
-          db,
-          "users",
-          user.uid,
-          "appointments",
-        );
-        await addDoc(appointmentsRef, { ...dataToSave, done: false });
-        toast.success("Consulta adicionada com sucesso!");
+      const token = await auth.currentUser.getIdToken();
+      const response = await fetch('/api/appointments', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ token, appointmentData: dataToSave }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Falha na rede ou erro do servidor');
       }
-      onFinish();
+
+      const result = await response.json();
+      if (result.success) {
+        toast.success("Consulta salva com sucesso!");
+        if (onFinish) onFinish();
+      } else {
+        throw new Error(result.error || 'Erro desconhecido ao salvar.');
+      }
     } catch (error) {
-      console.error("Erro ao salvar consulta:", error);
-      toast.error("Não foi possível salvar a consulta.");
+      console.error("Erro ao salvar consulta (pode ser offline):", error.message);
+      toast.info("Sua consulta será salva assim que a conexão for restaurada.");
+      if (onFinish) onFinish();
     }
   };
 

@@ -3,7 +3,8 @@
 import { NextResponse } from "next/server";
 import * as admin from "firebase-admin";
 
-// Inicialização do Firebase Admin (coloque suas credenciais no Vercel)
+// Inicialização do Firebase Admin
+// Lembre-se de adicionar a variável FIREBASE_ADMIN_CREDENTIALS nas configurações da Vercel
 try {
   if (!admin.apps.length) {
     const serviceAccount = JSON.parse(process.env.FIREBASE_ADMIN_CREDENTIALS);
@@ -25,11 +26,11 @@ export async function POST(request) {
       return NextResponse.json({ success: false, error: "Dados inválidos." }, { status: 400 });
     }
 
-    // Autenticar o usuário
+    // Autentica o usuário no backend usando o token
     const decodedToken = await admin.auth().verifyIdToken(token);
     const uid = decodedToken.uid;
 
-    // Salvar no Firestore
+    // Salva os dados no Firestore
     const entryRef = db.collection("users").doc(uid).collection("symptomEntries").doc(entryData.date);
     await entryRef.set(entryData, { merge: true });
 
@@ -37,7 +38,6 @@ export async function POST(request) {
 
   } catch (error) {
     console.error("Erro ao salvar entrada do diário:", error);
-    // Se o token for inválido, o erro será capturado aqui
     if (error.code === 'auth/id-token-expired' || error.code === 'auth/argument-error') {
       return NextResponse.json({ success: false, error: "Autenticação inválida." }, { status: 401 });
     }

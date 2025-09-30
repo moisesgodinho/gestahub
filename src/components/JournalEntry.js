@@ -1,9 +1,8 @@
 // src/components/JournalEntry.js
-
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { auth } from "@/lib/firebase"; // Apenas para pegar o token
+import { auth } from "@/lib/firebase"; // Usado para pegar o token de autenticação
 import { toast } from "react-toastify";
 import { moodOptions, symptomOptions } from "@/data/journalData";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -25,6 +24,7 @@ export default function JournalEntry({
   const [isFutureDate, setIsFutureDate] = useState(false);
   const notesTextareaRef = useRef(null);
 
+  // ... (os useEffects e outras funções handle permanecem os mesmos)
   useEffect(() => {
     if (entry) {
       setDate(entry.id);
@@ -73,7 +73,7 @@ export default function JournalEntry({
     textarea.style.height = `${textarea.scrollHeight}px`;
   };
 
-  // --- FUNÇÃO DE SALVAR ATUALIZADA ---
+  // --- A MÁGICA ACONTECE AQUI ---
   const proceedWithSave = async () => {
     if (!user || !date) return;
     try {
@@ -82,15 +82,13 @@ export default function JournalEntry({
 
       const response = await fetch('/api/journal', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token, entryData }),
       });
 
       if (!response.ok) {
-        // Se a resposta não for OK (ex: offline), o service worker vai pegar daqui
-        // Lançamos um erro para que a lógica de fallback seja acionada
+        // Se a resposta falhar (ex: offline), o service worker irá interceptar.
+        // Lançamos um erro para acionar o feedback de "será salvo depois".
         throw new Error('Falha na rede ou erro do servidor');
       }
       
@@ -104,15 +102,16 @@ export default function JournalEntry({
       }
       
     } catch (error) {
-      console.error("Erro ao salvar entrada do diário:", error);
-      // Feedback para o usuário em caso de falha (mesmo que vá para a fila do background sync)
+      console.error("Erro ao salvar (pode ser offline):", error.message);
+      // Damos um feedback otimista para o usuário.
       toast.info("Sua entrada será salva assim que a conexão for restaurada.");
-      // Mesmo com o erro de rede, chamamos onSave() para fechar o formulário e dar feedback imediato
+      // Fechamos o formulário para uma melhor experiência do usuário.
       if (onSave) onSave();
     }
   };
 
   const handleSave = async () => {
+    // ... (esta função permanece a mesma, apenas chama proceedWithSave)
     if (!user) {
       toast.error("Você precisa estar logado para salvar.");
       return;
@@ -126,7 +125,9 @@ export default function JournalEntry({
       return;
     }
     if (!mood && selectedSymptoms.length === 0 && notes.trim() === "") {
-      toast.warn("Por favor, registre pelo menos um humor, sintoma ou anotação.");
+      toast.warn(
+        "Por favor, registre pelo menos um humor, sintoma ou anotação.",
+      );
       return;
     }
     if (!entry && isExistingEntry) {
@@ -148,6 +149,7 @@ export default function JournalEntry({
         title="Substituir Entrada?"
         message="Já existe um registro para esta data. Deseja substituí-lo com as novas informações?"
       />
+      {/* O resto do seu JSX permanece o mesmo */}
       <div className="bg-white dark:bg-slate-800 p-6 sm:p-8 rounded-2xl shadow-xl mb-6">
         <h2 className="text-2xl font-semibold text-slate-800 dark:text-slate-200 mb-4">
           {!!entry
@@ -155,7 +157,6 @@ export default function JournalEntry({
             : "Como você está se sentindo hoje?"}
         </h2>
         
-        {/* O resto do JSX do componente permanece o mesmo */}
         <div className="mb-4">
           <label
             htmlFor="entryDate"
