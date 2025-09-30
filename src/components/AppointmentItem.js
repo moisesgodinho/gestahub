@@ -1,7 +1,9 @@
 // src/components/AppointmentItem.js
 "use client";
 
-import { useState } from "react";
+// --- INÍCIO DA MUDANÇA 1 ---
+import { useState, memo } from "react";
+// --- FIM DA MUDANÇA 1 ---
 
 const formatDateDisplay = (dateString) => {
   if (!dateString) return "";
@@ -9,13 +11,14 @@ const formatDateDisplay = (dateString) => {
   return date.toLocaleDateString("pt-BR", { timeZone: "UTC" });
 };
 
-export default function AppointmentItem({
+// Renomeia o componente para ter um nome interno
+const AppointmentItemComponent = ({
   item,
   onToggleDone,
   onEdit,
   onDelete,
   idealWindowText,
-}) {
+}) => {
   const [isExpanded, setIsExpanded] = useState(false);
 
   return (
@@ -149,4 +152,10 @@ export default function AppointmentItem({
       </div>
     </div>
   );
-}
+};
+
+// --- INÍCIO DA MUDANÇA 2 ---
+// Envolve o componente com React.memo e exporta a versão memoizada
+const AppointmentItem = memo(AppointmentItemComponent);
+export default AppointmentItem;
+// --- FIM DA MUDANÇA 2 ---

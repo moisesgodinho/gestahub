@@ -1,27 +1,28 @@
 // src/app/diario-de-sintomas/page.js
 "use client";
 
-import { useState, useMemo } from "react";
-import dynamic from 'next/dynamic'; // 1. Importar o dynamic
+// --- INÍCIO DA MUDANÇA 1 ---
+import { useState, useMemo, useCallback } from "react";
+// --- FIM DA MUDANÇA 1 ---
+import dynamic from 'next/dynamic';
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
 import JournalEntry from "@/components/JournalEntry";
 import JournalHistory from "@/components/JournalHistory";
-import SymptomChart from "@/components/SymptomChart";
 import JournalCalendar from "@/components/JournalCalendar";
 import JournalViewModal from "@/components/JournalViewModal";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { useUser } from "@/context/UserContext";
 import { useJournalEntries } from "@/hooks/useJournalEntries";
-import { useGestationalData } from "@/hooks/useGestationalData"; // Importar o hook
+import { useGestationalData } from "@/hooks/useGestationalData";
 import SkeletonLoader from "@/components/SkeletonLoader";
 
 export default function JournalPage() {
   const { user, loading: userLoading } = useUser();
   const { entries, loading: entriesLoading } = useJournalEntries(user);
   const { estimatedLmp, loading: gestationalLoading } =
-    useGestationalData(user); // Usar o hook de dados gestacionais
+    useGestationalData(user);
 
   const [entryToEdit, setEntryToEdit] = useState(null);
   const [entryToView, setEntryToView] = useState(null);
@@ -34,66 +35,56 @@ export default function JournalPage() {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [entryToDelete, setEntryToDelete] = useState(null);
 
-  // Abre o formulário de edição
-  const handleEdit = (entry) => {
+  // --- INÍCIO DA MUDANÇA 2 ---
+  // Memoriza as funções de callback para evitar re-renderizações desnecessárias dos filhos
+  const handleEdit = useCallback((entry) => {
     setEntryToEdit(entry);
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, []);
 
-  // Abre o modal de visualização
-  const handleView = (entry) => {
+  const handleView = useCallback((entry) => {
     setEntryToView(entry);
     setIsViewModalOpen(true);
-  };
+  }, []);
 
-  // Abre o modal de confirmação para adicionar nova entrada
-  const handleDateSelect = (dateString) => {
+  const handleDateSelect = useCallback((dateString) => {
     setSelectedDateForNew(dateString);
     setIsAddEntryModalOpen(true);
-  };
+  }, []);
 
-  // Confirma e abre o formulário para a nova entrada
-  const confirmAndOpenForm = () => {
+  const confirmAndOpenForm = useCallback(() => {
     setIsAddEntryModalOpen(false);
     setEntryToEdit({ id: selectedDateForNew });
     setIsFormOpen(true);
     window.scrollTo({ top: 0, behavior: "smooth" });
-  };
+  }, [selectedDateForNew]);
 
-  // Função para fechar o formulário (seja salvando ou cancelando)
-  const handleFinishForm = () => {
+  const handleFinishForm = useCallback(() => {
     setEntryToEdit(null);
     setIsFormOpen(false);
-  };
+  }, []);
 
-  // Abre o modal de confirmação para exclusão
-  const handleDeleteRequest = (entry) => {
-    setIsViewModalOpen(false); // Fecha o modal de visualização
+  const handleDeleteRequest = useCallback((entry) => {
+    setIsViewModalOpen(false);
     setEntryToDelete(entry);
     setIsDeleteModalOpen(true);
-  };
+  }, []);
 
-  // Confirma e executa a exclusão
-  const confirmDelete = async () => {
+  const confirmDelete = useCallback(async () => {
     if (!user || !entryToDelete) return;
+    setIsDeleteModalOpen(false);
     try {
-      const entryRef = doc(
-        db,
-        "users",
-        user.uid,
-        "symptomEntries",
-        entryToDelete.id,
-      );
+      const entryRef = doc(db, "users", user.uid, "symptomEntries", entryToDelete.id);
       await deleteDoc(entryRef);
       toast.info("Entrada do diário removida.");
     } catch (error) {
       toast.error("Não foi possível apagar a entrada.");
     } finally {
-      setIsDeleteModalOpen(false);
       setEntryToDelete(null);
     }
-  };
+  }, [user, entryToDelete]);
+  // --- FIM DA MUDANÇA 2 ---
 
   const formattedDateForModal = useMemo(() => {
     if (!selectedDateForNew) return "";
