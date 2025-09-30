@@ -11,6 +11,28 @@ const withPWA = withPWAInit({
   disable: process.env.NODE_ENV === "development",
   importScripts: ["/firebase-messaging-sw.js"],
   runtimeCaching: [
+    // --- INÍCIO DA MUDANÇA ---
+    // Pré-cache de imagens essenciais para o App Shell
+    {
+      urlPattern: /\.(?:png|jpg|jpeg|svg|ico)$/i,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "essential-images-cache",
+        expiration: {
+          maxEntries: 20, // Aumente se tiver mais imagens essenciais
+          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 ano
+        },
+        // Certifique-se de que a imagem de login e os ícones estejam no cache
+        precacheManager: {
+          urls: [
+            "/login.png",
+            "/icons/journal.png",
+            "/icons/calendar.png",
+          ],
+        },
+      },
+    },
+    // --- FIM DA MUDANÇA ---
     {
       urlPattern: ({ request }) => request.mode === "navigate",
       handler: "StaleWhileRevalidate",
@@ -33,10 +55,6 @@ const withPWA = withPWAInit({
         },
       },
     },
-    // --- INÍCIO DA MUDANÇA ---
-    // As regras de Background Sync foram removidas pois não são mais necessárias.
-    // O SDK do Firebase agora gerencia o comportamento offline.
-    // --- FIM DA MUDANÇA ---
     {
       urlPattern: /^https?:\/\/firestore\.googleapis\.com\/.*/i,
       handler: "NetworkFirst",
@@ -62,17 +80,7 @@ const withPWA = withPWAInit({
         },
       },
     },
-    {
-      urlPattern: /\.(?:jpg|jpeg|gif|png|svg|ico|webp)$/i,
-      handler: "StaleWhileRevalidate",
-      options: {
-        cacheName: "static-image-assets",
-        expiration: {
-          maxEntries: 64,
-          maxAgeSeconds: 24 * 60 * 60, // 24 horas
-        },
-      },
-    },
+    // A regra genérica de imagens foi substituída pela regra mais específica acima
   ],
 });
 
