@@ -10,7 +10,32 @@ const withPWA = withPWAInit({
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
   importScripts: ["/firebase-messaging-sw.js"],
+  // --- INÍCIO DAS MUDANÇAS ---
   runtimeCaching: [
+    // Regra para as páginas da aplicação (App Shell)
+    {
+      urlPattern: ({ request }) => request.mode === "navigate",
+      handler: "StaleWhileRevalidate",
+      options: {
+        cacheName: "pages-cache",
+        expiration: {
+          maxEntries: 50,
+          maxAgeSeconds: 30 * 24 * 60 * 60, // 30 dias
+        },
+      },
+    },
+    // Regra para arquivos estáticos (JS, CSS, etc.) do Next.js
+    {
+      urlPattern: /^https?:\/\/.+\/_next\/(static|image)\/.+/i,
+      handler: "CacheFirst",
+      options: {
+        cacheName: "next-static-assets-cache",
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 365 * 24 * 60 * 60, // 1 ano
+        },
+      },
+    },
     // --- NÍVEL 3: Background Sync para Ações Offline ---
     // Esta regra deve vir primeiro para capturar as mutações de dados.
     {
@@ -64,6 +89,7 @@ const withPWA = withPWAInit({
       },
     },
   ],
+  // --- FIM DAS MUDANÇAS ---
 });
 
 export default withPWA(nextConfig);
