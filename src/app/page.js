@@ -19,13 +19,12 @@ export default function Home() {
     countdown,
     dataSource,
     hasData,
+    refetch,
   } = useGestationalData(user);
 
-  // NOVO: Estado para controlar a edição manual pelo usuário
   const [isManualEditing, setIsManualEditing] = useState(false);
   const [activeCalculator, setActiveCalculator] = useState("dum");
 
-  // Define a calculadora ativa com base na fonte de dados quando os dados são carregados
   useEffect(() => {
     if (hasData) {
       setActiveCalculator(dataSource);
@@ -33,13 +32,10 @@ export default function Home() {
   }, [hasData, dataSource]);
 
   const handleSaveSuccess = () => {
-    setIsManualEditing(false); // Desativa a edição manual ao salvar
+    setIsManualEditing(false);
   };
 
   const loading = userLoading || dataLoading;
-
-  // Lógica de renderização mais clara e robusta
-  // Mostra as calculadoras se (1) os dados não existem OU (2) o usuário clicou para editar
   const showCalculators = !loading && user && (!hasData || isManualEditing);
 
   if (loading) {
@@ -62,8 +58,8 @@ export default function Home() {
               activeCalculator={activeCalculator}
               onSwitch={setActiveCalculator}
               onSaveSuccess={handleSaveSuccess}
-              // Permite cancelar a edição apenas se já existirem dados para mostrar
               onCancel={() => hasData && setIsManualEditing(false)}
+              onForceReload={refetch}
             />
           ) : (
             <>
@@ -73,9 +69,9 @@ export default function Home() {
                 dataSource={dataSource}
                 onSwitchToUltrasound={() => {
                   setActiveCalculator("ultrassom");
-                  setIsManualEditing(true); // Ativa a edição manual
+                  setIsManualEditing(true);
                 }}
-                onEdit={() => setIsManualEditing(true)} // Ativa a edição manual
+                onEdit={() => setIsManualEditing(true)}
               />
               <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
             </>
