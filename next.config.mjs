@@ -10,19 +10,21 @@ const withPWA = withPWAInit({
   skipWaiting: true,
   disable: process.env.NODE_ENV === "development",
   importScripts: ["/firebase-messaging-sw.js"],
+  // --- INÍCIO DA MUDANÇA ---
+  fallbacks: {
+    document: "/offline", // URL da página de fallback para navegação
+  },
+  // --- FIM DA MUDANÇA ---
   runtimeCaching: [
-    // --- INÍCIO DA MUDANÇA ---
-    // Pré-cache de imagens essenciais para o App Shell
     {
       urlPattern: /\.(?:png|jpg|jpeg|svg|ico)$/i,
       handler: "CacheFirst",
       options: {
         cacheName: "essential-images-cache",
         expiration: {
-          maxEntries: 20, // Aumente se tiver mais imagens essenciais
+          maxEntries: 20,
           maxAgeSeconds: 365 * 24 * 60 * 60, // 1 ano
         },
-        // Certifique-se de que a imagem de login e os ícones estejam no cache
         precacheManager: {
           urls: [
             "/login.png",
@@ -32,7 +34,6 @@ const withPWA = withPWAInit({
         },
       },
     },
-    // --- FIM DA MUDANÇA ---
     {
       urlPattern: ({ request }) => request.mode === "navigate",
       handler: "StaleWhileRevalidate",
@@ -80,7 +81,6 @@ const withPWA = withPWAInit({
         },
       },
     },
-    // A regra genérica de imagens foi substituída pela regra mais específica acima
   ],
 });
 
