@@ -1,12 +1,16 @@
 // src/hooks/useWaterData.js
 import { useState, useEffect } from "react";
-import { doc, onSnapshot, setDoc } from "firebase/firestore";
+import { doc, onSnapshot, setDoc, getDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getTodayString } from "@/lib/dateUtils";
 import { toast } from "react-toastify";
 
 export function useWaterData(user) {
-  const [waterData, setWaterData] = useState({ goal: 2000, current: 0, history: [] });
+  const [waterData, setWaterData] = useState({
+    goal: 2000,
+    current: 0,
+    history: [],
+  });
   const [loading, setLoading] = useState(true);
   const today = getTodayString();
 
@@ -17,18 +21,17 @@ export function useWaterData(user) {
     }
 
     const docRef = doc(db, "users", user.uid, "waterIntake", today);
-    const unsubscribe = onSnapshot(docRef, (docSnap) => {
+    const unsubscribe = onSnapshot(docRef, async (docSnap) => {
       if (docSnap.exists()) {
         const data = docSnap.data();
-        // Garante que o histórico seja um array
         setWaterData({ ...data, history: data.history || [] });
       } else {
+        // Se não existir, busca o objetivo do perfil do usuário
         const userDocRef = doc(db, "users", user.uid);
-        onSnapshot(userDocRef, (userSnap) => {
-          const profileGoal =
-            userSnap.data()?.gestationalProfile?.waterGoal || 2000;
-          setWaterData({ goal: profileGoal, current: 0, history: [] });
-        });
+        const userSnap = await getDoc(userDocRef);
+        const profileGoal =
+          userSnap.data()?.gestationalProfile?.waterGoal || 2000;
+        setWaterData({ goal: profileGoal, current: 0, history: [] });
       }
       setLoading(false);
     });
@@ -52,6 +55,7 @@ export function useWaterData(user) {
       toast.warn("Por favor, insira uma meta válida.");
       return;
     }
+    // Atualiza a meta para o dia atual e também no perfil do usuário
     const newData = { ...waterData, goal };
     setWaterData(newData);
     await updateWaterData(newData);
@@ -68,14 +72,14 @@ export function useWaterData(user) {
 
   const addWater = (amount) => {
     const newAmount = waterData.current + amount;
-    const newHistory = [...waterData.history, amount];
+    const newHistory = [...(waterData.history || []), amount];
     const newData = { ...waterData, current: newAmount, history: newHistory };
     setWaterData(newData);
     updateWaterData(newData);
   };
 
   const undoLastWater = () => {
-    if (waterData.history.length === 0) {
+    if (!waterData.history || waterData.history.length === 0) {
       return;
     }
     const lastAmount = waterData.history[waterData.history.length - 1];
