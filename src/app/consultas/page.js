@@ -25,45 +25,9 @@ import SkeletonLoader from "@/components/SkeletonLoader"; // Importado aqui
 import ConfirmationModal from "@/components/ConfirmationModal";
 import CompletionCelebration from "@/components/CompletionCelebration";
 import { toast } from "react-toastify";
+import { ultrasoundSchedule } from "@/data/appointmentData";
 
 // ... (o resto do seu código, como a const ultrasoundSchedule, permanece o mesmo)
-const ultrasoundSchedule = [
-  {
-    id: "transvaginal",
-    name: "1º Ultrassom (Transvaginal)",
-    startWeek: 8,
-    endWeek: 11,
-    type: "ultrasound",
-  },
-  {
-    id: "morfologico_1",
-    name: "2º Ultrassom (Morfológico 1º Trimestre)",
-    startWeek: 12,
-    endWeek: 14,
-    type: "ultrasound",
-  },
-  {
-    id: "morfologico_2",
-    name: "3º Ultrassom (Morfológico 2º Trimestre)",
-    startWeek: 22,
-    endWeek: 24,
-    type: "ultrasound",
-  },
-  {
-    id: "ecocardiograma",
-    name: "4º Ultrassom (Ecocardiograma Fetal)",
-    startWeek: 26,
-    endWeek: 28,
-    type: "ultrasound",
-  },
-  {
-    id: "doppler_3",
-    name: "5º Ultrassom (3º Trimestre com Doppler)",
-    startWeek: 28,
-    endWeek: 36,
-    type: "ultrasound",
-  },
-];
 
 function AppointmentsPageContent() {
   // ... (todo o conteúdo desta função permanece exatamente o mesmo)
