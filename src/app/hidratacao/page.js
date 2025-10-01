@@ -3,7 +3,7 @@
 
 import WaterTracker from "@/components/WaterTracker";
 import Card from "@/components/Card";
-import WaterChart from "@/components/WaterChart"; // Importe o novo componente
+import WaterChart from "@/components/WaterChart"; 
 
 export default function WaterPage() {
   return (
@@ -12,9 +12,9 @@ export default function WaterPage() {
         <h1 className="text-4xl font-bold text-rose-500 dark:text-rose-400 mb-6 text-center">
           Hidratação
         </h1>
+        
         <WaterTracker />
         
-        {/* Adicione o componente do gráfico aqui */}
         <WaterChart />
 
         <div className="mt-8">

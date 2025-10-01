@@ -96,50 +96,31 @@ export default function WaterChart() {
       const dayOfMonth = new Date(entry.date + 'T00:00:00Z').getUTCDate();
       data[dayOfMonth - 1] = entry.current;
     });
-
-    // --- LÓGICA HÍBRIDA (BARRA ÚNICA / ONDA) ---
-    const isSingleDataPoint = monthEntries.length <= 1;
     
+    // --- LÓGICA HÍBRIDA (PONTO / ONDA) ---
+    const isSingleDataPoint = monthEntries.length === 1;
+
     const consumptionDataset = {
-      label: `Consumo de Água (ml)`,
+      type: 'line',
+      label: 'Consumo de Água (ml)',
       data: data,
+      backgroundColor: (context) => {
+        const ctx = context.chart.ctx;
+        const gradient = ctx.createLinearGradient(0, 0, 0, context.chart.height);
+        gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
+        gradient.addColorStop(1, 'rgba(147, 197, 253, 0)');
+        return gradient;
+      },
+      borderColor: 'rgba(59, 130, 246, 1)',
+      borderWidth: isSingleDataPoint ? 0 : 2, // Sem linha para um ponto único
+      pointBackgroundColor: 'rgba(59, 130, 246, 1)',
+      pointRadius: isSingleDataPoint ? 5 : 0, // Raio do ponto visível apenas se for o único
+      pointHoverRadius: 5,
+      pointHitRadius: 10,
+      tension: 0.4,
+      fill: isSingleDataPoint ? false : true, // Preenche apenas se houver mais de um ponto
       order: 2,
     };
-
-    if (isSingleDataPoint) {
-      Object.assign(consumptionDataset, {
-        type: 'bar',
-        backgroundColor: (context) => {
-          const ctx = context.chart.ctx;
-          const gradient = ctx.createLinearGradient(0, 0, 0, context.chart.height);
-          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.8)');
-          gradient.addColorStop(1, 'rgba(147, 197, 253, 0.4)');
-          return gradient;
-        },
-        borderColor: 'rgba(59, 130, 246, 1)',
-        borderWidth: 1,
-        borderRadius: { topLeft: 15, topRight: 15 },
-        borderSkipped: false,
-        maxBarThickness: 60,
-      });
-    } else {
-      Object.assign(consumptionDataset, {
-        type: 'line',
-        backgroundColor: (context) => {
-          const ctx = context.chart.ctx;
-          const gradient = ctx.createLinearGradient(0, 0, 0, context.chart.height);
-          gradient.addColorStop(0, 'rgba(59, 130, 246, 0.5)');
-          gradient.addColorStop(1, 'rgba(147, 197, 253, 0)');
-          return gradient;
-        },
-        borderColor: 'rgba(59, 130, 246, 1)',
-        borderWidth: 2,
-        pointBackgroundColor: 'rgba(59, 130, 246, 1)',
-        pointRadius: 3,
-        tension: 0.4,
-        fill: true,
-      });
-    }
 
     return {
       labels,
@@ -164,6 +145,11 @@ export default function WaterChart() {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    elements: {
+      point: {
+        radius: 0
+      }
+    },
     plugins: {
       legend: {
         position: 'top',
@@ -194,6 +180,10 @@ export default function WaterChart() {
     return <SkeletonLoader type="card" />;
   }
   
+  if (sortedMonths.length === 0) {
+    return null;
+  }
+
   return (
     <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl mt-8">
       <div className="flex justify-between items-center mb-4">
