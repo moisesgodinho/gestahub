@@ -7,16 +7,18 @@ import HomeIcon from "./icons/HomeIcon";
 import CalendarIcon from "./icons/CalendarIcon";
 import JournalIcon from "./icons/JournalIcon";
 import ScaleIcon from "./icons/ScaleIcon";
+import WaterIcon from "./icons/WaterIcon";
 import KickCounterIcon from "./icons/KickCounterIcon";
 import ContractionIcon from "./icons/ContractionIcon";
 import BagIcon from "./icons/BagIcon";
-import BirthPlanIcon from "./icons/BirthPlanIcon"; // Importar o novo ícone
+import BirthPlanIcon from "./icons/BirthPlanIcon";
 
 const navLinks = [
   { href: "/", label: "Início", icon: HomeIcon },
   { href: "/consultas", label: "Consultas", icon: CalendarIcon },
   { href: "/diario-de-sintomas", label: "Diário", icon: JournalIcon },
   { href: "/acompanhamento-de-peso", label: "Peso", icon: ScaleIcon },
+  { href: "/hidratacao", label: "Hidratação", icon: WaterIcon },
   {
     href: "/contador-de-movimentos",
     label: "Movimentos",
@@ -43,7 +45,6 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    // Aumentar a largura da sidebar
     <aside className="fixed left-0 top-0 z-40 h-screen w-64 bg-white dark:bg-slate-800 shadow-lg flex flex-col items-center py-4">
       <Link
         href="/"
@@ -59,7 +60,6 @@ export default function Sidebar() {
             <Link
               key={link.href}
               href={link.href}
-              // Alterar layout para flex com ícone e texto
               className={`flex items-center w-full gap-4 p-3 rounded-lg transition-colors duration-200 ${
                 isActive
                   ? "bg-rose-100 dark:bg-rose-900/50 text-rose-500 dark:text-rose-400 font-semibold"
