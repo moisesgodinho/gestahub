@@ -52,7 +52,7 @@ export default function OfflinePage() {
         </h1>
         <p className="text-slate-600 dark:text-slate-400 mb-6">
           Parece que você perdeu a conexão. A página que você tentou acessar não
-          está disponível no cache para uso offline..
+          está disponível no cache para uso offline.
         </p>
         <Link
           href="/"
