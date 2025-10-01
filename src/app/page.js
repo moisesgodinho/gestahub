@@ -22,8 +22,25 @@ export default function Home() {
     refetch,
   } = useGestationalData(user);
 
+  // NOVO: Estado para controlar a visualização da página
+  const [view, setView] = useState("loading"); // loading, login, calculator, dashboard
   const [isManualEditing, setIsManualEditing] = useState(false);
   const [activeCalculator, setActiveCalculator] = useState("dum");
+
+  const loading = userLoading || dataLoading;
+
+  // Efeito para controlar a visualização com base nos dados e estado de carregamento
+  useEffect(() => {
+    if (loading) {
+      setView("loading");
+    } else if (!user) {
+      setView("login");
+    } else if (!hasData || isManualEditing) {
+      setView("calculator");
+    } else {
+      setView("dashboard");
+    }
+  }, [loading, user, hasData, isManualEditing]);
 
   useEffect(() => {
     if (hasData) {
@@ -35,10 +52,8 @@ export default function Home() {
     setIsManualEditing(false);
   };
 
-  const loading = userLoading || dataLoading;
-  const showCalculators = !loading && user && (!hasData || isManualEditing);
-
-  if (loading) {
+  // Renderiza o SkeletonLoader se a view for 'loading'
+  if (view === "loading") {
     return (
       <div className="flex items-center justify-center flex-grow p-4">
         <SkeletonLoader type="fullPage" />
@@ -48,36 +63,36 @@ export default function Home() {
 
   return (
     <div className="flex-grow flex flex-col items-center justify-center p-4">
-      {!user ? (
-        <Login />
-      ) : (
-        <div className="w-full max-w-3xl">
-          {showCalculators ? (
-            <CalculatorPanel
-              user={user}
-              activeCalculator={activeCalculator}
-              onSwitch={setActiveCalculator}
-              onSaveSuccess={handleSaveSuccess}
-              onCancel={() => hasData && setIsManualEditing(false)}
-              onForceReload={refetch}
+      <div className="w-full max-w-3xl">
+        {view === "login" && <Login />}
+
+        {view === "calculator" && (
+          <CalculatorPanel
+            user={user}
+            activeCalculator={activeCalculator}
+            onSwitch={setActiveCalculator}
+            onSaveSuccess={handleSaveSuccess}
+            onCancel={() => hasData && setIsManualEditing(false)}
+            onForceReload={refetch}
+          />
+        )}
+
+        {view === "dashboard" && (
+          <>
+            <GestationalInfoDashboard
+              gestationalInfo={gestationalInfo}
+              countdown={countdown}
+              dataSource={dataSource}
+              onSwitchToUltrasound={() => {
+                setActiveCalculator("ultrassom");
+                setIsManualEditing(true);
+              }}
+              onEdit={() => setIsManualEditing(true)}
             />
-          ) : (
-            <>
-              <GestationalInfoDashboard
-                gestationalInfo={gestationalInfo}
-                countdown={countdown}
-                dataSource={dataSource}
-                onSwitchToUltrasound={() => {
-                  setActiveCalculator("ultrassom");
-                  setIsManualEditing(true);
-                }}
-                onEdit={() => setIsManualEditing(true)}
-              />
-              <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
-            </>
-          )}
-        </div>
-      )}
+            <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
+          </>
+        )}
+      </div>
     </div>
   );
 }
