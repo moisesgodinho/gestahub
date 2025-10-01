@@ -2,12 +2,13 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { getToken, deleteToken } from "firebase/messaging";
+import { getToken, deleteToken, isSupported } from "firebase/messaging";
 import { doc, setDoc, deleteDoc, getDoc } from "firebase/firestore";
 import { messaging, db } from "@/lib/firebase";
 import { useUser } from "@/context/UserContext";
 import { toast } from "react-toastify";
 
+// (Os ícones BellIcon e BellOffIcon permanecem os mesmos)
 const BellIcon = (props) => (
   <svg
     {...props}
@@ -46,24 +47,24 @@ const BellOffIcon = (props) => (
   </svg>
 );
 
+
 export default function NotificationButton() {
   const { user } = useUser();
   const [permission, setPermission] = useState("default");
   const [isTokenActive, setIsTokenActive] = useState(false);
   const [loading, setLoading] = useState(true);
-  // --- INÍCIO DA MUDANÇA 1 ---
-  const [isSupported, setIsSupported] = useState(true);
-  // --- FIM DA MUDANÇA 1 ---
+  const [supported, setSupported] = useState(true);
 
   useEffect(() => {
     const checkNotificationState = async () => {
       setLoading(true);
-      // --- INÍCIO DA MUDANÇA 2 ---
-      // Verifica se as notificações são suportadas pelo navegador
-      if (typeof window !== 'undefined' && 'Notification' in window && messaging) {
-        setIsSupported(true);
+      
+      const isMessagingSupported = await isSupported();
+      setSupported(isMessagingSupported);
+
+      if (isMessagingSupported) {
         setPermission(Notification.permission);
-      // --- FIM DA MUDANÇA 2 ---
+
         if (Notification.permission === "granted" && user) {
           try {
             const currentToken = await getToken(messaging, {
@@ -89,13 +90,10 @@ export default function NotificationButton() {
         } else {
           setIsTokenActive(false);
         }
-      } else {
-        // --- INÍCIO DA MUDANÇA 3 ---
-        setIsSupported(false);
-        // --- FIM DA MUDANÇA 3 ---
       }
       setLoading(false);
     };
+    
     checkNotificationState();
   }, [user]);
 
@@ -128,13 +126,11 @@ export default function NotificationButton() {
       }
     } catch (error) {
       console.error("Erro ao solicitar permissão:", error);
-      // --- INÍCIO DA MUDANÇA 4 ---
       if (error.code === 'messaging/unsupported-browser') {
         toast.error("Seu navegador não suporta notificações. Tente usar um navegador diferente.");
       } else {
         toast.error("Ocorreu um erro ao ativar as notificações.");
       }
-      // --- FIM DA MUDANÇA 4 ---
     }
   };
 
@@ -149,7 +145,7 @@ export default function NotificationButton() {
         const tokenRef = doc(db, "users", user.uid, "fcmTokens", currentToken);
         await deleteDoc(tokenRef);
         setIsTokenActive(false);
-        setPermission("default");
+        setPermission("default"); // Reseta a permissão para o estado inicial
         toast.info("Notificações desativadas neste dispositivo.");
       }
     } catch (error) {
@@ -162,15 +158,13 @@ export default function NotificationButton() {
     return <p className="text-sm text-slate-500">Verificando status...</p>;
   }
   
-  // --- INÍCIO DA MUDANÇA 5 ---
-  if (!isSupported) {
+  if (!supported) {
     return (
       <p className="text-sm text-amber-600 dark:text-amber-400">
         Seu navegador não é compatível com notificações.
       </p>
     );
   }
-  // --- FIM DA MUDANÇA 5 ---
 
   if (permission === "granted" && isTokenActive) {
     return (
