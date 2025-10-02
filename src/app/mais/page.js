@@ -7,6 +7,7 @@ import ContractionIcon from "@/components/icons/ContractionIcon";
 import BagIcon from "@/components/icons/BagIcon";
 import BirthPlanIcon from "@/components/icons/BirthPlanIcon";
 import WaterIcon from "@/components/icons/WaterIcon";
+import ArticleIcon from "@/components/icons/ArticleIcon"; // Importado
 import Card from "@/components/Card";
 
 const otherLinks = [
@@ -34,6 +35,11 @@ const otherLinks = [
     href: "/hidratacao",
     label: "Hidratação",
     icon: WaterIcon,
+  },
+  {
+    href: "/artigos", // Adicionado
+    label: "Artigos e Dicas",
+    icon: ArticleIcon,
   },
 ];
 

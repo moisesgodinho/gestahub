@@ -12,6 +12,7 @@ import KickCounterIcon from "./icons/KickCounterIcon";
 import ContractionIcon from "./icons/ContractionIcon";
 import BagIcon from "./icons/BagIcon";
 import BirthPlanIcon from "./icons/BirthPlanIcon";
+import ArticleIcon from "./icons/ArticleIcon"; // Importado
 
 const navLinks = [
   { href: "/", label: "Início", icon: HomeIcon },
@@ -38,6 +39,11 @@ const navLinks = [
     href: "/plano-de-parto",
     label: "Plano de Parto",
     icon: BirthPlanIcon,
+  },
+  {
+    href: "/artigos", // Adicionado
+    label: "Artigos e Dicas",
+    icon: ArticleIcon,
   },
 ];
 
