@@ -77,7 +77,8 @@ select {
   body * {
     visibility: hidden;
   }
-  .printable-content, .printable-content * {
+  .printable-content,
+  .printable-content * {
     visibility: visible;
   }
   .printable-content {
@@ -91,3 +92,16 @@ select {
     margin: 2cm;
   }
 }
+
+/* --- INÍCIO DA MUDANÇA --- */
+/* Remove as setas dos inputs de número */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+/* --- FIM DA MUDANÇA --- */

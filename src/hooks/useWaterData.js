@@ -15,9 +15,10 @@ import { toast } from "react-toastify";
 
 export function useWaterData(user) {
   const [waterData, setWaterData] = useState({
-    goal: 2000,
+    goal: 2500,
     current: 0,
     cupSize: 250,
+    history: [], // Histórico de adições do dia
   });
   const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -44,7 +45,7 @@ export function useWaterData(user) {
       const userDocRef = doc(db, "users", user.uid);
       const userSnap = await getDoc(userDocRef);
       const profile = userSnap.data()?.gestationalProfile || {};
-      const profileGoal = profile.waterGoal || 2000;
+      const profileGoal = profile.waterGoal || 2500;
       const profileCupSize = profile.waterCupSize || 250;
 
       if (todayEntry) {
@@ -52,12 +53,14 @@ export function useWaterData(user) {
           ...todayEntry,
           goal: todayEntry.goal || profileGoal,
           cupSize: todayEntry.cupSize || profileCupSize,
+          history: todayEntry.history || [],
         });
       } else {
         setWaterData({
           goal: profileGoal,
           cupSize: profileCupSize,
           current: 0,
+          history: [],
         });
       }
 
@@ -107,15 +110,19 @@ export function useWaterData(user) {
 
   const addWater = (amount) => {
     const newAmount = waterData.current + amount;
-    const newData = { ...waterData, current: newAmount };
+    const newHistory = [...(waterData.history || []), amount];
+    const newData = { ...waterData, current: newAmount, history: newHistory };
     setWaterData(newData);
     updateWaterData(newData);
   };
 
-  const undoLastWater = (amount) => {
-    if (waterData.current === 0) return;
-    const newAmount = Math.max(0, waterData.current - amount);
-    const newData = { ...waterData, current: newAmount };
+  const undoLastWater = () => {
+    const history = waterData.history || [];
+    if (history.length === 0) return;
+    const lastAmount = history[history.length - 1];
+    const newAmount = Math.max(0, waterData.current - lastAmount);
+    const newHistory = history.slice(0, -1);
+    const newData = { ...waterData, current: newAmount, history: newHistory };
     setWaterData(newData);
     updateWaterData(newData);
   };
