@@ -1,12 +1,8 @@
 // src/lib/firebase.js
 import { initializeApp, getApps, getApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider } from "firebase/auth";
-import { getMessaging } from "firebase/messaging"; // Adicione esta linha
-import {
-  initializeFirestore,
-  persistentLocalCache,
-  getFirestore,
-} from "firebase/firestore";
+import { getMessaging } from "firebase/messaging";
+import { getFirestore } from "firebase/firestore";
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -19,23 +15,10 @@ const firebaseConfig = {
 
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 
-let db;
-try {
-  db = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      cacheSizeBytes: 100000000, // 100 MB
-    }),
-  });
-} catch (error) {
-  if (error.code === "failed-precondition") {
-    console.warn("Firebase (Firestore):", error.message);
-  }
-  db = getFirestore(app);
-}
+const db = getFirestore(app);
 
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
-// Adicione a exportação do messaging
 export const messaging =
   typeof window !== "undefined" ? getMessaging(app) : null;
 export { db };

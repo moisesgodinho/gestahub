@@ -6,7 +6,6 @@ import "./globals.css";
 import Header from "@/components/Header";
 import { UserProvider } from "@/context/UserContext";
 import ResponsiveNav from "@/components/ResponsiveNav";
-import OfflineIndicator from "@/components/OfflineIndicator";
 
 const poppins = Poppins({
   subsets: ["latin"],
@@ -75,7 +74,6 @@ export default function RootLayout({ children }) {
             <main className="flex-grow flex flex-col">{children}</main>
           </div>
           <ResponsiveNav />
-          <OfflineIndicator />
         </UserProvider>
       </body>
     </html>
