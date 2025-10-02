@@ -104,4 +104,45 @@ input[type="number"]::-webkit-outer-spin-button {
 input[type="number"] {
   -moz-appearance: textfield;
 }
+
+/* Estilização da Barra de Rolagem */
+/* Para navegadores baseados em WebKit (Chrome, Safari, Edge) */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #cbd5e1; /* Cor cinza claro */
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #94a3b8; /* Cor cinza mais escura no hover */
+}
+
+/* Estilo da barra de rolagem para o modo escuro */
+.dark ::-webkit-scrollbar-thumb {
+  background-color: #475569; /* Cor cinza escuro */
+}
+
+.dark ::-webkit-scrollbar-thumb:hover {
+  background-color: #64748b; /* Cor cinza escuro mais clara no hover */
+}
+
+/* Para Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #cbd5e1 transparent;
+}
+
+.dark * {
+  scrollbar-color: #475569 transparent;
+}
 /* --- FIM DA MUDANÇA --- */
