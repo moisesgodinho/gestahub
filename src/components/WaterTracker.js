@@ -130,17 +130,17 @@ export default function WaterTracker() {
 
           <div className="mt-6 flex justify-between items-center gap-4">
             <button
-              onClick={() => addWater(waterData.cupSize)}
-              className="w-full px-6 py-3 rounded-lg bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 font-semibold"
-            >
-              Adicionar 1 copo ({waterData.cupSize} ml)
-            </button>
-            <button
               onClick={() => undoLastWater(waterData.cupSize)}
               disabled={waterData.current === 0}
               className="px-4 py-2 text-sm rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 disabled:opacity-50 disabled:cursor-not-allowed flex-shrink-0"
             >
               Remover último
+            </button>
+            <button
+              onClick={() => addWater(waterData.cupSize)}
+              className="w-full px-6 py-3 rounded-lg bg-blue-100 text-blue-800 dark:bg-blue-900/50 dark:text-blue-200 font-semibold"
+            >
+              Adicionar 1 copo ({waterData.cupSize} ml)
             </button>
           </div>
         </>

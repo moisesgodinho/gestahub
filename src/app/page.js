@@ -6,6 +6,7 @@ import Login from "@/components/Login";
 import GestationalInfoDashboard from "@/components/GestationalInfoDashboard";
 import CalculatorPanel from "@/components/CalculatorPanel";
 import AgendaProximosPassos from "@/components/AgendaProximosPassos";
+import WaterTrackerDashboard from "@/components/WaterTrackerDashboard"; // Importado
 import { useUser } from "@/context/UserContext";
 import { useGestationalData } from "@/hooks/useGestationalData";
 import SkeletonLoader from "@/components/SkeletonLoader";
@@ -28,10 +29,8 @@ export default function Home() {
   const loading = userLoading || dataLoading;
 
   useEffect(() => {
-    // Se os dados existem, define a calculadora padrão com base na fonte de dados
     if (hasData) {
       setActiveCalculator(dataSource);
-      // Garante que não fiquemos no modo de edição se os dados aparecerem
       setIsManualEditing(false);
     }
   }, [hasData, dataSource]);
@@ -44,7 +43,6 @@ export default function Home() {
     setIsManualEditing(true);
   };
 
-  // Lógica de renderização
   const renderContent = () => {
     if (loading) {
       return (
@@ -58,7 +56,6 @@ export default function Home() {
       return <Login />;
     }
 
-    // Se o usuário clicou para editar, ou se não há dados, mostra as calculadoras.
     if (isManualEditing || !hasData) {
       return (
         <CalculatorPanel
@@ -66,14 +63,12 @@ export default function Home() {
           activeCalculator={activeCalculator}
           onSwitch={setActiveCalculator}
           onSaveSuccess={handleSaveSuccess}
-          // Só permite cancelar se já existirem dados para voltar
           onCancel={() => hasData && setIsManualEditing(false)}
           onForceReload={refetch}
         />
       );
     }
 
-    // Se chegou aqui, o usuário está logado e tem dados, mostra o painel principal.
     return (
       <>
         <GestationalInfoDashboard
@@ -86,6 +81,7 @@ export default function Home() {
           }}
           onEdit={handleEditRequest}
         />
+        <WaterTrackerDashboard />
         <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
       </>
     );
