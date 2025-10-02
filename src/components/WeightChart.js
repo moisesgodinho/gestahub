@@ -21,7 +21,7 @@ ChartJS.register(
   LineElement,
   Title,
   Tooltip,
-  Legend,
+  Legend
 );
 
 export default function WeightChart({ history, prePregnancyWeight, dueDate }) {
@@ -46,13 +46,13 @@ export default function WeightChart({ history, prePregnancyWeight, dueDate }) {
   }, []);
 
   const sortedHistory = [...history].sort(
-    (a, b) => new Date(a.date) - new Date(b.date),
+    (a, b) => new Date(a.date) - new Date(b.date)
   );
 
   const labels = [
     "Início",
     ...sortedHistory.map((entry) =>
-      new Date(entry.date).toLocaleDateString("pt-BR", { timeZone: "UTC" }),
+      new Date(entry.date).toLocaleDateString("pt-BR", { timeZone: "UTC" })
     ),
   ];
 
@@ -63,10 +63,12 @@ export default function WeightChart({ history, prePregnancyWeight, dueDate }) {
 
   if (dueDate && dueDate > new Date()) {
     labels.push(
-      `DPP: ${dueDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`,
+      `DPP: ${dueDate.toLocaleDateString("pt-BR", { timeZone: "UTC" })}`
     );
     dataPoints.push(null);
   }
+
+  const validDataPoints = dataPoints.filter((point) => point !== null).length;
 
   const chartData = {
     labels,
@@ -78,6 +80,9 @@ export default function WeightChart({ history, prePregnancyWeight, dueDate }) {
         backgroundColor: "rgba(236, 72, 153, 0.5)",
         tension: 0.1,
         borderWidth: 2,
+        pointRadius: validDataPoints <= 1 ? 5 : 0,
+        pointHoverRadius: 5,
+        pointBackgroundColor: "rgb(236, 72, 153)",
       },
     ],
   };
@@ -119,6 +124,10 @@ export default function WeightChart({ history, prePregnancyWeight, dueDate }) {
           color: isDarkMode ? "rgba(255, 255, 255, 0.1)" : "rgba(0, 0, 0, 0.1)",
         },
       },
+    },
+    interaction: {
+      intersect: false,
+      mode: "index",
     },
   };
 
