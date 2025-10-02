@@ -1,6 +1,14 @@
 // src/hooks/useWaterData.js
 import { useState, useEffect } from "react";
-import { doc, onSnapshot, setDoc, getDoc } from "firebase/firestore";
+import {
+  doc,
+  onSnapshot,
+  setDoc,
+  getDoc,
+  collection,
+  query,
+  orderBy,
+} from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getTodayString } from "@/lib/dateUtils";
 import { toast } from "react-toastify";
@@ -9,8 +17,9 @@ export function useWaterData(user) {
   const [waterData, setWaterData] = useState({
     goal: 2000,
     current: 0,
-    history: [],
+    cupSize: 250,
   });
+  const [history, setHistory] = useState([]);
   const [loading, setLoading] = useState(true);
   const today = getTodayString();
 
@@ -20,19 +29,39 @@ export function useWaterData(user) {
       return;
     }
 
-    const docRef = doc(db, "users", user.uid, "waterIntake", today);
-    const unsubscribe = onSnapshot(docRef, async (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setWaterData({ ...data, history: data.history || [] });
+    const q = query(
+      collection(db, "users", user.uid, "waterIntake"),
+      orderBy("date", "desc")
+    );
+
+    const unsubscribe = onSnapshot(q, async (snapshot) => {
+      const allEntries = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }));
+      const todayEntry = allEntries.find((entry) => entry.id === today);
+
+      const userDocRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userDocRef);
+      const profile = userSnap.data()?.gestationalProfile || {};
+      const profileGoal = profile.waterGoal || 2000;
+      const profileCupSize = profile.waterCupSize || 250;
+
+      if (todayEntry) {
+        setWaterData({
+          ...todayEntry,
+          goal: todayEntry.goal || profileGoal,
+          cupSize: todayEntry.cupSize || profileCupSize,
+        });
       } else {
-        // Se não existir, busca o objetivo do perfil do usuário
-        const userDocRef = doc(db, "users", user.uid);
-        const userSnap = await getDoc(userDocRef);
-        const profileGoal =
-          userSnap.data()?.gestationalProfile?.waterGoal || 2000;
-        setWaterData({ goal: profileGoal, current: 0, history: [] });
+        setWaterData({
+          goal: profileGoal,
+          cupSize: profileCupSize,
+          current: 0,
+        });
       }
+
+      setHistory(allEntries);
       setLoading(false);
     });
 
@@ -43,52 +72,60 @@ export function useWaterData(user) {
     if (!user) return;
     try {
       const docRef = doc(db, "users", user.uid, "waterIntake", today);
-      await setDoc(docRef, newData, { merge: true });
+      await setDoc(docRef, { ...newData, date: today }, { merge: true });
     } catch (error) {
       toast.error("Não foi possível salvar os dados.");
     }
   };
 
-  const setWaterGoal = async (newGoal) => {
+  const setWaterSettings = async (newGoal, newCupSize) => {
     const goal = parseInt(newGoal, 10);
+    const cupSize = parseInt(newCupSize, 10);
+
     if (isNaN(goal) || goal <= 0) {
-      toast.warn("Por favor, insira uma meta válida.");
+      toast.warn("Por favor, insira uma meta diária válida.");
       return;
     }
-    // Atualiza a meta para o dia atual e também no perfil do usuário
-    const newData = { ...waterData, goal };
+    if (isNaN(cupSize) || cupSize <= 0) {
+      toast.warn("Por favor, insira um tamanho de copo válido.");
+      return;
+    }
+
+    const newData = { ...waterData, goal, cupSize };
     setWaterData(newData);
     await updateWaterData(newData);
 
     const userDocRef = doc(db, "users", user.uid);
     await setDoc(
       userDocRef,
-      { gestationalProfile: { waterGoal: goal } },
+      { gestationalProfile: { waterGoal: goal, waterCupSize: cupSize } },
       { merge: true }
     );
 
-    toast.success("Meta de hidratação atualizada!");
+    toast.success("Configurações de hidratação atualizadas!");
   };
 
   const addWater = (amount) => {
     const newAmount = waterData.current + amount;
-    const newHistory = [...(waterData.history || []), amount];
-    const newData = { ...waterData, current: newAmount, history: newHistory };
+    const newData = { ...waterData, current: newAmount };
     setWaterData(newData);
     updateWaterData(newData);
   };
 
-  const undoLastWater = () => {
-    if (!waterData.history || waterData.history.length === 0) {
-      return;
-    }
-    const lastAmount = waterData.history[waterData.history.length - 1];
-    const newAmount = Math.max(0, waterData.current - lastAmount);
-    const newHistory = waterData.history.slice(0, -1);
-    const newData = { ...waterData, current: newAmount, history: newHistory };
+  const undoLastWater = (amount) => {
+    if (waterData.current === 0) return;
+    const newAmount = Math.max(0, waterData.current - amount);
+    const newData = { ...waterData, current: newAmount };
     setWaterData(newData);
     updateWaterData(newData);
   };
 
-  return { waterData, loading, setWaterGoal, addWater, undoLastWater };
+  return {
+    waterData,
+    history,
+    loading,
+    setWaterSettings,
+    addWater,
+    undoLastWater,
+  };
 }

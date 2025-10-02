@@ -2,9 +2,6 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { collection, query, onSnapshot, orderBy } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { useUser } from "@/context/UserContext";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -63,32 +60,9 @@ const ChevronRightIcon = () => (
   </svg>
 );
 
-export default function WaterChart({ user, currentDayData }) {
-  const [allEntries, setAllEntries] = useState([]);
-  const [loading, setLoading] = useState(true);
+export default function WaterChart({ history, waterData }) {
   const [currentMonthIndex, setCurrentMonthIndex] = useState(0);
   const [isDarkMode, setIsDarkMode] = useState(false);
-
-  useEffect(() => {
-    if (user) {
-      const q = query(
-        collection(db, "users", user.uid, "waterIntake"),
-        orderBy("date", "desc")
-      );
-      const unsubscribe = onSnapshot(q, (snapshot) => {
-        const data = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-          date: doc.id,
-        }));
-        setAllEntries(data);
-        setLoading(false);
-      });
-      return () => unsubscribe();
-    } else {
-      setLoading(false);
-    }
-  }, [user]);
 
   useEffect(() => {
     const checkDarkMode = () =>
@@ -103,20 +77,16 @@ export default function WaterChart({ user, currentDayData }) {
   }, []);
 
   const entriesByMonth = useMemo(() => {
-    return allEntries.reduce((acc, entry) => {
+    return history.reduce((acc, entry) => {
       const monthYear = entry.date.substring(0, 7);
       if (!acc[monthYear]) acc[monthYear] = [];
       acc[monthYear].push(entry);
       return acc;
     }, {});
-  }, [allEntries]);
+  }, [history]);
 
   const sortedMonths = useMemo(() => {
-    const today = new Date();
-    const currentMonthKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}`;
-    const monthKeys = new Set(Object.keys(entriesByMonth));
-    monthKeys.add(currentMonthKey);
-    return Array.from(monthKeys).sort().reverse();
+    return Object.keys(entriesByMonth).sort().reverse();
   }, [entriesByMonth]);
 
   const chartData = useMemo(() => {
@@ -124,7 +94,7 @@ export default function WaterChart({ user, currentDayData }) {
 
     const monthKey = sortedMonths[currentMonthIndex];
     const monthEntries = entriesByMonth[monthKey] || [];
-    const goal = currentDayData?.goal || 2000;
+    const goal = waterData?.goal || 2000;
 
     const [year, month] = monthKey.split("-").map(Number);
     const numDaysInMonth = new Date(year, month, 0).getDate();
@@ -139,8 +109,6 @@ export default function WaterChart({ user, currentDayData }) {
       data[dayOfMonth - 1] = entry.current;
     });
 
-    const hasMultipleDataPoints = monthEntries.length > 1;
-
     return {
       labels,
       datasets: [
@@ -150,12 +118,13 @@ export default function WaterChart({ user, currentDayData }) {
           data: data,
           backgroundColor: "rgba(59, 130, 246, 0.2)",
           borderColor: "rgba(59, 130, 246, 1)",
-          borderWidth: hasMultipleDataPoints ? 2 : 0, // Mostra a linha apenas se houver mais de um ponto
-          pointRadius: hasMultipleDataPoints ? 0 : 5, // Mostra o ponto apenas se for o único
-          pointBackgroundColor: "rgba(59, 130, 246, 1)",
+          borderWidth: 2,
+          pointRadius: monthEntries.length === 1 ? 5 : 0,
           pointHoverRadius: 5,
+          pointBackgroundColor: "rgba(59, 130, 246, 1)",
           tension: 0.4,
           fill: true,
+          showLine: monthEntries.length > 1,
         },
         {
           type: "line",
@@ -171,13 +140,7 @@ export default function WaterChart({ user, currentDayData }) {
         },
       ],
     };
-  }, [
-    currentMonthIndex,
-    entriesByMonth,
-    sortedMonths,
-    isDarkMode,
-    currentDayData,
-  ]);
+  }, [currentMonthIndex, entriesByMonth, sortedMonths, isDarkMode, waterData]);
 
   const options = {
     responsive: true,
@@ -216,7 +179,9 @@ export default function WaterChart({ user, currentDayData }) {
     },
   };
 
-  if (loading) return <SkeletonLoader type="card" />;
+  if (history.length === 0) {
+    return null;
+  }
 
   return (
     <div className="bg-white dark:bg-slate-800 p-4 sm:p-6 rounded-2xl shadow-xl mt-8">
