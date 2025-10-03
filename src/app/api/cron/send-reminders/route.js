@@ -28,13 +28,6 @@ if (!admin.apps.length) {
 const adminDb = !initError ? getFirestore() : null;
 const messaging = !initError ? getMessaging() : null;
 
-const getYYYYMMDD = (date) => {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-};
-
 async function cleanUpFailedTokens(userId, tokens, responses) {
   const failedTokens = [];
   responses.forEach((resp, idx) => {
@@ -67,9 +60,16 @@ export async function GET() {
 
   try {
     const usersSnapshot = await adminDb.collection("users").get();
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    const dateTomorrow = getYYYYMMDD(tomorrow);
+    
+    // --- INÍCIO DA CORREÇÃO ---
+    const now = new Date();
+    const tomorrow = new Date(now);
+    tomorrow.setDate(now.getDate() + 1);
+    
+    // Obtém a data de amanhã no formato YYYY-MM-DD para o fuso horário do Brasil
+    const dateTomorrow = tomorrow.toLocaleDateString('en-CA', { timeZone: 'America/Sao_Paulo' });
+    // --- FIM DA CORREÇÃO ---
+
     let totalSent = 0;
 
     for (const userDoc of usersSnapshot.docs) {
