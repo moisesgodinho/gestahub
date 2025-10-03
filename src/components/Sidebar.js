@@ -12,7 +12,8 @@ import KickCounterIcon from "./icons/KickCounterIcon";
 import ContractionIcon from "./icons/ContractionIcon";
 import BagIcon from "./icons/BagIcon";
 import BirthPlanIcon from "./icons/BirthPlanIcon";
-import ArticleIcon from "./icons/ArticleIcon"; // Importado
+import ArticleIcon from "./icons/ArticleIcon";
+import CartIcon from "./icons/CartIcon";
 
 const navLinks = [
   { href: "/", label: "Início", icon: HomeIcon },
@@ -41,9 +42,14 @@ const navLinks = [
     icon: BirthPlanIcon,
   },
   {
-    href: "/artigos", // Adicionado
+    href: "/artigos",
     label: "Artigos e Dicas",
     icon: ArticleIcon,
+  },
+  {
+    href: "/lista-de-compras",
+    label: "Lista de Compras",
+    icon: CartIcon,
   },
 ];
 

@@ -7,7 +7,8 @@ import ContractionIcon from "@/components/icons/ContractionIcon";
 import BagIcon from "@/components/icons/BagIcon";
 import BirthPlanIcon from "@/components/icons/BirthPlanIcon";
 import WaterIcon from "@/components/icons/WaterIcon";
-import ArticleIcon from "@/components/icons/ArticleIcon"; // Importado
+import ArticleIcon from "@/components/icons/ArticleIcon";
+import CartIcon from "@/components/icons/CartIcon";
 import Card from "@/components/Card";
 
 const otherLinks = [
@@ -37,9 +38,14 @@ const otherLinks = [
     icon: WaterIcon,
   },
   {
-    href: "/artigos", // Adicionado
+    href: "/artigos",
     label: "Artigos e Dicas",
     icon: ArticleIcon,
+  },
+  {
+    href: "/lista-de-compras",
+    label: "Lista de Compras",
+    icon: CartIcon,
   },
 ];
 

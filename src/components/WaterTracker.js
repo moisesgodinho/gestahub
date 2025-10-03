@@ -97,7 +97,7 @@ export default function WaterTracker() {
               htmlFor="cupSize"
               className="block text-sm font-medium text-slate-700 dark:text-slate-300"
             >
-              Tamanho do copo (ml)
+              Tamanho padrão do copo (ml)
             </label>
             <input
               type="number"
