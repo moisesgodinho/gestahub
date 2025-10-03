@@ -5,17 +5,23 @@ import { useState } from "react";
 import { useUser } from "@/context/UserContext";
 import { useGestationalData } from "@/hooks/useGestationalData";
 import { useMedication } from "@/hooks/useMedication";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import MedicationForm from "@/components/MedicationForm";
 import MedicationList from "@/components/MedicationList";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import ConfirmationModal from "@/components/ConfirmationModal";
 import { getDueDate } from "@/lib/gestationalAge";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 export default function MedicationsPage() {
   const { user, loading: userLoading } = useUser();
-  const { gestationalInfo, estimatedLmp, loading: gestationalLoading } =
-    useGestationalData(user);
+  const {
+    gestationalInfo,
+    estimatedLmp,
+    loading: gestationalLoading,
+  } = useGestationalData(user);
   const dueDate = estimatedLmp ? getDueDate(estimatedLmp) : null;
+  const isMobile = useIsMobile();
 
   const {
     medications,
@@ -37,11 +43,13 @@ export default function MedicationsPage() {
   const handleAddNew = () => {
     setMedicationToEdit(null);
     setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleEdit = (med) => {
     setMedicationToEdit(med);
     setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleCancel = () => {
@@ -102,14 +110,23 @@ export default function MedicationsPage() {
               medicationToEdit={medicationToEdit}
             />
           ) : (
-            <div className="mb-6 text-center">
-              <button
-                onClick={handleAddNew}
-                className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
-              >
-                Adicionar Medicamento
-              </button>
-            </div>
+            <>
+              {isMobile ? (
+                <FloatingActionButton
+                  onClick={handleAddNew}
+                  title="Adicionar Medicamento"
+                />
+              ) : (
+                <div className="mb-6 text-center">
+                  <button
+                    onClick={handleAddNew}
+                    className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+                  >
+                    Adicionar Medicamento
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <MedicationList

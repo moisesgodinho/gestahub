@@ -26,10 +26,13 @@ import ConfirmationModal from "@/components/ConfirmationModal";
 import CompletionCelebration from "@/components/CompletionCelebration";
 import { toast } from "react-toastify";
 import { ultrasoundSchedule } from "@/data/appointmentData";
+import { useIsMobile } from "@/hooks/useIsMobile";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 // ... (o resto do seu código, como a const ultrasoundSchedule, permanece o mesmo)
 
 function AppointmentsPageContent() {
+  const isMobile = useIsMobile();
   // ... (todo o conteúdo desta função permanece exatamente o mesmo)
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -173,6 +176,7 @@ function AppointmentsPageContent() {
   const handleAddNew = (dateString = null) => {
     setAppointmentToEdit(dateString ? { date: dateString } : null);
     setIsFormOpen(true);
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const handleAddNewFromModal = (dateString) => {
@@ -340,7 +344,9 @@ function AppointmentsPageContent() {
         onClose={() => setIsDeleteModalOpen(false)}
         onConfirm={confirmDelete}
         title="Confirmar Exclusão"
-        message={`Tem certeza que deseja apagar a consulta "${appointmentToDelete?.title || ""}"?`}
+        message={`Tem certeza que deseja apagar a consulta "${
+          appointmentToDelete?.title || ""
+        }"?`}
       />
 
       <div className="flex items-center justify-center flex-grow p-4">
@@ -359,14 +365,23 @@ function AppointmentsPageContent() {
               dueDate={dueDate}
             />
           ) : (
-            <div className="mb-6 text-center">
-              <button
-                onClick={() => handleAddNew()}
-                className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
-              >
-                Adicionar Nova Consulta
-              </button>
-            </div>
+            <>
+              {isMobile ? (
+                <FloatingActionButton
+                  onClick={() => handleAddNew()}
+                  title="Adicionar Nova Consulta"
+                />
+              ) : (
+                <div className="mb-6 text-center">
+                  <button
+                    onClick={() => handleAddNew()}
+                    className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+                  >
+                    Adicionar Nova Consulta
+                  </button>
+                </div>
+              )}
+            </>
           )}
           <AppointmentCalendar
             appointments={combinedAppointments}

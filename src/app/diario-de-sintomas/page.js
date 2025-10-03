@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useMemo, useCallback } from "react";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 import { doc, deleteDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { toast } from "react-toastify";
@@ -14,13 +14,16 @@ import ConfirmationModal from "@/components/ConfirmationModal";
 import { useUser } from "@/context/UserContext";
 import { useJournalEntries } from "@/hooks/useJournalEntries";
 import { useGestationalData } from "@/hooks/useGestationalData";
+import { useIsMobile } from "@/hooks/useIsMobile";
 import SkeletonLoader from "@/components/SkeletonLoader";
+import FloatingActionButton from "@/components/FloatingActionButton";
 
 export default function JournalPage() {
   const { user, loading: userLoading } = useUser();
   const { entries, loading: entriesLoading } = useJournalEntries(user);
   const { estimatedLmp, loading: gestationalLoading } =
     useGestationalData(user);
+  const isMobile = useIsMobile();
 
   const [entryToEdit, setEntryToEdit] = useState(null);
   const [entryToView, setEntryToView] = useState(null);
@@ -71,7 +74,13 @@ export default function JournalPage() {
     if (!user || !entryToDelete) return;
     setIsDeleteModalOpen(false);
     try {
-      const entryRef = doc(db, "users", user.uid, "symptomEntries", entryToDelete.id);
+      const entryRef = doc(
+        db,
+        "users",
+        user.uid,
+        "symptomEntries",
+        entryToDelete.id
+      );
       await deleteDoc(entryRef);
       toast.info("Entrada do diário removida.");
     } catch (error) {
@@ -92,9 +101,9 @@ export default function JournalPage() {
     });
   }, [selectedDateForNew]);
 
-  const SymptomChart = dynamic(() => import('@/components/SymptomChart'), {
+  const SymptomChart = dynamic(() => import("@/components/SymptomChart"), {
     loading: () => <SkeletonLoader type="card" />,
-    ssr: false
+    ssr: false,
   });
 
   const loading = userLoading || entriesLoading || gestationalLoading;
@@ -153,17 +162,30 @@ export default function JournalPage() {
               allEntries={entries}
             />
           ) : (
-            <div className="mb-6 text-center">
-              <button
-                onClick={() => {
-                  setEntryToEdit(null);
-                  setIsFormOpen(true);
-                }}
-                className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
-              >
-                Adicionar Registro do Dia
-              </button>
-            </div>
+            <>
+              {isMobile ? (
+                <FloatingActionButton
+                  onClick={() => {
+                    setEntryToEdit(null);
+                    setIsFormOpen(true);
+                    window.scrollTo({ top: 0, behavior: "smooth" });
+                  }}
+                  title="Adicionar Registro do Dia"
+                />
+              ) : (
+                <div className="mb-6 text-center">
+                  <button
+                    onClick={() => {
+                      setEntryToEdit(null);
+                      setIsFormOpen(true);
+                    }}
+                    className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
+                  >
+                    Adicionar Registro do Dia
+                  </button>
+                </div>
+              )}
+            </>
           )}
 
           <JournalCalendar

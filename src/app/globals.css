@@ -94,6 +94,12 @@ select {
 }
 
 /* --- INÍCIO DA MUDANÇA --- */
+/* Adiciona o esquema de cores para os ícones de data/hora no modo escuro */
+.dark input[type="date"],
+.dark input[type="time"] {
+  color-scheme: dark;
+}
+
 /* Remove as setas dos inputs de número */
 input[type="number"]::-webkit-inner-spin-button,
 input[type="number"]::-webkit-outer-spin-button {

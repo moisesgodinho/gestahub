@@ -6,7 +6,8 @@ import Login from "@/components/Login";
 import GestationalInfoDashboard from "@/components/GestationalInfoDashboard";
 import CalculatorPanel from "@/components/CalculatorPanel";
 import AgendaProximosPassos from "@/components/AgendaProximosPassos";
-import WaterTrackerDashboard from "@/components/WaterTrackerDashboard"; // Importado
+import WaterTrackerDashboard from "@/components/WaterTrackerDashboard";
+import MedicationDashboard from "@/components/MedicationDashboard";
 import { useUser } from "@/context/UserContext";
 import { useGestationalData } from "@/hooks/useGestationalData";
 import SkeletonLoader from "@/components/SkeletonLoader";
@@ -82,6 +83,7 @@ export default function Home() {
           onEdit={handleEditRequest}
         />
         <WaterTrackerDashboard />
+        <MedicationDashboard />
         <AgendaProximosPassos lmpDate={estimatedLmp} user={user} />
       </>
     );
