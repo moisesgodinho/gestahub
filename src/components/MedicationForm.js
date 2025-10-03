@@ -135,7 +135,7 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label htmlFor="dosage" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Dosagem</label>
-                <input type="text" id="dosage" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ex: 400mcg" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/>
+                <input type="text" id="dosage" value={dosage} onChange={(e) => setDosage(e.target.value)} placeholder="Ex: 500mg" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"/>
             </div>
             <div>
                 <label htmlFor="frequency" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Nº de doses ao dia</label>
