@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import dynamic from 'next/dynamic';
+import dynamic from "next/dynamic";
 import { doc, setDoc, deleteDoc, collection } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import ConfirmationModal from "@/components/ConfirmationModal";
@@ -11,6 +11,7 @@ import { useUser } from "@/context/UserContext";
 import { useWeightData } from "@/hooks/useWeightData";
 import { getTodayString, calculateGestationalAgeOnDate } from "@/lib/dateUtils";
 import SkeletonLoader from "@/components/SkeletonLoader";
+import InfoTooltip from "@/components/InfoTooltip";
 
 const bmiCategories = [
   { category: "Baixo Peso", range: "< 18.5", recommendation: "12.5 a 18 kg" },
@@ -64,12 +65,12 @@ export default function WeightTrackerPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [isOverwriteModalOpen, setIsOverwriteModalOpen] = useState(false);
   const [visibleHistoryCount, setVisibleHistoryCount] = useState(
-    INITIAL_VISIBLE_COUNT,
+    INITIAL_VISIBLE_COUNT
   );
 
-  const WeightChart = dynamic(() => import('@/components/WeightChart'), {
+  const WeightChart = dynamic(() => import("@/components/WeightChart"), {
     loading: () => <SkeletonLoader type="card" />,
-    ssr: false
+    ssr: false,
   });
 
   useEffect(() => {
@@ -114,7 +115,7 @@ export default function WeightTrackerPage() {
       toast.warn("Por favor, insira um peso realista (entre 30 e 300 kg).");
       return;
     }
-    
+
     setIsEditing(false);
 
     try {
@@ -132,7 +133,7 @@ export default function WeightTrackerPage() {
     } catch (error) {
       console.error("Erro ao salvar dados iniciais:", error);
       toast.error("Erro ao salvar dados.");
-      setIsEditing(true); 
+      setIsEditing(true);
     }
   };
 
@@ -154,7 +155,7 @@ export default function WeightTrackerPage() {
       toast.success(
         weightHistory.some((e) => e.id === entryDate)
           ? "Registro de peso atualizado!"
-          : "Peso adicionado ao histórico!",
+          : "Peso adicionado ao histórico!"
       );
     } catch (error) {
       console.error("Erro ao adicionar/atualizar peso:", error);
@@ -187,7 +188,7 @@ export default function WeightTrackerPage() {
     }
     if (estimatedLmp && selectedDate < estimatedLmp) {
       toast.warn(
-        "A data do registro não pode ser anterior ao início da gestação.",
+        "A data do registro não pode ser anterior ao início da gestação."
       );
       return;
     }
@@ -214,7 +215,7 @@ export default function WeightTrackerPage() {
         "users",
         user.uid,
         "weightHistory",
-        entryToDelete.id,
+        entryToDelete.id
       );
       await deleteDoc(entryRef);
       toast.info("Registro de peso removido.");
@@ -418,9 +419,13 @@ export default function WeightTrackerPage() {
                 <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-2 text-center">
                   Recomendações de Ganho de Peso
                 </h3>
-                <p className="text-xs text-center text-slate-500 dark:text-slate-400 mb-4">
-                  A meta de ganho de peso é baseada no seu IMC pré-gestacional.
-                </p>
+                <div className="flex items-center justify-center gap-2 mb-4">
+                  <p className="text-xs text-center text-slate-500 dark:text-slate-400">
+                    A meta de ganho de peso é baseada no seu IMC
+                    pré-gestacional.
+                  </p>
+                  <InfoTooltip text="Estes valores são médias e servem como uma referência. O ganho de peso ideal pode variar. O mais importante é o acompanhamento contínuo no seu pré-natal." />
+                </div>
                 <div className="space-y-3">
                   {bmiCategories.map((item) => {
                     const isActive = item.category === recommendation.category;
@@ -477,14 +482,16 @@ export default function WeightTrackerPage() {
                         <div className="flex-grow">
                           <p className="font-semibold text-slate-700 dark:text-slate-200">
                             {new Date(
-                              entry.date + "T00:00:00Z",
-                            ).toLocaleDateString("pt-BR", { timeZone: "UTC" })}
+                              entry.date + "T00:00:00Z"
+                            ).toLocaleDateString("pt-BR", {
+                              timeZone: "UTC",
+                            })}
                           </p>
                           {estimatedLmp && (
                             <p className="text-xs text-rose-500 dark:text-rose-400 font-medium">
                               {calculateGestationalAgeOnDate(
                                 estimatedLmp,
-                                entry.date,
+                                entry.date
                               )}
                             </p>
                           )}
@@ -525,7 +532,7 @@ export default function WeightTrackerPage() {
                       <button
                         onClick={() =>
                           setVisibleHistoryCount(
-                            (prev) => prev + LOAD_MORE_COUNT,
+                            (prev) => prev + LOAD_MORE_COUNT
                           )
                         }
                         className="px-6 py-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 transition-colors"
