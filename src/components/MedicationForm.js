@@ -173,7 +173,7 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
               id="dosage"
               value={dosage}
               onChange={(e) => setDosage(e.target.value)}
-              placeholder="Ex: 400mcg"
+              placeholder="Ex: 500mg"
               className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200"
             />
           </div>
