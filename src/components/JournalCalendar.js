@@ -89,6 +89,17 @@ export default function JournalCalendar({
     });
   };
 
+  const formattedMonth = useMemo(() => {
+    const dateString = currentDate.toLocaleString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
+    return dateString
+      .split(" ")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  }, [currentDate]);
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
 
@@ -120,7 +131,7 @@ export default function JournalCalendar({
   for (let day = 1; day <= totalDays; day++) {
     const dateString = `${year}-${String(month + 1).padStart(
       2,
-      "0",
+      "0"
     )}-${String(day).padStart(2, "0")}`;
     const entry = entriesMap.get(dateString);
     const mood = entry ? moodOptions.find((m) => m.value === entry.mood) : null;
@@ -130,10 +141,18 @@ export default function JournalCalendar({
     calendarDays.push(
       <div
         key={day}
-        onClick={!isFutureDate ? () => (entry ? onEditEntry(entry) : onDateSelect(dateString)) : undefined}
+        onClick={
+          !isFutureDate
+            ? () => (entry ? onEditEntry(entry) : onDateSelect(dateString))
+            : undefined
+        }
         className={`p-1 text-center rounded-lg transition-colors flex flex-col aspect-square relative bg-slate-50 dark:bg-slate-700/50 border-2 ${
           isToday ? "border-rose-400" : "border-transparent"
-        } ${isFutureDate ? "opacity-50 cursor-not-allowed" : "cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700"}`}
+        } ${
+          isFutureDate
+            ? "opacity-50 cursor-not-allowed"
+            : "cursor-pointer hover:bg-slate-200 dark:hover:bg-slate-700"
+        }`}
       >
         <span
           className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end font-semibold ${
@@ -159,7 +178,7 @@ export default function JournalCalendar({
             <div></div>
           )}
         </div>
-      </div>,
+      </div>
     );
   }
 
@@ -174,10 +193,7 @@ export default function JournalCalendar({
           <ChevronLeftIcon />
         </button>
         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
-          {currentDate.toLocaleString("pt-BR", {
-            month: "long",
-            year: "numeric",
-          })}
+          {formattedMonth}
         </h3>
         <button
           onClick={() => changeMonth(1)}

@@ -199,6 +199,17 @@ export default function AppointmentCalendar({
     });
   };
 
+  const formattedMonth = useMemo(() => {
+    const dateString = currentDate.toLocaleString("pt-BR", {
+      month: "long",
+      year: "numeric",
+    });
+    return dateString
+      .split(" ")
+      .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+      .join(" ");
+  }, [currentDate]);
+
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
   const firstDayOfMonth = new Date(year, month, 1);
@@ -223,7 +234,10 @@ export default function AppointmentCalendar({
   }
 
   for (let day = 1; day <= totalDays; day++) {
-    const dateString = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    const dateString = `${year}-${String(month + 1).padStart(
+      2,
+      "0"
+    )}-${String(day).padStart(2, "0")}`;
     const dayAppointments = appointmentsByDate.get(dateString) || [];
     const isToday = dateString === todayString;
     const windowExam = ultrasoundWindows.get(dateString);
@@ -253,7 +267,11 @@ export default function AppointmentCalendar({
       >
         <span
           className={`w-7 h-7 flex items-center justify-center rounded-full text-sm self-end font-semibold
-                    ${isToday ? "text-rose-500 dark:text-rose-400" : "text-slate-700 dark:text-slate-300"}
+                    ${
+                      isToday
+                        ? "text-rose-500 dark:text-rose-400"
+                        : "text-slate-700 dark:text-slate-300"
+                    }
                 `}
         >
           {day}
@@ -276,7 +294,11 @@ export default function AppointmentCalendar({
                 <div
                   key={app.id || app.name}
                   className={`w-full text-xs p-1 rounded truncate
-                                    ${app.type === "ultrasound" ? "bg-pink-200 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200" : "bg-red-300 text-red-800 dark:bg-red-900/50 dark:text-red-200"}`}
+                                    ${
+                                      app.type === "ultrasound"
+                                        ? "bg-pink-200 text-pink-800 dark:bg-pink-900/50 dark:text-pink-200"
+                                        : "bg-red-300 text-red-800 dark:bg-red-900/50 dark:text-red-200"
+                                    }`}
                 >
                   {app.title || app.name}
                 </div>
@@ -284,7 +306,7 @@ export default function AppointmentCalendar({
             </div>
           )}
         </div>
-      </div>,
+      </div>
     );
   }
 
@@ -299,10 +321,7 @@ export default function AppointmentCalendar({
           <ChevronLeftIcon />
         </button>
         <h3 className="text-xl font-semibold text-slate-800 dark:text-slate-200">
-          {currentDate.toLocaleString("pt-BR", {
-            month: "long",
-            year: "numeric",
-          })}
+          {formattedMonth}
         </h3>
         <button
           onClick={() => changeMonth(1)}
@@ -340,7 +359,9 @@ export default function AppointmentCalendar({
             {ultrasoundSchedule.map((exam) => (
               <div key={exam.id} className="flex items-center gap-2">
                 <span
-                  className={`w-4 h-4 rounded-lg ${colorClasses[exam.color]?.legend || ""}`}
+                  className={`w-4 h-4 rounded-lg ${
+                    colorClasses[exam.color]?.legend || ""
+                  }`}
                 ></span>
                 <span className="text-sm text-slate-600 dark:text-slate-400">
                   {exam.name}
