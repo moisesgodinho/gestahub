@@ -58,7 +58,7 @@ const ChevronRightIcon = () => (
     xmlns="http://www.w3.org/2000/svg"
     width="24"
     height="24"
-    viewBox="0 0 24 24"
+    viewBox="0 0 24"
     fill="none"
     stroke="currentColor"
     strokeWidth="2"
@@ -157,7 +157,9 @@ function DayMedicationList({
             return { ...med, dosesForToday: [] };
 
           const medStartDateTime = parseDateStringAsLocal(med.startDate);
-          const [startHours, startMinutes] = med.doses[0].split(":").map(Number);
+          const [startHours, startMinutes] = med.doses[0]
+            .split(":")
+            .map(Number);
           medStartDateTime.setHours(startHours, startMinutes);
 
           const targetDayStart = parseDateStringAsLocal(date);
@@ -237,7 +239,12 @@ function DayMedicationList({
                     >
                       {med.name}
                     </p>
-                    {durationText && isToday && (
+                    {med.durationType === "CONTINUOUS" && (
+                      <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                        Uso Contínuo
+                      </span>
+                    )}
+                    {durationText && (
                       <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                         {durationText}
                       </span>
