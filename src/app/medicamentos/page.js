@@ -9,19 +9,22 @@ import MedicationForm from "@/components/MedicationForm";
 import MedicationList from "@/components/MedicationList";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import ConfirmationModal from "@/components/ConfirmationModal";
+import { getDueDate } from "@/lib/gestationalAge";
 
 export default function MedicationsPage() {
   const { user, loading: userLoading } = useUser();
-  const { gestationalInfo, loading: gestationalLoading } = useGestationalData(user);
-  
-  const { 
-    medications, 
-    history, 
-    loading: medsLoading, 
-    addMedication, 
-    updateMedication, 
-    deleteMedication, 
-    onToggleDose 
+  const { gestationalInfo, estimatedLmp, loading: gestationalLoading } =
+    useGestationalData(user);
+  const dueDate = estimatedLmp ? getDueDate(estimatedLmp) : null;
+
+  const {
+    medications,
+    history,
+    loading: medsLoading,
+    addMedication,
+    updateMedication,
+    deleteMedication,
+    onToggleDose,
   } = useMedication(user);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -55,12 +58,12 @@ export default function MedicationsPage() {
     setIsFormOpen(false);
     setMedicationToEdit(null);
   };
-  
+
   const handleDeleteRequest = (medId) => {
     setMedicationIdToDelete(medId);
     setIsDeleteModalOpen(true);
   };
-  
+
   const confirmDelete = () => {
     if (medicationIdToDelete) {
       deleteMedication(medicationIdToDelete);
@@ -79,11 +82,11 @@ export default function MedicationsPage() {
 
   return (
     <>
-      <ConfirmationModal 
-        isOpen={isDeleteModalOpen} 
-        onClose={() => setIsDeleteModalOpen(false)} 
-        onConfirm={confirmDelete} 
-        title="Confirmar Exclusão" 
+      <ConfirmationModal
+        isOpen={isDeleteModalOpen}
+        onClose={() => setIsDeleteModalOpen(false)}
+        onConfirm={confirmDelete}
+        title="Confirmar Exclusão"
         message="Tem certeza que deseja remover este medicamento? Esta ação não pode ser desfeita."
       />
       <div className="flex items-start justify-center flex-grow p-4">
@@ -93,11 +96,15 @@ export default function MedicationsPage() {
           </h1>
 
           {isFormOpen ? (
-            <MedicationForm onSave={handleSave} onCancel={handleCancel} medicationToEdit={medicationToEdit} />
+            <MedicationForm
+              onSave={handleSave}
+              onCancel={handleCancel}
+              medicationToEdit={medicationToEdit}
+            />
           ) : (
             <div className="mb-6 text-center">
-              <button 
-                onClick={handleAddNew} 
+              <button
+                onClick={handleAddNew}
                 className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
               >
                 Adicionar Medicamento
@@ -112,6 +119,7 @@ export default function MedicationsPage() {
             onToggleDose={onToggleDose}
             onEdit={handleEdit}
             onDelete={handleDeleteRequest}
+            dueDate={dueDate}
           />
         </div>
       </div>

@@ -16,7 +16,7 @@ import {
   where,
   getDocs,
   startAfter,
-  limit
+  limit,
 } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { getTodayString } from "@/lib/dateUtils";
@@ -38,93 +38,138 @@ export function useMedication(user) {
     setLoading(true);
     const medsRef = collection(db, "users", user.uid, "medications");
     const q = query(medsRef, orderBy("name"));
-    const unsubscribeMeds = onSnapshot(q, (snapshot) => {
-      const medsList = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      setMedications(medsList);
-      setLoading(false);
-    }, (error) => {
-      console.error("Erro ao buscar medicamentos:", error);
-      setLoading(false);
-    });
+    const unsubscribeMeds = onSnapshot(
+      q,
+      (snapshot) => {
+        const medsList = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setMedications(medsList);
+        setLoading(false);
+      },
+      (error) => {
+        console.error("Erro ao buscar medicamentos:", error);
+        setLoading(false);
+      }
+    );
 
     const historyRef = collection(db, "users", user.uid, "medicationHistory");
     const unsubscribeHistory = onSnapshot(historyRef, (snapshot) => {
-        const historyData = {};
-        snapshot.forEach(doc => {
-            historyData[doc.id] = doc.data();
-        });
-        setHistory(historyData);
+      const historyData = {};
+      snapshot.forEach((doc) => {
+        historyData[doc.id] = doc.data();
+      });
+      setHistory(historyData);
     });
 
-
     return () => {
-        unsubscribeMeds();
-        unsubscribeHistory();
+      unsubscribeMeds();
+      unsubscribeHistory();
     };
   }, [user]);
 
-
-  const addMedication = useCallback(async (medData) => {
-    if (!user) return;
-    try {
+  const addMedication = useCallback(
+    async (medData) => {
+      if (!user) return;
+      try {
         const medsRef = collection(db, "users", user.uid, "medications");
         await addDoc(medsRef, {
-            ...medData,
-            createdAt: new Date()
+          ...medData,
+          createdAt: new Date(),
         });
         toast.success("Medicamento adicionado com sucesso!");
-    } catch (error) {
+      } catch (error) {
         console.error("Erro ao adicionar medicamento:", error);
         toast.error("Não foi possível adicionar o medicamento.");
-    }
-   }, [user]);
+      }
+    },
+    [user]
+  );
 
-  const updateMedication = useCallback(async (medId, medData) => {
-    if (!user) return;
-    try {
+  const updateMedication = useCallback(
+    async (medId, medData) => {
+      if (!user) return;
+      try {
         const medRef = doc(db, "users", user.uid, "medications", medId);
         await setDoc(medRef, medData, { merge: true });
         toast.success("Medicamento atualizado com sucesso!");
-    } catch (error) {
+      } catch (error) {
         console.error("Erro ao atualizar medicamento:", error);
         toast.error("Não foi possível atualizar o medicamento.");
-    }
-   }, [user]);
+      }
+    },
+    [user]
+  );
 
-  const deleteMedication = useCallback(async (medId) => {
-    if (!user) return;
-    try {
+  const deleteMedication = useCallback(
+    async (medId) => {
+      if (!user) return;
+      try {
         const medRef = doc(db, "users", user.uid, "medications", medId);
         await deleteDoc(medRef);
         toast.info("Medicamento removido.");
-    } catch (error) {
+      } catch (error) {
         console.error("Erro ao remover medicamento:", error);
         toast.error("Não foi possível remover o medicamento.");
-    }
-  }, [user]);
-
-  const onToggleDose = useCallback(async (medId, dateString, doseIndex) => {
-    if (!user) return;
-
-    const historyRef = doc(db, "users", user.uid, "medicationHistory", dateString);
-
-    try {
-      const docSnap = await getDoc(historyRef);
-      const currentData = docSnap.exists() ? docSnap.data() : {};
-      const takenDoses = currentData[medId] || [];
-
-      if (takenDoses.includes(doseIndex)) {
-        // Se a dose já foi tomada, remove
-        await setDoc(historyRef, { [medId]: arrayRemove(doseIndex) }, { merge: true });
-      } else {
-        // Se a dose não foi tomada, adiciona
-        await setDoc(historyRef, { [medId]: arrayUnion(doseIndex) }, { merge: true });
       }
-    } catch (error) {
-      console.error("Erro ao atualizar a dose:", error);
-      toast.error("Não foi possível atualizar o status da dose.");
-    }
-  }, [user]);
+    },
+    [user]
+  );
 
-  return { medications, history, loading, addMedication, updateMedication, deleteMedication, onToggleDose };
+  const onToggleDose = useCallback(
+    async (medId, dateString, doseIndex) => {
+      if (!user) return;
+
+      const historyRef = doc(
+        db,
+        "users",
+        user.uid,
+        "medicationHistory",
+        dateString
+      );
+      const todayString = getTodayString();
+      const isPastDate = dateString < todayString;
+
+      try {
+        const docSnap = await getDoc(historyRef);
+        const currentData = docSnap.exists() ? docSnap.data() : {};
+        const takenDoses = currentData[medId] || [];
+
+        if (takenDoses.includes(doseIndex)) {
+          if (isPastDate) {
+            toast.info("Não é possível desmarcar uma dose de um dia anterior.");
+            return;
+          }
+          // Se a dose já foi tomada, remove
+          await setDoc(
+            historyRef,
+            { [medId]: arrayRemove(doseIndex) },
+            { merge: true }
+          );
+        } else {
+          // Se a dose não foi tomada, adiciona
+          await setDoc(
+            historyRef,
+            { [medId]: arrayUnion(doseIndex) },
+            { merge: true }
+          );
+        }
+      } catch (error) {
+        console.error("Erro ao atualizar a dose:", error);
+        toast.error("Não foi possível atualizar o status da dose.");
+      }
+    },
+    [user]
+  );
+
+  return {
+    medications,
+    history,
+    loading,
+    addMedication,
+    updateMedication,
+    deleteMedication,
+    onToggleDose,
+  };
 }
