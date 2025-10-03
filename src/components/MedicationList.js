@@ -37,44 +37,29 @@ const isMedicationActive = (med, targetDate, gestationalWeek) => {
     return false;
 };
 
-// --- NOVA FUNÇÃO ---
-// Retorna o texto de duração para exibir na UI
-const getDurationText = (med) => {
-    const today = parseDateStringAsLocal(getTodayString());
-  
+const getDurationText = (med, date) => {
+    const targetDate = parseDateStringAsLocal(date);
     switch (med.durationType) {
       case 'TRIMESTER':
         return `Durante o ${med.durationValue}º Trimestre`;
-      
       case 'DAYS':
         if (!med.startDate || !med.durationValue) return null;
-        
         const start = parseDateStringAsLocal(med.startDate);
         const endDate = new Date(start);
         endDate.setDate(start.getDate() + Number(med.durationValue));
-        
-        const diffTime = endDate.getTime() - today.getTime();
+        const diffTime = endDate.getTime() - targetDate.getTime();
         const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-        if (diffDays < 0) {
-          return `Terminou há ${Math.abs(diffDays)} dia(s)`;
-        } else if (diffDays === 0) {
-          return "Último dia";
-        } else if (diffDays === 1) {
-          return "Termina amanhã";
-        } else {
-          return `Termina em ${diffDays} dias`;
-        }
-  
-      case 'CONTINUOUS':
+        if (diffDays <= 0) return null;
+        if (diffDays === 1) return "Último dia";
+        return `Restam ${diffDays} dias`;
       default:
         return null;
     }
 };
 
-// Componente para renderizar um único dia na lista
 function DayMedicationList({ date, medications, history, gestationalWeek, onToggleDose, onEdit, onDelete }) {
     const takenOnDate = history[date] || {};
+    const isToday = date === getTodayString();
 
     const activeMedications = useMemo(() => {
         return medications
@@ -94,17 +79,12 @@ function DayMedicationList({ date, medications, history, gestationalWeek, onTogg
                     targetDayEnd.setDate(targetDayEnd.getDate() + 1);
                     let currentDoseTime = new Date(medStartDateTime);
                     let doseIndex = 0;
-                    while (currentDoseTime < targetDayStart && currentDoseTime.getTime() + (med.intervalHours * 60 * 60 * 1000 * 2) < targetDayStart.getTime()) {
-                        currentDoseTime.setHours(currentDoseTime.getHours() + med.intervalHours);
+                    while (currentDoseTime < targetDayStart) {
+                        currentDoseTime.setHours(currentDoseTime.getHours() + Number(med.intervalHours));
                         doseIndex++;
                     }
                     while (currentDoseTime < targetDayEnd) {
-                        if (currentDoseTime >= targetDayStart) {
-                            dosesForToday.push({
-                                time: currentDoseTime.toTimeString().slice(0, 5),
-                                originalIndex: doseIndex
-                            });
-                        }
+                        dosesForToday.push({ time: currentDoseTime.toTimeString().slice(0, 5), originalIndex: doseIndex });
                         currentDoseTime.setHours(currentDoseTime.getHours() + Number(med.intervalHours));
                         doseIndex++;
                     }
@@ -118,7 +98,6 @@ function DayMedicationList({ date, medications, history, gestationalWeek, onTogg
 
     const correctDate = parseDateStringAsLocal(date);
     const formattedDate = correctDate.toLocaleDateString("pt-BR", { weekday: "long", day: "2-digit", month: "short" });
-    const isToday = date === getTodayString();
 
     return (
         <div className="p-4 rounded-lg bg-white dark:bg-slate-800 shadow-lg">
@@ -130,7 +109,7 @@ function DayMedicationList({ date, medications, history, gestationalWeek, onTogg
                 {activeMedications.map(med => {
                     const takenDosesIndices = takenOnDate[med.id] || [];
                     const allDosesTaken = med.dosesForToday.length > 0 && med.dosesForToday.every(dose => takenDosesIndices.includes(dose.originalIndex));
-                    const durationText = getDurationText(med);
+                    const durationText = getDurationText(med, date);
 
                     return (
                         <div key={med.id} className={`p-3 rounded-lg flex flex-col gap-3 transition-colors ${allDosesTaken ? "bg-green-50 dark:bg-green-900/30" : "bg-slate-100 dark:bg-slate-700/50"}`}>
@@ -138,7 +117,7 @@ function DayMedicationList({ date, medications, history, gestationalWeek, onTogg
                                 <div className="flex-grow min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap mb-1">
                                         <p className={`font-semibold text-slate-700 dark:text-slate-200 ${allDosesTaken ? 'line-through' : ''}`}>{med.name}</p>
-                                        {durationText && (
+                                        {durationText && isToday && (
                                             <span className="text-xs font-medium px-2 py-0.5 rounded-full bg-slate-200 text-slate-600 dark:bg-slate-700 dark:text-slate-300">
                                                 {durationText}
                                             </span>
@@ -175,15 +154,15 @@ function DayMedicationList({ date, medications, history, gestationalWeek, onTogg
     );
 }
   
-export default function MedicationList({ medications, history, gestationalWeek, onToggleDose, onEdit, onDelete }) {
+export default function MedicationList({ viewDate, medications, history, gestationalWeek, onToggleDose, onEdit, onDelete }) {
   
   const futureDates = useMemo(() => {
     const dates = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(viewDate);
+    startDate.setHours(0, 0, 0, 0);
 
     for (let i = 0; i < 6; i++) {
-        const d = new Date(today);
+        const d = new Date(startDate);
         d.setDate(d.getDate() + i);
         const year = d.getFullYear();
         const month = String(d.getMonth() + 1).padStart(2, '0');
@@ -191,7 +170,7 @@ export default function MedicationList({ medications, history, gestationalWeek, 
         dates.push(`${year}-${month}-${day}`);
     }
     return dates;
-  }, []);
+  }, [viewDate]);
 
   const hasAnyActiveMedicationForFuture = useMemo(() => {
     if (medications.length === 0) return false;
@@ -211,7 +190,7 @@ export default function MedicationList({ medications, history, gestationalWeek, 
             <p className="text-center text-slate-500 dark:text-slate-400">
                 {medications.length === 0 
                     ? 'Você ainda não adicionou nenhum medicamento ou vitamina.' 
-                    : 'Nenhum medicamento ativo para os próximos dias.'
+                    : 'Nenhum medicamento ativo para o período visualizado.'
                 }
             </p>
         </Card>

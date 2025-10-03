@@ -1,12 +1,13 @@
 // src/app/medicamentos/page.js
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useUser } from "@/context/UserContext";
 import { useGestationalData } from "@/hooks/useGestationalData";
 import { useMedication } from "@/hooks/useMedication";
 import MedicationForm from "@/components/MedicationForm";
 import MedicationList from "@/components/MedicationList";
+import MedicationHistoryList from "@/components/MedicationHistoryList";
 import SkeletonLoader from "@/components/SkeletonLoader";
 import ConfirmationModal from "@/components/ConfirmationModal";
 
@@ -14,16 +15,34 @@ export default function MedicationsPage() {
   const { user, loading: userLoading } = useUser();
   const { gestationalInfo, loading: gestationalLoading } = useGestationalData(user);
   
-  // Passa a semana gestacional para o hook de medicação
-  const { medications, history, loading: medsLoading, addMedication, updateMedication, deleteMedication, onToggleDose } = useMedication(user, gestationalInfo?.weeks);
+  const { 
+    medications, 
+    history, 
+    pastHistory, 
+    loading: medsLoading, 
+    loadingPast, 
+    hasMorePast, 
+    loadPastHistory,
+    addMedication, 
+    updateMedication, 
+    deleteMedication, 
+    onToggleDose 
+  } = useMedication(user, gestationalInfo?.weeks);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [medicationToEdit, setMedicationToEdit] = useState(null);
-  
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [medicationIdToDelete, setMedicationIdToDelete] = useState(null);
+  const [showPast, setShowPast] = useState(false);
 
   const loading = userLoading || medsLoading || gestationalLoading;
+
+  // Carrega o histórico inicial quando o usuário clica para ver
+  useEffect(() => {
+    if (showPast && pastHistory.length === 0 && hasMorePast) {
+        loadPastHistory();
+    }
+  }, [showPast, pastHistory, hasMorePast, loadPastHistory]);
 
   const handleAddNew = () => {
     setMedicationToEdit(null);
@@ -73,12 +92,12 @@ export default function MedicationsPage() {
 
   return (
     <>
-      <ConfirmationModal
-        isOpen={isDeleteModalOpen}
-        onClose={() => setIsDeleteModalOpen(false)}
-        onConfirm={confirmDelete}
-        title="Confirmar Exclusão"
-        message="Tem certeza que deseja remover este medicamento da sua lista?"
+      <ConfirmationModal 
+        isOpen={isDeleteModalOpen} 
+        onClose={() => setIsDeleteModalOpen(false)} 
+        onConfirm={confirmDelete} 
+        title="Confirmar Exclusão" 
+        message="Tem certeza que deseja remover este medicamento? Esta ação não pode ser desfeita."
       />
       <div className="flex items-start justify-center flex-grow p-4">
         <div className="w-full max-w-3xl">
@@ -90,8 +109,8 @@ export default function MedicationsPage() {
             <MedicationForm onSave={handleSave} onCancel={handleCancel} medicationToEdit={medicationToEdit} />
           ) : (
             <div className="mb-6 text-center">
-              <button
-                onClick={handleAddNew}
+              <button 
+                onClick={handleAddNew} 
                 className="px-6 py-3 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition-colors"
               >
                 Adicionar Medicamento
@@ -100,6 +119,7 @@ export default function MedicationsPage() {
           )}
 
           <MedicationList
+            viewDate={new Date()} // Sempre começa a partir de hoje
             medications={medications}
             history={history}
             gestationalWeek={gestationalInfo?.weeks}
@@ -107,6 +127,28 @@ export default function MedicationsPage() {
             onEdit={handleEdit}
             onDelete={handleDeleteRequest}
           />
+
+          <div className="mt-8 text-center">
+            {!showPast && (
+                <button 
+                  onClick={() => setShowPast(true)} 
+                  className="text-indigo-600 dark:text-indigo-400 font-semibold hover:underline"
+                >
+                    Ver Histórico de Dias Anteriores
+                </button>
+            )}
+          </div>
+
+          {showPast && (
+            <MedicationHistoryList
+                history={pastHistory}
+                medications={medications}
+                onLoadMore={() => loadPastHistory(true)}
+                hasMore={hasMorePast}
+                loading={loadingPast}
+                gestationalWeek={gestationalInfo?.weeks}
+            />
+          )}
         </div>
       </div>
     </>
