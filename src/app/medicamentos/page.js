@@ -108,7 +108,7 @@ export default function MedicationsPage() {
           <MedicationList
             medications={medications}
             history={history}
-            gestationalWeek={gestationalInfo?.weeks}
+            gestationalInfo={gestationalInfo}
             onToggleDose={onToggleDose}
             onEdit={handleEdit}
             onDelete={handleDeleteRequest}

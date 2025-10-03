@@ -103,7 +103,8 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
         finalInterval = Number(intervalHours);
     }
 
-    if(durationType === 'DAYS' || scheduleType === 'INTERVAL'){
+    // Garante que todos os tipos que precisam de uma data de início a recebam.
+    if(durationType === 'DAYS' || scheduleType === 'INTERVAL' || durationType === 'CONTINUOUS'){
         finalStartDate = startDate;
     }
 
@@ -214,10 +215,6 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
                 <input type="radio" name="durationType" value="DAYS" checked={durationType === 'DAYS'} onChange={() => setDurationType('DAYS')} className="form-radio text-indigo-600 bg-transparent border-slate-400 focus:ring-indigo-500"/>
                 <span className="text-sm text-slate-700 dark:text-slate-300">Período de Dias</span>
             </label>
-            <label className="flex items-center gap-2 cursor-pointer">
-                <input type="radio" name="durationType" value="TRIMESTER" checked={durationType === 'TRIMESTER'} onChange={() => setDurationType('TRIMESTER')} className="form-radio text-indigo-600 bg-transparent border-slate-400 focus:ring-indigo-500"/>
-                <span className="text-sm text-slate-700 dark:text-slate-300">Por Trimestre</span>
-            </label>
           </div>
           {durationType === 'DAYS' && (
             <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -231,18 +228,6 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
                 <input type="date" id="startDateDays" value={startDate} onChange={(e) => setStartDate(e.target.value)}
                   className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm" required />
               </div>
-            </div>
-          )}
-          {durationType === 'TRIMESTER' && (
-            <div className="pt-2">
-              <label className="block text-xs font-medium text-slate-600 dark:text-slate-400">Qual trimestre:</label>
-              <select value={durationValue} onChange={(e) => setDurationValue(e.target.value)}
-                 className="mt-1 w-full sm:w-1/2 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm" required>
-                 <option value="">Selecione...</option>
-                 <option value="1">1º Trimestre</option>
-                 <option value="2">2º Trimestre</option>
-                 <option value="3">3º Trimestre</option>
-              </select>
             </div>
           )}
         </div>
