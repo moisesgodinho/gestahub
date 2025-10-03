@@ -1,9 +1,9 @@
 // src/components/MedicationList.js
 "use client";
 
-import { getTodayString } from "@/lib/dateUtils";
+import { useMemo, useState, useEffect } from "react";
 import Card from "@/components/Card";
-import { useMemo } from "react";
+import { getTodayString } from "@/lib/dateUtils";
 
 const EditIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
@@ -13,29 +13,47 @@ const DeleteIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
 );
 
+const ChevronLeftIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
+);
+const ChevronRightIcon = () => (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+);
+
 const parseDateStringAsLocal = (dateString) => {
     if (!dateString) return null;
     const [year, month, day] = dateString.split('-').map(Number);
     return new Date(year, month - 1, day);
 };
 
-const isMedicationActive = (med, targetDate, gestationalWeek) => {
-    if (!med.durationType || med.durationType === 'CONTINUOUS') return true;
-    if (!med.startDate) return false;
-    const start = parseDateStringAsLocal(med.startDate);
-    const target = parseDateStringAsLocal(targetDate);
-    if (med.durationType === 'DAYS') {
-        const endDate = new Date(start);
-        endDate.setDate(start.getDate() + Number(med.durationValue || 0));
-        return target >= start && target < endDate;
+const isMedicationActiveOnDate = (med, targetDate, gestationalWeek) => {
+    if (!med) return false;
+    if (med.durationType === 'CONTINUOUS') return true;
+
+    if (!med.startDate && med.durationType !== 'TRIMESTER') {
+        return false;
     }
+
+    const target = parseDateStringAsLocal(targetDate);
+    
     if (med.durationType === 'TRIMESTER') {
         if (!gestationalWeek) return false;
         const trimester = Math.ceil(gestationalWeek / 13);
         return trimester === Number(med.durationValue);
     }
-    return false;
+    
+    const start = parseDateStringAsLocal(med.startDate);
+    if (target < start) return false;
+
+    if (med.durationType === 'DAYS') {
+        const endDate = new Date(start);
+        endDate.setDate(start.getDate() + Number(med.durationValue || 0));
+        return target < endDate;
+    }
+    
+    return true; // Para outros casos (como horário fixo sem data de fim)
 };
+
 
 const getDurationText = (med, date) => {
     const targetDate = parseDateStringAsLocal(date);
@@ -59,11 +77,13 @@ const getDurationText = (med, date) => {
 
 function DayMedicationList({ date, medications, history, gestationalWeek, onToggleDose, onEdit, onDelete }) {
     const takenOnDate = history[date] || {};
-    const isToday = date === getTodayString();
+    const todayString = getTodayString();
+    const isToday = date === todayString;
+    const isFutureDate = date > todayString;
 
     const activeMedications = useMemo(() => {
         return medications
-            .filter(med => isMedicationActive(med, date, gestationalWeek))
+            .filter(med => isMedicationActiveOnDate(med, date, gestationalWeek))
             .map(med => {
                 let dosesForToday = [];
                 if (med.scheduleType === 'FLEXIBLE' || med.scheduleType === 'FIXED_TIMES') {
@@ -71,20 +91,22 @@ function DayMedicationList({ date, medications, history, gestationalWeek, onTogg
                 } 
                 else if (med.scheduleType === 'INTERVAL') {
                     if (!med.startDate || !med.doses || !med.doses[0] || !med.intervalHours) return { ...med, dosesForToday: [] };
+                    
                     const medStartDateTime = parseDateStringAsLocal(med.startDate);
                     const [startHours, startMinutes] = med.doses[0].split(':').map(Number);
                     medStartDateTime.setHours(startHours, startMinutes);
+
                     const targetDayStart = parseDateStringAsLocal(date);
                     const targetDayEnd = new Date(targetDayStart);
                     targetDayEnd.setDate(targetDayEnd.getDate() + 1);
+
                     let currentDoseTime = new Date(medStartDateTime);
                     let doseIndex = 0;
-                    while (currentDoseTime < targetDayStart) {
-                        currentDoseTime.setHours(currentDoseTime.getHours() + Number(med.intervalHours));
-                        doseIndex++;
-                    }
-                    while (currentDoseTime < targetDayEnd) {
-                        dosesForToday.push({ time: currentDoseTime.toTimeString().slice(0, 5), originalIndex: doseIndex });
+                    
+                    while(currentDoseTime < targetDayEnd) {
+                        if (currentDoseTime >= targetDayStart) {
+                             dosesForToday.push({ time: currentDoseTime.toTimeString().slice(0, 5), originalIndex: doseIndex });
+                        }
                         currentDoseTime.setHours(currentDoseTime.getHours() + Number(med.intervalHours));
                         doseIndex++;
                     }
@@ -138,9 +160,9 @@ function DayMedicationList({ date, medications, history, gestationalWeek, onTogg
                                 {med.dosesForToday.map(dose => {
                                     const isTaken = takenDosesIndices.includes(dose.originalIndex);
                                     return (
-                                        <label key={dose.originalIndex} className="flex items-center gap-2 cursor-pointer">
-                                            <input type="checkbox" checked={isTaken} onChange={() => onToggleDose(med.id, date, dose.originalIndex)} className="sr-only peer" />
-                                            <div className={`w-5 h-5 border-2 rounded-md flex-shrink-0 flex items-center justify-center ${isTaken ? 'bg-green-500 border-green-500' : 'border-slate-400 dark:border-slate-500'}`}><svg className={`w-3.5 h-3.5 text-white transform transition-transform ${isTaken ? 'scale-100' : 'scale-0'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                                        <label key={`${med.id}-${dose.originalIndex}`} className={`flex items-center gap-2 ${isFutureDate ? 'cursor-not-allowed' : 'cursor-pointer'}`}>
+                                            <input type="checkbox" checked={isTaken} onChange={() => onToggleDose(med.id, date, dose.originalIndex)} className="sr-only peer" disabled={isFutureDate} />
+                                            <div className={`w-5 h-5 border-2 rounded-md flex-shrink-0 flex items-center justify-center ${isTaken ? 'bg-green-500 border-green-500' : isFutureDate ? 'bg-slate-200 dark:bg-slate-600 border-slate-300 dark:border-slate-500' : 'border-slate-400 dark:border-slate-500'}`}><svg className={`w-3.5 h-3.5 text-white transform transition-transform ${isTaken ? 'scale-100' : 'scale-0'}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="4" strokeLinecap="round" strokeLinejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
                                             <span className={`text-sm font-medium ${isTaken ? 'line-through text-slate-500 dark:text-slate-400' : 'text-slate-700 dark:text-slate-300'}`}>{dose.time}</span>
                                         </label>
                                     )
@@ -154,63 +176,107 @@ function DayMedicationList({ date, medications, history, gestationalWeek, onTogg
     );
 }
   
-export default function MedicationList({ viewDate, medications, history, gestationalWeek, onToggleDose, onEdit, onDelete }) {
-  
-  const futureDates = useMemo(() => {
-    const dates = [];
-    const startDate = new Date(viewDate);
-    startDate.setHours(0, 0, 0, 0);
+export default function MedicationList({ medications, history, gestationalWeek, onToggleDose, onEdit, onDelete }) {
+    const [currentDate, setCurrentDate] = useState(() => new Date());
 
-    for (let i = 0; i < 6; i++) {
-        const d = new Date(startDate);
-        d.setDate(d.getDate() + i);
-        const year = d.getFullYear();
-        const month = String(d.getMonth() + 1).padStart(2, '0');
-        const day = String(d.getDate()).padStart(2, '0');
-        dates.push(`${year}-${month}-${day}`);
-    }
-    return dates;
-  }, [viewDate]);
+    useEffect(() => {
+        const today = new Date();
+        setCurrentDate(new Date(today.getFullYear(), today.getMonth(), 1));
+    }, []);
 
-  const hasAnyActiveMedicationForFuture = useMemo(() => {
-    if (medications.length === 0) return false;
-    for (const date of futureDates) {
-        for (const med of medications) {
-            if (isMedicationActive(med, date, gestationalWeek)) {
-                return true;
+    const changeMonth = (amount) => {
+        setCurrentDate(prev => {
+            const newDate = new Date(prev.getFullYear(), prev.getMonth() + amount, 1);
+            return newDate;
+        });
+    };
+    
+    const hasMedicationInMonth = (date) => {
+        if (!medications || medications.length === 0) return false;
+        
+        const year = date.getFullYear();
+        const month = date.getMonth();
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+
+        for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+            const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+            for (const med of medications) {
+                if (isMedicationActiveOnDate(med, dateStr, gestationalWeek)) {
+                    return true;
+                }
             }
         }
+        return false;
     }
-    return false;
-  }, [medications, futureDates, gestationalWeek]);
 
-  if (!hasAnyActiveMedicationForFuture) {
+    const previousMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+    const nextMonth = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+    
+    const canGoBack = hasMedicationInMonth(previousMonth);
+    const canGoForward = hasMedicationInMonth(nextMonth);
+
+
+    const datesForMonthView = useMemo(() => {
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth();
+
+        const firstDay = new Date(year, month, 1);
+        const lastDay = new Date(year, month + 1, 0);
+        const dates = [];
+
+        for (let d = new Date(firstDay); d <= lastDay; d.setDate(d.getDate() + 1)) {
+            dates.push(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
+        }
+        return dates;
+    }, [currentDate]);
+
+    const hasAnyActiveMedicationForCurrentMonth = hasMedicationInMonth(currentDate);
+
     return (
-        <Card>
-            <p className="text-center text-slate-500 dark:text-slate-400">
-                {medications.length === 0 
-                    ? 'Você ainda não adicionou nenhum medicamento ou vitamina.' 
-                    : 'Nenhum medicamento ativo para o período visualizado.'
-                }
-            </p>
-        </Card>
-    );
-  }
+        <div className="space-y-4">
+            <div className="bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-xl flex justify-between items-center sticky top-2 z-10">
+                <button onClick={() => changeMonth(-1)} disabled={!canGoBack} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <ChevronLeftIcon />
+                </button>
+                <h2 className="text-xl font-semibold text-slate-800 dark:text-slate-200 capitalize">
+                    {currentDate.toLocaleString("pt-BR", { month: "long", year: "numeric", timeZone: 'UTC' })}
+                </h2>
+                <button onClick={() => changeMonth(1)} disabled={!canGoForward} className="p-2 rounded-full text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed">
+                    <ChevronRightIcon />
+                </button>
+            </div>
+            
+            {(medications.length === 0) && (
+                 <Card>
+                    <p className="text-center text-slate-500 dark:text-slate-400">
+                        Você ainda não adicionou nenhum medicamento ou vitamina.
+                    </p>
+                 </Card>
+            )}
 
-  return (
-    <div className="space-y-4">
-        {futureDates.map(date => (
-            <DayMedicationList 
-                key={date}
-                date={date}
-                medications={medications}
-                history={history}
-                gestationalWeek={gestationalWeek}
-                onToggleDose={onToggleDose}
-                onEdit={onEdit}
-                onDelete={onDelete}
-            />
-        ))}
-    </div>
-  );
+            {(medications.length > 0 && !hasAnyActiveMedicationForCurrentMonth) && (
+                 <Card>
+                    <p className="text-center text-slate-500 dark:text-slate-400">
+                        Nenhum medicamento ativo para este mês.
+                    </p>
+                 </Card>
+            )}
+
+            {hasAnyActiveMedicationForCurrentMonth && (
+                datesForMonthView.map(date => (
+                    <DayMedicationList 
+                        key={date}
+                        date={date}
+                        medications={medications}
+                        history={history}
+                        gestationalWeek={gestationalWeek}
+                        onToggleDose={onToggleDose}
+                        onEdit={onEdit}
+                        onDelete={onDelete}
+                    />
+                ))
+            )}
+        </div>
+    );
 }

@@ -3,23 +3,7 @@
 
 import { useState, useEffect } from "react";
 import { toast } from 'react-toastify';
-
-// Função para calcular os horários
-const calculateDoseTimes = (startTime, frequency, interval) => {
-    if (!startTime || !frequency || !interval) return [];
-    const times = [startTime];
-    let lastTime = startTime;
-    for (let i = 1; i < frequency; i++) {
-        const [hours, minutes] = lastTime.split(':').map(Number);
-        const date = new Date();
-        date.setHours(hours, minutes, 0);
-        date.setHours(date.getHours() + Number(interval));
-        const nextTime = date.toTimeString().slice(0, 5);
-        times.push(nextTime);
-        lastTime = nextTime;
-    }
-    return times;
-};
+import { getTodayString } from "@/lib/dateUtils";
 
 export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
   const [name, setName] = useState("");
@@ -34,6 +18,7 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
 
   const [durationType, setDurationType] = useState("CONTINUOUS");
   const [durationValue, setDurationValue] = useState("");
+  const [startDate, setStartDate] = useState(getTodayString());
 
   useEffect(() => {
     if (medicationToEdit) {
@@ -46,7 +31,7 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
       setScheduleType(type);
       
       if (type === 'INTERVAL') {
-          setStartTime(medicationToEdit.doses[0] || "");
+          setStartTime(medicationToEdit.doses && medicationToEdit.doses.length > 0 ? medicationToEdit.doses[0] : "");
           setIntervalHours(medicationToEdit.intervalHours || "");
       } else {
           const savedDoses = medicationToEdit.doses || [];
@@ -55,7 +40,9 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
 
       setDurationType(medicationToEdit.durationType || "CONTINUOUS");
       setDurationValue(medicationToEdit.durationValue || "");
+      setStartDate(medicationToEdit.startDate || getTodayString());
     } else {
+      // Reset para estado inicial limpo
       setName("");
       setDosage("");
       setFrequency(1);
@@ -66,10 +53,10 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
       setIntervalHours("");
       setDurationType("CONTINUOUS");
       setDurationValue("");
+      setStartDate(getTodayString());
     }
   }, [medicationToEdit]);
 
-  // Efeito para atualizar o array de doses quando a frequência muda
   useEffect(() => {
     if (scheduleType !== 'INTERVAL') {
         setDoses(currentDoses => {
@@ -79,23 +66,12 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
     }
   }, [frequency, scheduleType]);
 
-  // --- NOVA LÓGICA ---
-  // Efeito para CALCULAR a frequência quando o intervalo muda
   useEffect(() => {
     if (scheduleType === 'INTERVAL' && intervalHours > 0 && intervalHours < 25) {
       const newFrequency = Math.floor(24 / intervalHours);
       setFrequency(newFrequency > 0 ? newFrequency : 1);
     }
   }, [intervalHours, scheduleType]);
-
-  // Efeito para CALCULAR os horários automaticamente
-  useEffect(() => {
-    if (scheduleType === 'INTERVAL' && startTime && frequency > 0 && intervalHours > 0) {
-        const calculatedTimes = calculateDoseTimes(startTime, frequency, intervalHours);
-        setDoses(calculatedTimes);
-    }
-  }, [scheduleType, startTime, frequency, intervalHours]);
-
 
   const handleDoseChange = (index, value) => {
     const newDoses = [...doses];
@@ -109,20 +85,39 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
       toast.warn("Por favor, insira o nome do medicamento.");
       return;
     }
-    if (doses.some(dose => !dose || !dose.trim())) {
-        toast.warn("Por favor, preencha todos os horários ou descrições das doses.");
+
+    let finalDoses = doses;
+    let finalInterval = null;
+    let finalStartDate = null;
+
+    if (scheduleType === 'FIXED_TIMES' && doses.some(dose => !dose || !dose.trim())) {
+        toast.warn("Por favor, preencha todos os horários.");
         return;
     }
+    if (scheduleType === 'INTERVAL') {
+        if (!startTime || !intervalHours) {
+            toast.warn("Preencha o horário inicial e o intervalo.");
+            return;
+        }
+        finalDoses = [startTime];
+        finalInterval = Number(intervalHours);
+    }
+
+    if(durationType === 'DAYS' || scheduleType === 'INTERVAL'){
+        finalStartDate = startDate;
+    }
+
     onSave({ 
         name, 
         dosage, 
         frequency: Number(frequency), 
         notes, 
         scheduleType, 
-        doses, 
-        intervalHours: Number(intervalHours) || 0,
+        doses: finalDoses,
+        intervalHours: finalInterval,
         durationType, 
-        durationValue: durationType === 'CONTINUOUS' ? null : Number(durationValue) || durationValue,
+        durationValue: durationType === 'CONTINUOUS' ? null : durationValue,
+        startDate: finalStartDate,
     });
   };
 
@@ -175,13 +170,17 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
             </div>
 
             {scheduleType === 'INTERVAL' ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <div>
+                        <label htmlFor="startDateInterval" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Data de Início*</label>
+                        <input type="date" id="startDateInterval" value={startDate} onChange={(e) => setStartDate(e.target.value)} className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200" required/>
+                    </div>
                     <div>
                         <label htmlFor="startTime" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Horário da 1ª dose*</label>
                         <input type="time" id="startTime" value={startTime} onChange={(e) => setStartTime(e.target.value)} className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200" required/>
                     </div>
                     <div>
-                        <label htmlFor="intervalHours" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Intervalo (em horas)*</label>
+                        <label htmlFor="intervalHours" className="block text-sm font-medium text-slate-700 dark:text-slate-300">Intervalo (horas)*</label>
                         <input type="number" id="intervalHours" value={intervalHours} onChange={(e) => setIntervalHours(e.target.value)} placeholder="Ex: 8" min="1" max="24" className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200" required/>
                     </div>
                 </div>
@@ -221,10 +220,17 @@ export default function MedicationForm({ onSave, onCancel, medicationToEdit }) {
             </label>
           </div>
           {durationType === 'DAYS' && (
-            <div className="pt-2">
-              <label htmlFor="durationDays" className="block text-xs font-medium text-slate-600 dark:text-slate-400">Número de dias:</label>
-              <input type="number" id="durationDays" value={durationValue} onChange={(e) => setDurationValue(e.target.value)} min="1" placeholder="Ex: 30"
-                className="mt-1 w-full sm:w-1/2 px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm" required />
+            <div className="pt-2 grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="durationDays" className="block text-xs font-medium text-slate-600 dark:text-slate-400">Número de dias:</label>
+                <input type="number" id="durationDays" value={durationValue} onChange={(e) => setDurationValue(e.target.value)} min="1" placeholder="Ex: 30"
+                  className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm" required />
+              </div>
+              <div>
+                <label htmlFor="startDateDays" className="block text-xs font-medium text-slate-600 dark:text-slate-400">Data de Início:</label>
+                <input type="date" id="startDateDays" value={startDate} onChange={(e) => setStartDate(e.target.value)}
+                  className="mt-1 w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-md bg-transparent dark:text-slate-200 text-sm" required />
+              </div>
             </div>
           )}
           {durationType === 'TRIMESTER' && (
