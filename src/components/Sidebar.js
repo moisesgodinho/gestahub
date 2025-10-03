@@ -14,6 +14,7 @@ import BagIcon from "./icons/BagIcon";
 import BirthPlanIcon from "./icons/BirthPlanIcon";
 import ArticleIcon from "./icons/ArticleIcon";
 import CartIcon from "./icons/CartIcon";
+import PillIcon from "@/components/icons/PillIcon"; // Importado
 
 const navLinks = [
   { href: "/", label: "Início", icon: HomeIcon },
@@ -50,6 +51,11 @@ const navLinks = [
     href: "/lista-de-compras",
     label: "Lista de Compras",
     icon: CartIcon,
+  },
+  {
+    href: "/medicamentos", // Adicionado
+    label: "Medicamentos",
+    icon: PillIcon,
   },
 ];
 

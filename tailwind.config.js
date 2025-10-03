@@ -35,5 +35,6 @@ module.exports = {
   },
   plugins: [
     require("@tailwindcss/typography"), // Adicione esta linha
+    require('@tailwindcss/forms'), // Adicione esta linha
   ],
 };

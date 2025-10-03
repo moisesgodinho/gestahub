@@ -9,6 +9,7 @@ import BirthPlanIcon from "@/components/icons/BirthPlanIcon";
 import WaterIcon from "@/components/icons/WaterIcon";
 import ArticleIcon from "@/components/icons/ArticleIcon";
 import CartIcon from "@/components/icons/CartIcon";
+import PillIcon from "@/components/icons/PillIcon"; // Importado
 import Card from "@/components/Card";
 
 const otherLinks = [
@@ -46,6 +47,11 @@ const otherLinks = [
     href: "/lista-de-compras",
     label: "Lista de Compras",
     icon: CartIcon,
+  },
+  {
+    href: "/medicamentos", // Adicionado
+    label: "Medicamentos",
+    icon: PillIcon,
   },
 ];
 
