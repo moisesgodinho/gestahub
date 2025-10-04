@@ -25,12 +25,17 @@ export function useGestationalData(user) {
       setHasData(true);
 
       const lmpDateTime = lmpDate.getTime();
+
+      // --- INÍCIO DA CORREÇÃO ---
+      // Cria a data de "hoje" no fuso horário local, ignorando as horas.
       const today = new Date();
-      const todayTime = Date.UTC(
-        today.getUTCFullYear(),
-        today.getUTCMonth(),
-        today.getUTCDate()
+      const localToday = new Date(
+        today.getFullYear(),
+        today.getMonth(),
+        today.getDate()
       );
+      const todayTime = localToday.getTime();
+      // --- FIM DA CORREÇÃO ---
 
       const gestationalAgeInMs = todayTime - lmpDateTime;
       const gestationalAgeInDays = Math.floor(

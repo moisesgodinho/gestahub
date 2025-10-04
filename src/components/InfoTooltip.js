@@ -31,13 +31,12 @@ export default function InfoTooltip({ text }) {
       onMouseEnter={() => setShow(true)}
       onMouseLeave={() => setShow(false)}
     >
-      {/* COR ALTERADA AQUI para um tom de anil (índigo) */}
       <InfoIcon className="text-indigo-400 dark:text-indigo-500 cursor-pointer" />
 
       {show && (
-        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-64 p-3 bg-slate-700 dark:bg-slate-800 text-white text-xs rounded-lg shadow-lg z-10 transition-opacity duration-300">
+        <div className="absolute bottom-full right-0 mb-2 w-64 p-3 bg-slate-700 dark:bg-slate-800 text-white text-xs rounded-lg shadow-lg z-[60] transition-opacity duration-300">
           {text}
-          <div className="absolute top-full left-1/2 -translate-x-1/2 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-700 dark:border-t-slate-800"></div>
+          <div className="absolute top-full right-2 w-0 h-0 border-x-8 border-x-transparent border-t-8 border-t-slate-700 dark:border-t-slate-800"></div>
         </div>
       )}
     </div>

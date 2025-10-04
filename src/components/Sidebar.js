@@ -57,6 +57,7 @@ const navLinks = [
     label: "Medicamentos",
     icon: PillIcon,
   },
+  { href: "/offline", label: "Offline", icon: () => null, hidden: true }, // Adicionado para cache
 ];
 
 export default function Sidebar() {
@@ -71,24 +72,26 @@ export default function Sidebar() {
         GestaHub
       </Link>
       <nav className="flex w-full flex-col items-start px-4 gap-2">
-        {navLinks.map((link) => {
-          const isActive = pathname === link.href;
-          const Icon = link.icon;
-          return (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`flex items-center w-full gap-4 p-3 rounded-lg transition-colors duration-200 ${
-                isActive
-                  ? "bg-rose-100 dark:bg-rose-900/50 text-rose-500 dark:text-rose-400 font-semibold"
-                  : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
-              }`}
-            >
-              <Icon className="w-6 h-6 flex-shrink-0" />
-              <span>{link.label}</span>
-            </Link>
-          );
-        })}
+        {navLinks
+          .filter((link) => !link.hidden)
+          .map((link) => {
+            const isActive = pathname === link.href;
+            const Icon = link.icon;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`flex items-center w-full gap-4 p-3 rounded-lg transition-colors duration-200 ${
+                  isActive
+                    ? "bg-rose-100 dark:bg-rose-900/50 text-rose-500 dark:text-rose-400 font-semibold"
+                    : "text-slate-500 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700"
+                }`}
+              >
+                <Icon className="w-6 h-6 flex-shrink-0" />
+                <span>{link.label}</span>
+              </Link>
+            );
+          })}
       </nav>
     </aside>
   );

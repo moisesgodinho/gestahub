@@ -8,6 +8,9 @@ const withPWA = withPWAInit({
   dest: "public",
   disable: process.env.NODE_ENV === "development",
   importScripts: ["/firebase-messaging-sw.js"],
+  fallbacks: {
+    document: "/offline",
+  },
 });
 
 export default withPWA(nextConfig);
