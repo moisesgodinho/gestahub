@@ -88,6 +88,16 @@ export default function Header() {
     document
       .querySelector('meta[name="theme-color"]')
       .setAttribute("content", newColor);
+
+    // **[INÍCIO DA MODIFICAÇÃO]**
+    // Chama a "ponte" para comunicar a mudança ao app Android nativo
+    if (
+      window.AndroidTheme &&
+      typeof window.AndroidTheme.updateThemeColor === "function"
+    ) {
+      window.AndroidTheme.updateThemeColor(newColor);
+    }
+    // **[FIM DA MODIFICAÇÃO]**
   };
 
   const getDisplayName = () => {
